@@ -237,8 +237,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 1-5: 더미 단계 `UDebugSuccessStep`/`UDebugFailStep`/`UDebugPendingStep`(타이머, `Delay` 최소 0.1) — `Steps/DebugSteps.h` 한 파일, 커맨드라인 빌드 성공, `+ Add` 노출 확인
 
+- [x] Step 1-6: 테스트 맵 `Portfolio/Maps/L_WeaponTest`, `Portfolio/Weapons/BP_TestWeapon`(더미 단계 3개, `WeaponData`=`DA_TestWeapon`), 레벨 블루프린트 `F` → `RequestFire`
+- [x] ✅ **Step 1 마일스톤**: 순서 실행, Pending 후 재개, Failed 중단을 출력 로그로 확인 (테스트 A·B)
+
 ### 현재 위치
-- **Step 1-6** 시작 전 (데이터 에셋 `FireSequence` 채우기, 무기 블루프린트에 더미 단계 부착, 키 입력으로 `RequestFire`)
+- **Step 2-1** 시작 전 (`UAmmoDataAsset`, `FFireContext::Ammo` 추가)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - `Content/Portfolio/Data/DA_TestWeapon.uasset`은 디스크에 있으나 미추적 → 1-6에서 커밋
 - 원격 저장소 없음
