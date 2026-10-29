@@ -10,7 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStepResult, EStepResult, Result);
 
 
-UCLASS( Abstract )
+UCLASS( Abstract, Blueprintable )
 class FIRSTVR_API UWeaponStepComponent : public UActorComponent
 {
 	GENERATED_BODY()
