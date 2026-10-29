@@ -235,8 +235,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 1-4: `AWeaponBase`(추상, `BuildSteps`, `RequestFire`, 현재 단계만 구독하며 Success 진행/Failed 중단/Pending 대기, `Fire()`는 로그만) — Rider 빌드 성공. `FireRate`·`Recoil` 적용은 Step 2-3
 
+- [x] Step 1-5: 더미 단계 `UDebugSuccessStep`/`UDebugFailStep`/`UDebugPendingStep`(타이머, `Delay` 최소 0.1) — `Steps/DebugSteps.h` 한 파일, 커맨드라인 빌드 성공, `+ Add` 노출 확인
+
 ### 현재 위치
-- **Step 1-5** 시작 전 (더미 단계: 항상 Success / 항상 Failed / 1초 후 Success. `Report`는 `Execute` 마지막 줄에)
+- **Step 1-6** 시작 전 (데이터 에셋 `FireSequence` 채우기, 무기 블루프린트에 더미 단계 부착, 키 입력으로 `RequestFire`)
+- 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - `Content/Portfolio/Data/DA_TestWeapon.uasset`은 디스크에 있으나 미추적 → 1-6에서 커밋
 - 원격 저장소 없음
 
