@@ -231,11 +231,15 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 1-2: `UWeaponStepComponent` 추상 클래스 (`Execute`, 비가상 `Report`, `OnStepResult`, `OnFailedFeedback`) — 사용자 직접 구현(샘플 참고), Rider 빌드, `+ Add`에 노출되지 않음 확인
 
+- [x] Step 1-3: `UWeaponDataAsset`(`UPrimaryDataAsset` 상속, `FireSequence`, `Recoil`, `FireRate`=초당 발사 수) — Rider 빌드, 에디터에서 데이터 에셋 생성·칸 노출 확인
+
 ### 현재 위치
-- **Step 1-3** 시작 전
+- **Step 1-4** 시작 전
+- `Content/Portfolio/Data/DA_TestWeapon`은 에디터에서 만들었으나 아직 디스크에 저장 안 됨 → 1-6에서 저장·커밋
 - 원격 저장소 없음. 옛 초기 커밋 데이터가 `.git`에 남아 있음 (정리는 사용자 확인 후 `git reflog expire` + `git gc`)
 
 ### 결정 기록
 - 2026-10-29: 바이너리 에셋(`.uasset`, `.umap`, 원본 아트/미디어)은 Git LFS로 관리한다.
 - 2026-10-29: Fab 에셋 폴더는 `Content/FPS_Assault_Pack/`, `Content/Nimikko_WesternTown/`. 저장소에서 제외하고, 새 Fab 에셋을 받으면 `.gitignore`에 폴더를 추가한다.
 - 2026-10-29: `OnFailedFeedback`은 부모 `Report`(비가상)가 `Failed`일 때 자동 호출한다. 자식은 `Report(Failed)`만 부른다. 이유별 피드백이 필요해지면 이유 파라미터로 확장. (`Docs/PLAN.md` 4.4)
+- 2026-10-29: 소스 주석(에디터 툴팁 포함)은 한글로 쓴다. 한글이 든 소스 파일은 UTF-8(BOM)으로 저장한다. 로그 문자열(`TEXT("...")`)은 영어.
