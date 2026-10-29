@@ -240,8 +240,10 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 1-6: 테스트 맵 `Portfolio/Maps/L_WeaponTest`, `Portfolio/Weapons/BP_TestWeapon`(더미 단계 3개, `WeaponData`=`DA_TestWeapon`), 레벨 블루프린트 `F` → `RequestFire`
 - [x] ✅ **Step 1 마일스톤**: 순서 실행, Pending 후 재개, Failed 중단을 출력 로그로 확인 (테스트 A·B)
 
+- [x] Step 2-1: `UAmmoDataAsset`(`Speed` cm/s, `Penetration`, `BaseDamage`), `FFireContext::Ammo`(전방 선언), `FIRE` 로그에 탄 이름 — Rider 빌드, `DA_Ammo_9mm` 생성 확인
+
 ### 현재 위치
-- **Step 2-1** 시작 전 (`UAmmoDataAsset`, `FFireContext::Ammo` 추가)
+- **Step 2-2** 시작 전 (`UMagazineStep`: `Capacity`, `AllowedAmmo`, `InitialAmmo` → `CurrentAmmo`, `AddAmmo()`, 탄 소모와 `Context.Ammo` 기록, 탄 없으면 Failed)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - `Content/Portfolio/Data/DA_TestWeapon.uasset`은 디스크에 있으나 미추적 → 1-6에서 커밋
 - 원격 저장소 없음
