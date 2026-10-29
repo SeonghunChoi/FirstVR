@@ -1,5 +1,6 @@
 #include "Weapon/WeaponBase.h"
 
+#include "Weapon/AmmoDataAsset.h"
 #include "Weapon/WeaponDataAsset.h"
 #include "Weapon/Steps/WeaponStepComponent.h"
 
@@ -101,5 +102,5 @@ void AWeaponBase::HandleStepResult(EStepResult Result)
 
 void AWeaponBase::Fire()
 {
-	UE_LOG(LogWeapon, Log, TEXT("[%s] FIRE (RecoilScale %.2f, DamageScale %.2f)"), *GetName(), Context.RecoilScale, Context.DamageScale);
+	UE_LOG(LogWeapon, Log, TEXT("[%s] FIRE (Ammo %s, RecoilScale %.2f, DamageScale %.2f)"), *GetName(), *GetNameSafe(Context.Ammo), Context.RecoilScale, Context.DamageScale);
 }
