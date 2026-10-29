@@ -227,9 +227,10 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 0-1: `.gitignore` 보강(IDE/OS 항목), `.gitattributes`에 LFS 설정 (커밋 전)
 - [x] Step 0-2: Fab 폴더(`FPS_Assault_Pack`, `Nimikko_WesternTown`) `.gitignore` 추가, `FPS_Assault_Pack` 추적 해제
 - [x] Step 0-3: 초기 커밋을 LFS 적용·Fab 제외 상태로 다시 만듦 (`[Step 0] 저장소 초기화`, 에셋 186개 LFS)
+- [x] Step 1-1: C++ 프로젝트 전환, `WeaponTypes.h`(`LogWeapon`, `EStepResult`, `FFireContext`) — Rider 빌드, 에디터에서 타입 노출 확인. `FFireContext::Ammo`는 Step 2-1에서 추가
 
 ### 현재 위치
-- **Step 1-1** 시작 전
+- **Step 1-2** 시작 전
 - 원격 저장소 없음. 옛 초기 커밋 데이터가 `.git`에 남아 있음 (정리는 사용자 확인 후 `git reflog expire` + `git gc`)
 
 ### 결정 기록
