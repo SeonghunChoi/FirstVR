@@ -233,10 +233,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 1-3: `UWeaponDataAsset`(`UPrimaryDataAsset` 상속, `FireSequence`, `Recoil`, `FireRate`=초당 발사 수) — Rider 빌드, 에디터에서 데이터 에셋 생성·칸 노출 확인
 
+- [x] Step 1-4: `AWeaponBase`(추상, `BuildSteps`, `RequestFire`, 현재 단계만 구독하며 Success 진행/Failed 중단/Pending 대기, `Fire()`는 로그만) — Rider 빌드 성공. `FireRate`·`Recoil` 적용은 Step 2-3
+
 ### 현재 위치
-- **Step 1-4** 시작 전
-- `Content/Portfolio/Data/DA_TestWeapon`은 에디터에서 만들었으나 아직 디스크에 저장 안 됨 → 1-6에서 저장·커밋
-- 원격 저장소 없음. 옛 초기 커밋 데이터가 `.git`에 남아 있음 (정리는 사용자 확인 후 `git reflog expire` + `git gc`)
+- **Step 1-5** 시작 전 (더미 단계: 항상 Success / 항상 Failed / 1초 후 Success. `Report`는 `Execute` 마지막 줄에)
+- `Content/Portfolio/Data/DA_TestWeapon.uasset`은 디스크에 있으나 미추적 → 1-6에서 커밋
+- 원격 저장소 없음
 
 ### 결정 기록
 - 2026-10-29: 바이너리 에셋(`.uasset`, `.umap`, 원본 아트/미디어)은 Git LFS로 관리한다.
