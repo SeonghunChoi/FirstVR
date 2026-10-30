@@ -1,12 +1,21 @@
 #include "Weapon/WeaponBase.h"
 
+#include "Components/SceneComponent.h"
+#include "Engine/World.h"
 #include "Weapon/AmmoDataAsset.h"
 #include "Weapon/WeaponDataAsset.h"
+#include "Weapon/WeaponProjectile.h"
 #include "Weapon/Steps/WeaponStepComponent.h"
 
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	SetRootComponent(Root);
+
+	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
+	Muzzle->SetupAttachment(Root);
 }
 
 void AWeaponBase::BeginPlay()
@@ -51,6 +60,13 @@ void AWeaponBase::RequestFire()
 	if (Steps.IsEmpty())
 	{
 		UE_LOG(LogWeapon, Warning, TEXT("[%s] Fire ignored: no steps"), *GetName());
+		return;
+	}
+
+	const double Interval = 1.0 / WeaponData->FireRate;
+	if (GetWorld()->GetTimeSeconds() - LastFireTime < Interval)
+	{
+		UE_LOG(LogWeapon, Log, TEXT("[%s] Fire ignored: cooldown"), *GetName());
 		return;
 	}
 
@@ -102,5 +118,31 @@ void AWeaponBase::HandleStepResult(EStepResult Result)
 
 void AWeaponBase::Fire()
 {
-	UE_LOG(LogWeapon, Log, TEXT("[%s] FIRE (Ammo %s, RecoilScale %.2f, DamageScale %.2f)"), *GetName(), *GetNameSafe(Context.Ammo), Context.RecoilScale, Context.DamageScale);
+	LastFireTime = GetWorld()->GetTimeSeconds();
+
+	const float Recoil = WeaponData->Recoil * Context.RecoilScale;
+	UE_LOG(LogWeapon, Log, TEXT("[%s] FIRE (Ammo %s, Recoil %.2f, DamageScale %.2f)"), *GetName(), *GetNameSafe(Context.Ammo), Recoil, Context.DamageScale);
+
+	if (!Context.Ammo)
+	{
+		UE_LOG(LogWeapon, Warning, TEXT("[%s] No ammo in context. Is a magazine step in FireSequence?"), *GetName());
+		return;
+	}
+
+	if (!Context.Ammo->ProjectileClass)
+	{
+		UE_LOG(LogWeapon, Error, TEXT("[%s] %s has no ProjectileClass"), *GetName(), *Context.Ammo->GetName());
+		return;
+	}
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = GetInstigator();
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AWeaponProjectile* Projectile = GetWorld()->SpawnActor<AWeaponProjectile>(Context.Ammo->ProjectileClass, Muzzle->GetComponentTransform(), Params);
+	if (Projectile)
+	{
+		Projectile->Launch(Context.Ammo, Context.DamageScale);
+	}
 }

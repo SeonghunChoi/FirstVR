@@ -4,6 +4,8 @@
 #include "Engine/DataAsset.h"
 #include "AmmoDataAsset.generated.h"
 
+class AWeaponProjectile;
+
 /** 탄 종류 하나의 설정. 어떤 무기에 넣든 탄을 따라가는 값만 둔다. */
 UCLASS(BlueprintType)
 class FIRSTVR_API UAmmoDataAsset : public UPrimaryDataAsset
@@ -11,6 +13,10 @@ class FIRSTVR_API UAmmoDataAsset : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	/** 발사할 때 스폰하는 투사체. 탄을 바꾸면 투사체 모양도 바뀐다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo")
+	TSubclassOf<AWeaponProjectile> ProjectileClass;
+
 	/** 탄속(cm/s). 언리얼 단위는 1 = 1cm. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo", meta = (ClampMin = "0.0", ForceUnits = "cm/s"))
 	float Speed = 35000.f;
