@@ -256,9 +256,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 3-1: 템플릿 잡기 구조 분석 — `BP_XRPawn`(손 근처 `BP_GrabComponent` 탐색 → `TryGrab`/`TryRelease`), `BP_GrabComponent`(SceneComponent, `bIsHeld`, `OnGrabbed`/`OnDropped`, `GetHeldByHand`, `E_GrabType`), `BP_Pistol`(잡으면 `IMC_Weapon_*` 추가, `IA_Shoot_*` → `MuzzleLocation`에서 스폰)
 - [x] Step 3-2: 잡기 설계 결정 (아래 결정 기록, `Docs/PLAN.md` 4.7)
+- [x] Step 3-3: `UGripStep`(추상, `bHeld`, `SetHeld`, `FindGripComponent`(const라 Pure 노드), `GripComponentName`="Grip", 손 없으면 Failed), `BP_GripStep`(BeginPlay에서 `BP_GrabComponent`의 `OnGrabbed`/`OnDropped` 구독), `BP_TestWeapon`에 `Grip`(`BP_GrabComponent`) 추가, `FireSequence`=[`BP_GripStep`, `MagazineStep`] — 일반 Play에서 Not held로 중단, VR Preview에서 Held/Released 확인
+  - 추상 클래스는 `TSubclassOf` 선택 목록에 안 보이므로 데이터 에셋에는 `BP_GripStep`을 넣는다
+  - VR Preview에서는 `F` 키가 다른 기능에 배정되어 있어 잡은 상태의 발사는 3-4(트리거)에서 확인
 
 ### 현재 위치
-- **Step 3-3** 시작 전 (`UGripStep` + `BP_GripStep`: 이름으로 잡기 컴포넌트를 찾아 구독, `SetHeld`, 손 없으면 Failed)
+- **Step 3-4** 시작 전 (트리거 입력을 `RequestFire`에 연결, Enhanced Input)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
