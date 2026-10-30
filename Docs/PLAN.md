@@ -149,11 +149,12 @@ class UWeaponStepComponent {
   #OnFailedFeedback()
 }
 class UGripStep {
-  +FName GripSocket
+  +FName GripComponentName
   -bool bHeld
+  +SetHeld(bool)
 }
 class UTwoHandGripStep {
-  +FName SupportSocket
+  +FName SupportComponentName
 }
 class USafetyStep {
   -bool bLocked
@@ -213,6 +214,13 @@ UDamageReceiver ..> UHitReaction : 반응
 - 무기 시스템과 적 시스템은 `AProjectile`이 탄 데이터를 전달하는 지점에서만 만난다. 피해 계산은 `UDamageReceiver`에서 처리한다.
 - 메시 교체를 위해 발사 원점, 파지 위치, 탄창 결합부는 이름이 정해진 소켓 또는 Scene Component로 두고, 컴포넌트는 그 이름으로만 위치를 찾는다.
   - **발사 원점 `Muzzle`은 코어(`AWeaponBase` 생성자)가 만든다.** ✅ 모든 무기에 빠짐없이 있고, 블루프린트는 위치만 옮긴다. 투사체는 `Muzzle`의 앞 방향(X)으로 나간다.
+
+### 4.7 결정: 파지와 잡기 시스템 ✅
+
+- **잡기 자체(손 근처 탐색, 컨트롤러에 붙이기, 햅틱, 물리)는 잡기 시스템이 맡는다.** 파지 단계는 잡혔다/놓였다는 결과만 듣고, 발사 흐름에서 파지 상태를 검사한다. 발사 단계와 상호작용 처리를 한 클래스에 섞지 않는다.
+- **잡기 시스템은 VR 템플릿의 `BP_GrabComponent`와 `BP_XRPawn`을 그대로 쓴다.** 손 탐색과 붙이기를 다시 만들지 않는다. C++은 블루프린트 클래스를 참조할 수 없으므로, 템플릿과의 연결은 `UGripStep`의 블루프린트 자식(`BP_GripStep`)이 맡는다.
+- **파지 상태의 원본은 `UGripStep::bHeld`다.** `OnGrabbed`/`OnDropped`가 올 때 `SetHeld`(`BlueprintCallable`)로 갱신하고, `Execute`는 `bHeld`만 본다. 노출 규칙(상태값은 `VisibleInstanceOnly`, 변경은 함수로만)을 따른다.
+- **`BP_GripStep`은 이름으로 자기 잡기 컴포넌트를 찾는다.** `GripComponentName`과 같은 이름의 `BP_GrabComponent`를 `BeginPlay`에서 찾아 스스로 구독한다. 무기마다 배선하지 않으며, 두 손 무기(주 손잡이 + 보조 손잡이)도 이름만 달리 설정한다. 잡기 컴포넌트가 곧 파지 위치(Scene Component)다.
 
 ---
 
