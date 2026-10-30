@@ -5,6 +5,7 @@
 #include "Weapon/WeaponTypes.h"
 #include "WeaponBase.generated.h"
 
+class USceneComponent;
 class UWeaponDataAsset;
 class UWeaponStepComponent;
 
@@ -27,7 +28,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	/** 모든 단계가 Success일 때 호출된다. Step 2-3에서 투사체 발사로 채운다. */
+	/** 모든 단계가 Success일 때 호출된다. Context.Ammo의 투사체를 발사 원점에서 스폰한다. */
 	virtual void Fire();
 
 	/** 무기 종류 공통 설정. */
@@ -40,6 +41,17 @@ private:
 
 	UFUNCTION()
 	void HandleStepResult(EStepResult Result);
+
+	/** 루트. 블루프린트에서 붙이는 메시와 컴포넌트는 이 아래로 들어간다. */
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	TObjectPtr<USceneComponent> Root;
+
+	/** 발사 원점. 앞 방향(X)으로 투사체가 나간다. 블루프린트에서 위치만 옮긴다. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USceneComponent> Muzzle;
+
+	/** 마지막으로 발사한 시각(초). FireRate 제한에 쓴다. */
+	double LastFireTime = -1.0e9;
 
 	/** FireSequence 순서대로 찾은 단계 컴포넌트. */
 	UPROPERTY(VisibleInstanceOnly, Category = "Weapon|State")

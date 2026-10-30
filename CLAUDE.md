@@ -245,10 +245,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 2-2: `UMagazineStep`(한 종류 탄, `AllowedAmmo[0]`로 초기 장전, `AddAmmo` 규칙 검사·넣은 수 반환, 탄 없으면 Failed), `BP_MagazineStep`(`OnFailedFeedback` → Print String), 부모에 `Blueprintable` 추가, 레벨 블루프린트 `R` → `AddAmmo` — 로그로 소모·Empty·장전 제한 확인
   - 피드백 로그 확인은 출력 로그 `Filters > Categories`에서 `LogWeapon` + `LogBlueprintUserMessages`
 
+- [x] Step 2-3: `AWeaponProjectile`(추상, Sphere 충돌 + Mesh + `ProjectileMovement`, `Launch`로 탄속, 멈추면 Hit 로그 후 파괴, 수명 3초), `UAmmoDataAsset::ProjectileClass`, 코어가 `Root`/`Muzzle` 생성, `FireRate` 쿨다운(실제 발사 시각 기준), `Muzzle`에서 스폰 — 커맨드라인 빌드, `BP_Projectile_9mm` 발사·Hit·쿨다운 확인
+  - `Recoil`은 `FIRE` 로그에 `Recoil × RecoilScale`로만 출력. 실제 적용은 Step 3(파지)
+- [x] ✅ **Step 2 마일스톤**: 키 입력 → 투사체 발사 → 탄 소진 시 Failed로 멈춤
+
 ### 현재 위치
-- **Step 2-3** 시작 전 (투사체: `UProjectileMovementComponent`로 탄속 연결, 코어가 발사 원점에서 스폰, `FireRate`·`Recoil` 적용)
+- **Step 3-1** 시작 전 (VR 템플릿의 잡기 구조 분석)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
-- `Content/Portfolio/Data/DA_TestWeapon.uasset`은 디스크에 있으나 미추적 → 1-6에서 커밋
 - 원격 저장소 없음
 
 ### 결정 기록
@@ -257,3 +260,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-10-29: `OnFailedFeedback`은 부모 `Report`(비가상)가 `Failed`일 때 자동 호출한다. 자식은 `Report(Failed)`만 부른다. 이유별 피드백이 필요해지면 이유 파라미터로 확장. (`Docs/PLAN.md` 4.4)
 - 2026-10-29: 소스 주석(에디터 툴팁 포함)은 한글로 쓴다. 한글이 든 소스 파일은 UTF-8(BOM)으로 저장한다. 로그 문자열(`TEXT("...")`)은 영어.
 - 2026-10-30: 탄창에는 한 종류의 탄만 들어간다(`LoadedAmmo` + `CurrentAmmo`). 배치 시 초기 탄 종류는 `AllowedAmmo`의 첫 항목. (`Docs/PLAN.md` 5.2)
+- 2026-10-30: 투사체 클래스는 탄 데이터(`UAmmoDataAsset::ProjectileClass`)에 둔다. 발사 원점 `Muzzle`은 코어 생성자가 만든다. (`Docs/PLAN.md` 4장, 5.1)
