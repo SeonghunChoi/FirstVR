@@ -103,7 +103,9 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
 - **VR 테스트**: 플레이 버튼 옆 `⋮` → `VR Preview` (시뮬레이터 런타임이 켜져 있어야 활성화)
   - 조작은 **시뮬레이터 창에 포커스**를 두고 한다. 언리얼 프리뷰 창에 포커스가 있으면 키가 먹지 않는다.
   - 시뮬레이터에 "No frames received"가 뜨면 `편집 > 에디터 개인설정 > 일반 > 퍼포먼스`에서 `백그라운드에서 CPU 덜 사용`을 끈다.
-  - 시뮬레이터 키 (`%APPDATA%\MetaXR\MetaXrSimulator\keybindings.json`): `U` Grip(잡기), `T` 또는 마우스 왼쪽(Point & click) 트리거, WASD·`R`/`F` 이동, 우클릭 드래그 시점, `]`/`[` 조작 대상 전환, `Space` 손 위치 초기화
+  - 시뮬레이터 키 (`%APPDATA%\MetaXR\MetaXrSimulator\keybindings.json`): `U` Grip(잡기), `T` 또는 마우스 왼쪽(Point & click) 트리거, WASD·`R`/`F` 이동, 방향키 회전, `Q`/`E` 기울기, 우클릭 드래그 시점, `]`/`[` 조작 대상 전환, `Space` 손 위치 초기화
+  - 시뮬레이터 기본 손 자세는 오른손 손가락이 왼쪽을 향한다. 잡은 무기의 방향은 손 기준으로 판단한다.
+  - `MotionVectorIndex == MotionVectorDepthIndex` 어서트 크래시: 시뮬레이터의 `XR_FB_space_warp` 때문. `DefaultEngine.ini`의 `[SystemSettings] xr.OpenXRAcquireMode=1`로 우회한다 (에디터 재시작 필요).
   - 시뮬레이터 `Viewport`(눈 선택)와 언리얼 프리뷰 창의 관전자 화면(왼쪽 눈)은 별개다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
 - **일반 테스트**: 플레이 버튼 (VR 없이 로직 검증용)
@@ -264,9 +266,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 3-4: `UTriggerInputComponent`(추상, 발사 단계 아님, `EnableForHand`/`DisableTrigger`, 잡은 손의 `IMC_Weapon_*` 추가 + `IA_Shoot_*` Started → `RequestFire`, `EndPlay`에서 해제), `Build.cs`에 `EnhancedInput`, 이름 찾기를 `FindSceneComponentByName`(`WeaponTypes`)으로 공용화, `BP_TriggerInput`(캐스트 결과를 `GrabComponent` 변수로 저장, `GetHeldByHand == Right`), `BP_TestWeapon`에 부착 — Rider 빌드, VR Preview에서 잡기 → 트리거 발사 → 탄 소진 Failed → 놓으면 입력 해제 확인
   - 블루프린트 노드 검색은 상황 맞춤이라, 다른 컴포넌트의 함수는 그 타입의 핀에서 끌어야 보인다
   - `DA_Ammo_9mm`의 `Speed`를 C++ 기본값 35000으로 되돌림 (테스트 중 100·1000으로 낮췄었음)
+- [x] Step 3-5: 코어 `OnFired(Recoil)` 델리게이트(투사체 스폰 성공 시 발행), `UTriggerInputComponent`가 구독해 잡은 손에 `FireHaptic`(세기 0~1 제한) 재생, `BP_PistolWeapon`(`Body` 아래 `Grip`(Snap)·`Cube`(→`Grab`)·`MagazineWell`(자리만)·`Muzzle`) + `DA_Pistol` — Rider 빌드, VR Preview에서 잡기 → 발사·햅틱 → 탄 소진 Failed(햅틱 없음) → 놓으면 입력 해제 확인
+  - Snap 잡기는 부모를 `NegateRotator(Grip 상대 회전)`으로 돌려 `Grip`의 축을 손 축에 맞춘다. 템플릿 `BP_Pistol` 값을 따라 `Grip` 회전 Pitch 85
+  - 잦은 VR Preview 크래시(`MotionVectorIndex == MotionVectorDepthIndex`) 우회로 `DefaultEngine.ini`에 `xr.OpenXRAcquireMode=1` (3.6 참고, 효과는 더 지켜볼 것)
+- [x] ✅ **Step 3 마일스톤**: VR Preview에서 권총을 집고 트리거로 발사
 
 ### 현재 위치
-- **Step 3-5** 시작 전 (그레이박스 권총 완성: 발사 원점 / 파지 / 탄창 결합부를 소켓 또는 Scene Component로)
+- **Step 4-1** 시작 전 (`UEnemyDataAsset`: 본 이름 기반 부위 배율, 방어력, 절뚝임 기준)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -280,3 +286,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-10-31: 잡기 자체는 VR 템플릿(`BP_GrabComponent`, `BP_XRPawn`)을 재사용한다. 파지 상태 원본은 `UGripStep::bHeld`(`SetHeld`로 갱신)이고, 템플릿과의 연결은 `BP_GripStep`이 `GripComponentName`으로 잡기 컴포넌트를 찾아 스스로 구독한다. (`Docs/PLAN.md` 4.7)
 - 2026-10-31: 무기 루트는 코어가 만드는 박스 충돌체 `Body`(`PhysicsActor` 프로필)다. 템플릿 잡기는 잡기 컴포넌트의 부모만 손에 붙이므로 `Grip`은 `Body` 바로 아래에 둔다. 빈 `Root`에서는 `Muzzle`이 제자리에 남는 문제가 있었다. (`Docs/PLAN.md` 4장)
 - 2026-10-31: 트리거 입력은 무기 쪽 입력 전용 컴포넌트 `UTriggerInputComponent`(발사 단계 아님)가 받아 `RequestFire`를 부른다. 잡히면 잡은 손의 템플릿 입력 매핑(`IMC_Weapon_*`, `IA_Shoot_*`)을 켜고 놓으면 끈다. 손 판별은 `BP_TriggerInput`이 `GetHeldByHand`로 한다. (`Docs/PLAN.md` 4.7)
+- 2026-10-31: 권총은 `BP_PistolWeapon` + `DA_Pistol`로 새로 만들고 `BP_TestWeapon`은 실험용으로 남긴다. 기준점은 `Muzzle`·`Grip`·`MagazineWell`(자리만). 코어는 발사 시 `OnFired(Recoil)`만 발행하고, 발사 햅틱은 `UTriggerInputComponent`가 구독해서 준다. 시각 반동은 나중에. (`Docs/PLAN.md` 4.8)
