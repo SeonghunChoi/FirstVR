@@ -1,5 +1,6 @@
 #include "Weapon/WeaponBase.h"
 
+#include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
 #include "Weapon/AmmoDataAsset.h"
@@ -11,11 +12,12 @@ AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
-	SetRootComponent(Root);
+	Body = CreateDefaultSubobject<UBoxComponent>(TEXT("Body"));
+	Body->SetCollisionProfileName(TEXT("PhysicsActor"));
+	SetRootComponent(Body);
 
 	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
-	Muzzle->SetupAttachment(Root);
+	Muzzle->SetupAttachment(Body);
 }
 
 void AWeaponBase::BeginPlay()

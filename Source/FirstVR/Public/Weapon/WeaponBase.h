@@ -5,6 +5,7 @@
 #include "Weapon/WeaponTypes.h"
 #include "WeaponBase.generated.h"
 
+class UBoxComponent;
 class USceneComponent;
 class UWeaponDataAsset;
 class UWeaponStepComponent;
@@ -42,9 +43,12 @@ private:
 	UFUNCTION()
 	void HandleStepResult(EStepResult Result);
 
-	/** 루트. 블루프린트에서 붙이는 메시와 컴포넌트는 이 아래로 들어간다. */
+	/**
+	 * 루트이자 무기 전체의 충돌체. 메시, 잡기 컴포넌트, Muzzle은 모두 이 아래로 들어간다.
+	 * 템플릿 잡기는 잡기 컴포넌트의 부모만 손에 붙이므로, 잡기 컴포넌트는 Body 바로 아래에 둔다.
+	 */
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	TObjectPtr<USceneComponent> Root;
+	TObjectPtr<UBoxComponent> Body;
 
 	/** 발사 원점. 앞 방향(X)으로 투사체가 나간다. 블루프린트에서 위치만 옮긴다. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))

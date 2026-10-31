@@ -3,9 +3,14 @@
 #include "CoreMinimal.h"
 #include "WeaponTypes.generated.h"
 
+class AActor;
 class UAmmoDataAsset;
+class USceneComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWeapon, Log, All);
+
+/** Owner의 Scene Component 중 이름이 Name인 것을 찾는다. 없으면 nullptr. */
+FIRSTVR_API USceneComponent* FindSceneComponentByName(const AActor* Owner, FName Name);
 
 UENUM(BlueprintType)
 enum class EStepResult : uint8
