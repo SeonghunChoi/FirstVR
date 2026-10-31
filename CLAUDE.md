@@ -271,8 +271,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 잦은 VR Preview 크래시(`MotionVectorIndex == MotionVectorDepthIndex`) 우회로 `DefaultEngine.ini`에 `xr.OpenXRAcquireMode=1` (3.6 참고, 효과는 더 지켜볼 것)
 - [x] ✅ **Step 3 마일스톤**: VR Preview에서 권총을 집고 트리거로 발사
 
+- [x] Step 4-1: `UEnemyDataAsset`(`MaxHealth`, `Armor`, `BoneMultipliers`(없는 본 1.0), `LegBones`, `LimpThreshold`, `GetBoneMultiplier`/`IsLegBone`), Third Person 콘텐츠 팩으로 전신 마네킹(`Characters/Mannequins`) 추가, `Portfolio/Data/DA_Enemy_Mannequin` — 커맨드라인 빌드, 에디터에서 분류·값 저장 확인
+  - 맵 키는 `PA_Mannequin`에 바디가 있는 본만 쓴다: `pelvis`, `spine_02~05`, `neck_01`, `neck_02`, `head`, `clavicle_l/r`, `upperarm_l/r`, `lowerarm_l/r`, `hand_l/r`, `thigh_l/r`, `calf_l/r`, `foot_l/r`
+
 ### 현재 위치
-- **Step 4-1** 시작 전 (`UEnemyDataAsset`: 본 이름 기반 부위 배율, 방어력, 절뚝임 기준)
+- **Step 4-2** 시작 전 (`UDamageReceiver`: `ReceiveHit(Hit, Ammo, DamageScale)`에서 피해 계산, `LogEnemy` 카테고리)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -287,3 +290,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-10-31: 무기 루트는 코어가 만드는 박스 충돌체 `Body`(`PhysicsActor` 프로필)다. 템플릿 잡기는 잡기 컴포넌트의 부모만 손에 붙이므로 `Grip`은 `Body` 바로 아래에 둔다. 빈 `Root`에서는 `Muzzle`이 제자리에 남는 문제가 있었다. (`Docs/PLAN.md` 4장)
 - 2026-10-31: 트리거 입력은 무기 쪽 입력 전용 컴포넌트 `UTriggerInputComponent`(발사 단계 아님)가 받아 `RequestFire`를 부른다. 잡히면 잡은 손의 템플릿 입력 매핑(`IMC_Weapon_*`, `IA_Shoot_*`)을 켜고 놓으면 끈다. 손 판별은 `BP_TriggerInput`이 `GetHeldByHand`로 한다. (`Docs/PLAN.md` 4.7)
 - 2026-10-31: 권총은 `BP_PistolWeapon` + `DA_Pistol`로 새로 만들고 `BP_TestWeapon`은 실험용으로 남긴다. 기준점은 `Muzzle`·`Grip`·`MagazineWell`(자리만). 코어는 발사 시 `OnFired(Recoil)`만 발행하고, 발사 햅틱은 `UTriggerInputComponent`가 구독해서 준다. 시각 반동은 나중에. (`Docs/PLAN.md` 4.8)
+- 2026-10-31: 적 데이터는 본마다 배율(`BoneMultipliers`, 없는 본은 1.0), 방어력은 비율(`min(1, Penetration / Armor)`, 계산은 `UDamageReceiver`), 절뚝임은 `LegBones`에 든 본의 누적 최종 피해(좌우 합산)가 `LimpThreshold` 이상일 때. `MaxHealth`도 적 데이터에 둔다. (`Docs/PLAN.md` 5.2, 6.4)
