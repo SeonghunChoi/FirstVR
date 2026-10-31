@@ -10,6 +10,8 @@ class USceneComponent;
 class UWeaponDataAsset;
 class UWeaponStepComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFired, float, Recoil);
+
 UCLASS(Abstract)
 class FIRSTVR_API AWeaponBase : public AActor
 {
@@ -25,6 +27,10 @@ public:
 	/** 발사 흐름이 진행 중(대기 포함)인지. */
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	bool IsFiring() const { return CurrentStepIndex != INDEX_NONE; }
+
+	/** 투사체를 발사한 직후. 반동 세기(Recoil × RecoilScale)를 넘긴다. 발사 피드백은 이 이벤트를 구독해서 준다. */
+	UPROPERTY(BlueprintAssignable, Category = "Weapon")
+	FOnWeaponFired OnFired;
 
 protected:
 	virtual void BeginPlay() override;

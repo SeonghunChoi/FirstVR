@@ -146,5 +146,6 @@ void AWeaponBase::Fire()
 	if (Projectile)
 	{
 		Projectile->Launch(Context.Ammo, Context.DamageScale);
+		OnFired.Broadcast(Recoil);
 	}
 }
