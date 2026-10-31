@@ -1,8 +1,5 @@
 #include "Weapon/Steps/GripStep.h"
 
-#include "Components/SceneComponent.h"
-#include "GameFramework/Actor.h"
-
 void UGripStep::Execute(FFireContext& Context)
 {
 	if (!bHeld)
@@ -28,17 +25,10 @@ void UGripStep::SetHeld(bool bInHeld)
 
 USceneComponent* UGripStep::FindGripComponent() const
 {
-	TArray<USceneComponent*> Components;
-	GetOwner()->GetComponents<USceneComponent>(Components);
-
-	for (USceneComponent* Component : Components)
+	USceneComponent* Grip = FindSceneComponentByName(GetOwner(), GripComponentName);
+	if (!Grip)
 	{
-		if (Component->GetFName() == GripComponentName)
-		{
-			return Component;
-		}
+		UE_LOG(LogWeapon, Error, TEXT("[%s] No component named %s"), *GetName(), *GripComponentName.ToString());
 	}
-
-	UE_LOG(LogWeapon, Error, TEXT("[%s] No component named %s"), *GetName(), *GripComponentName.ToString());
-	return nullptr;
+	return Grip;
 }
