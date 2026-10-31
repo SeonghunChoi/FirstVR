@@ -184,8 +184,10 @@ class UDamageReceiver {
   +ReceiveHit(Hit, Ammo, DamageScale)
 }
 class UEnemyDataAsset {
-  +TMap BodyPartMultipliers
+  +float MaxHealth
   +float Armor
+  +TMap BoneMultipliers
+  +TArray LegBones
   +float LimpThreshold
 }
 class UHitReaction {
@@ -251,6 +253,7 @@ UDamageReceiver ..> UHitReaction : 반응
 ### 5.2 피해 계산
 
 - **최종 피해 = 탄 데이터(기본 피해, 관통력) × 적 데이터(부위 배율, 방어력)**
+  - ✅ `최종 피해 = BaseDamage × 본 배율 × DamageScale × min(1, Penetration / Armor)` (방어력 0이면 계수 1)
 - 두 데이터가 만나는 계산은 **피격 쪽에서** 처리한다. 무기 시스템과 적 시스템이 서로를 모른 채 동작한다.
 - 맞지 않는 탄 장전(예: 권총에 소총탄)은 탄창 컴포넌트가 허용 탄 종류를 확인해 **Failed**로 처리한다.
   - 장전은 발사 흐름 밖의 동작이라 `AddAmmo`가 실제로 넣은 수를 돌려주고, 거절이면 0을 돌려준다. (Error가 아닌 규칙상 거절이라는 점은 같다)
@@ -294,6 +297,13 @@ UDamageReceiver ..> UHitReaction : 반응
 | 물리 기반 피격 반응 | ✓ | `PhysicalAnimationComponent` 또는 맞은 본 아래만 `SetAllBodiesBelowSimulatePhysics` 후 블렌딩. 추가 애니메이션 불필요, 공고의 물리 시뮬레이션 업무와 직접 연결 |
 | 상태 변화 | ✓ | 다리 피격 시 절뚝임 등, 애니메이션 블루프린트 상태 전환 |
 | 부분 파괴 | ✗ | 범위에서 제외 |
+
+### 6.4 결정: 적 데이터 ✅
+
+- **부위 배율은 본마다 둔다.** `BoneMultipliers`(`TMap<본 이름, 배율>`)에 적고, 없는 본은 1.0이다. 키는 피직스 에셋에 바디가 있는 본 이름이다(Hit 결과에는 그 본만 들어온다). 1.0이 아닌 본만 적으면 된다.
+- **방어력은 비율로 반영한다.** 관통력이 방어력 이상이면 100%, 모자라면 `관통력 / 방어력`만큼 들어간다. 피해가 0이 되지 않아 약한 탄은 "더 많이 맞춰야" 한다(6.2). 공식 계산은 `UDamageReceiver`가 한다.
+- **절뚝임은 다리 누적 피해(절대값)로 판단한다.** 다리 본 목록 `LegBones`에 든 본에 들어간 최종 피해의 합이 `LimpThreshold` 이상이면 절뚝인다. 좌우 다리는 합쳐서 센다. 방어력과 관통력이 그대로 반영되고, 체력을 바꿔도 기준은 그대로다.
+- **최대 체력 `MaxHealth`도 적 데이터에 둔다.** 현재 체력은 `UDamageReceiver`의 상태값이다.
 
 ---
 
