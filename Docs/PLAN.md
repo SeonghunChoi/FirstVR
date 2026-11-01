@@ -157,8 +157,10 @@ class UTwoHandGripStep {
   +FName SupportComponentName
 }
 class USafetyStep {
+  +bool bInitiallyLocked
   -bool bLocked
   +ToggleSafety()
+  +SetLocked(bool)
 }
 class UMagazineStep {
   +int32 Capacity
@@ -253,6 +255,14 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **기준점은 `Muzzle`(코어), `Grip`(잡기 컴포넌트), `MagazineWell`(Scene Component) 세 개다.** `MagazineWell`은 자리만 두고, 위치를 쓰는 코드는 탄창 교체를 만들 때 연결한다.
 - **코어는 발사할 때 `OnFired(Recoil)` 델리게이트만 발행한다.** 반동 세기는 `Recoil × RecoilScale`이다. 구체적인 발사 피드백은 이 이벤트를 구독하는 컴포넌트가 맡는다(설계 규칙 4).
 - **발사 햅틱은 잡은 손을 아는 `UTriggerInputComponent`가 `OnFired`를 구독해서 준다.** 세기는 반동 세기(0~1로 제한)다. 눈에 보이는 반동(총이 튀었다 돌아오기)은 손맛 조정 단계에서 따로 다룬다.
+
+### 4.9 결정: 안전장치 ✅
+
+- **안전장치는 발사 단계 `USafetyStep`이다.** 잠겨 있으면 `Failed`, 풀려 있으면 `Success`. 잠김 피드백은 `OnFailedFeedback`으로 블루프린트 자식(`BP_SafetyStep`)이 정한다. 걸고 풀 때의 피드백(딸깍 소리 등)은 `OnSafetyChanged(bLocked)`(`BlueprintImplementableEvent`)로 같은 자식이 정한다.
+- 잠금 상태 `bLocked`는 실행 중 상태값이고 변경은 `SetLocked`/`ToggleSafety`로만 한다. 배치 시 처음 상태는 배치별 초기값 `bInitiallyLocked`(`EditInstanceOnly`, 기본 잠김)다.
+- **VR에서는 무기를 잡은 손의 A/X 버튼으로 토글한다.** 템플릿이 쓰지 않는 버튼(`OculusTouch_Right_A_Click`, `OculusTouch_Left_X_Click`)이다. 트리거처럼 잡을 때 그 손의 입력 매핑을 켜고 놓을 때 끈다. 시뮬레이터에서는 `B` 키다.
+- **버튼은 단계가 아니라 입력 컴포넌트가 받는다(4.7).** 트리거와 안전장치 입력의 공통부분(잡은 손의 매핑 켜고 끄기, 버튼 바인딩, 무기 액터 입력 켜고 끄기)을 추상 부모 `UWeaponInputComponent`로 꺼내고, 자식은 버튼이 눌렸을 때 할 일만 구현한다. `UTriggerInputComponent`는 `RequestFire`, `USafetyInputComponent`는 같은 액터의 `USafetyStep::ToggleSafety`를 부른다. 무기 액터의 입력은 켜진 입력 컴포넌트가 하나도 없을 때만 끈다.
+- 어느 손인지는 지금처럼 입력 컴포넌트의 블루프린트 자식(`BP_TriggerInput`, `BP_SafetyInput`)이 각자 잡기 컴포넌트를 구독해 판별한다. C++ 형제 클래스라 그래프를 물려받지 못해 복제되므로, 입력 컴포넌트가 더 늘면 `UGripStep`이 잡은 손도 발행하는 방식을 다시 검토한다.
 
 ---
 
