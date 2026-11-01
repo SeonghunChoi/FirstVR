@@ -195,6 +195,7 @@ class UEnemyDataAsset {
   +TMap BoneMultipliers
   +TArray LeftLegBones / RightLegBones
   +float LimpThreshold
+  +float CorpseLifeSpan
 }
 class UEnemyAnimInstance {
   +float PelvisDrop
@@ -206,6 +207,7 @@ class UHitReaction {
   +FPhysicalAnimationData PhysicalAnimationData
   +float RecoverTime
   +ApplyPhysicalHit(Bone, Impulse)
+  +StartRagdoll()
 }
 AWeaponBase --> UWeaponDataAsset : 순서 읽기
 AWeaponBase o-- UWeaponStepComponent : 단계 실행
@@ -223,7 +225,7 @@ AProjectile --> UAmmoDataAsset
 AProjectile ..> IHittable : 피격
 IHittable <|.. UDamageReceiver
 UDamageReceiver --> UEnemyDataAsset
-UHitReaction ..> UDamageReceiver : OnDamaged 구독
+UHitReaction ..> UDamageReceiver : OnDamaged / OnDied 구독
 UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 ```
 
@@ -344,6 +346,13 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **애니메이션 블루프린트는 C++ 부모 `UEnemyAnimInstance`가 `OnLimpStarted`를 구독해서 상태를 안다.** 상태값을 매 프레임 읽지 않고 다른 반응과 같은 "발행하고 구독" 모양을 따른다. 부모가 골반·발 오프셋을 `LimpBlendTime` 동안 0에서 목표값까지 계산해 두고, 애님 그래프는 그 값을 노드에 꽂기만 한다.
 - 오프셋 크기(`PelvisDrop`, `InjuredFootOffset`)는 스켈레톤 자세에 묶인 값이라 애니메이션 블루프린트의 클래스 기본값에 둔다.
 - 상태 머신은 쓰지 않는다. 절뚝임은 재생 중인 애니메이션을 바꾸지 않고 위에 얹는 보정이라, 전환은 `LimpAlpha` 블렌드로 충분하다. 걷기 상태 머신은 Phase 4에서 이 보정 앞단에 둔다.
+
+### 6.8 결정: 사망 처리 ✅
+
+- **사망은 전신 래그돌이다.** 모든 바디를 물리로 돌리고 `PhysicalAnimation` 모터를 끈다(`SetStrengthMultiplyer(0)`). 치명타는 `OnDamaged` → `OnDied` 순서로 발행되므로 마지막 탄의 충격량이 먼저 들어가고, 쓰러지는 모양이 맞은 부위와 방향을 따른다. 사망 애니메이션 에셋은 쓰지 않는다(6.3).
+- **래그돌은 `UHitReaction`이 맡는다.** 치명타도 피격 반응을 시작시키므로, 다른 컴포넌트가 래그돌을 켜면 `UHitReaction`의 복귀 틱이 그 부위의 물리를 다시 끈다. 메시의 물리를 만지는 컴포넌트를 하나로 두어 이 충돌을 구조적으로 없앤다. `OnDied`를 받으면 진행 중인 반응을 비우고 틱을 끈 뒤 래그돌로 넘어가고, 그 뒤의 `ApplyPhysicalHit`은 무시한다.
+- 사망 후 피격은 지금처럼 무시한다(6.5). 쓰러진 몸에 탄이 맞아도 피해도 밀림도 없다.
+- **쓰러진 몸은 적 데이터의 `CorpseLifeSpan`(초) 뒤에 없앤다.** 0이면 남긴다. 액터 수명은 사망 상태를 관리하는 `UDamageReceiver`가 사망 시 `SetLifeSpan`으로 건다.
 
 ---
 

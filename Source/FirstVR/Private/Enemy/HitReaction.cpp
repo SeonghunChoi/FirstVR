@@ -39,6 +39,7 @@ void UHitReaction::BeginPlay()
 		return;
 	}
 	Receiver->OnDamaged.AddDynamic(this, &UHitReaction::HandleDamaged);
+	Receiver->OnDied.AddDynamic(this, &UHitReaction::HandleDied);
 }
 
 void UHitReaction::HandleDamaged(FName BoneName, float Damage, const FHitResult& Hit, UAmmoDataAsset* Ammo)
@@ -60,7 +61,7 @@ void UHitReaction::HandleDamaged(FName BoneName, float Damage, const FHitResult&
 
 void UHitReaction::ApplyPhysicalHit(FName BoneName, FVector Impulse)
 {
-	if (!Mesh || !PhysicalAnimation || BoneName.IsNone())
+	if (!Mesh || !PhysicalAnimation || BoneName.IsNone() || bRagdoll)
 	{
 		return;
 	}
@@ -91,6 +92,30 @@ void UHitReaction::ApplyPhysicalHit(FName BoneName, FVector Impulse)
 	SetComponentTickEnabled(true);
 
 	UE_LOG(LogEnemy, Log, TEXT("[%s] Physical hit %s (below %s), impulse %.0f"), *GetNameSafe(GetOwner()), *BoneName.ToString(), *RootBone.ToString(), Impulse.Size());
+}
+
+void UHitReaction::HandleDied()
+{
+	StartRagdoll();
+}
+
+void UHitReaction::StartRagdoll()
+{
+	if (!Mesh || !PhysicalAnimation || bRagdoll)
+	{
+		return;
+	}
+	bRagdoll = true;
+
+	ActiveReactions.Empty();
+	SetComponentTickEnabled(false);
+
+	PhysicalAnimation->SetStrengthMultiplyer(0.f);
+	Mesh->SetAllBodiesSimulatePhysics(true);
+	Mesh->SetAllBodiesPhysicsBlendWeight(1.f);
+	Mesh->WakeAllRigidBodies();
+
+	UE_LOG(LogEnemy, Log, TEXT("[%s] Ragdoll"), *GetNameSafe(GetOwner()));
 }
 
 void UHitReaction::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

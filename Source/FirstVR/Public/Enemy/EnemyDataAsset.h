@@ -55,4 +55,8 @@ public:
 	/** 다리 누적 피해가 이 값 이상이면 절뚝인다. 최종 피해(방어력, 배율 적용 후) 기준이다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0"))
 	float LimpThreshold = 40.f;
+
+	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))
+	float CorpseLifeSpan = 10.f;
 };
