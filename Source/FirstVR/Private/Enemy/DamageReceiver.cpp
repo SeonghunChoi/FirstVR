@@ -46,7 +46,7 @@ void UDamageReceiver::ReceiveHit(const FHitResult& Hit, UAmmoDataAsset* Ammo, fl
 
 	UE_LOG(LogEnemy, Log, TEXT("[%s] Hit %s by %s: damage %.1f (x%.2f), health %.1f/%.1f"),
 		*GetNameSafe(GetOwner()), *BoneName.ToString(), *GetNameSafe(Ammo), Damage, EnemyData->GetBoneMultiplier(BoneName), CurrentHealth, EnemyData->MaxHealth);
-	OnDamaged.Broadcast(BoneName, Damage, Hit);
+	OnDamaged.Broadcast(BoneName, Damage, Hit, Ammo);
 
 	if (EnemyData->IsLegBone(BoneName))
 	{

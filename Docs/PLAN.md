@@ -174,6 +174,7 @@ class UAmmoDataAsset {
   +float Speed
   +float Penetration
   +float BaseDamage
+  +float ImpactImpulse
 }
 class AProjectile {
   +UAmmoDataAsset Ammo
@@ -196,6 +197,8 @@ class UEnemyDataAsset {
   +float LimpThreshold
 }
 class UHitReaction {
+  +FPhysicalAnimationData PhysicalAnimationData
+  +float RecoverTime
   +ApplyPhysicalHit(Bone, Impulse)
 }
 AWeaponBase --> UWeaponDataAsset : 순서 읽기
@@ -318,6 +321,14 @@ UHitReaction ..> UDamageReceiver : OnDamaged 구독
 - **인터페이스는 컴포넌트(`UDamageReceiver`)가 구현한다.** 투사체는 맞은 액터에서 `FindComponentByInterface<IHittable>()`로 찾는다. 적 블루프린트는 컴포넌트를 붙이기만 하면 되고 전달 노드를 이을 필요가 없다. 컴포넌트 없는 대상(상자 등)이 생기면 투사체에 "액터가 구현했는지 먼저 보기"만 더한다.
 - **`UDamageReceiver`는 결과를 델리게이트로 발행만 한다.** `OnDamaged(본, 피해, Hit)`, `OnLimpStarted`, `OnDied`. 피격 반응(`UHitReaction`), 애니메이션 상태, 사망 연출이 각자 구독한다. 무기의 `OnFired` → `UTriggerInputComponent`(햅틱)와 같은 모양이다.
 - 사망한 뒤의 피격은 무시한다. 치명타가 다리에 맞아도 절뚝임 대신 사망만 발행한다.
+
+### 6.6 결정: 물리 피격 반응 ✅
+
+- **맞은 본 아래 바디만 물리로 돌리고 `UPhysicalAnimationComponent`로 애니메이션 자세 쪽에 당긴다.** 블렌드 가중치만 쓰면 물리 구간에서 부위가 힘 빠진 래그돌처럼 처지므로, 모터로 버티다 돌아오게 한다. 모터는 월드 기준(`bIsLocalSimulation` 끔)이라 골반을 맞으면 몸 전체가 흔들리되 쓰러지지 않는다.
+  - 이를 위해 메시의 `PhysicsTransformUpdateMode`를 `ComponentTransformIsKinematic`으로 둔다(`UHitReaction`이 `BeginPlay`에서 설정). 기본값은 루트 바디(골반)가 물리로 돌면 컴포넌트가 그 바디를 따라가는데, 그러면 월드 기준 목표 자세도 함께 움직여 골반을 되돌릴 힘이 없고 반응이 끝난 뒤에도 액터가 돌아간 채 남는다.
+- 블렌드 가중치는 `RecoverTime` 동안 1 → 0으로 줄이고, 끝나면 물리를 끈다. 반응 중인 부위 안쪽을 다시 맞으면 그 반응을 다시 시작하고, 바깥(조상 본)을 맞으면 안쪽 반응을 흡수한다.
+- **충격량 = 탄의 `ImpactImpulse` × (최종 피해 / `BaseDamage`).** 탄마다 미는 세기를 정하면서(탄을 따라가는 값, 5.1) 부위 배율·`DamageScale`·방어력도 밀림에 반영된다(6.2). 단위는 속도 변화(cm/s)라 바디 질량과 무관하다.
+- `OnDamaged`는 탄 데이터도 함께 넘긴다: `OnDamaged(본, 피해, Hit, Ammo)`.
 
 ---
 

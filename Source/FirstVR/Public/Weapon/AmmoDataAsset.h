@@ -28,4 +28,8 @@ public:
 	/** 기본 피해. 피격 쪽에서 부위 배율과 DamageScale을 곱한다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo", meta = (ClampMin = "0.0"))
 	float BaseDamage = 20.f;
+
+	/** 맞은 바디를 미는 세기(속도 변화, cm/s). 피격 쪽에서 최종 피해 / BaseDamage 비율을 곱한다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ammo", meta = (ClampMin = "0.0", ForceUnits = "cm/s"))
+	float ImpactImpulse = 500.f;
 };
