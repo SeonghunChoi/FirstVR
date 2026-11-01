@@ -10,7 +10,7 @@ class UEnemyDataAsset;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEnemy, Log, All);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnEnemyDamaged, FName, BoneName, float, Damage, const FHitResult&, Hit);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnEnemyDamaged, FName, BoneName, float, Damage, const FHitResult&, Hit, UAmmoDataAsset*, Ammo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyLimpStarted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyDied);
 
