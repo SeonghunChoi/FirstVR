@@ -108,6 +108,8 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - `MotionVectorIndex == MotionVectorDepthIndex` 어서트 크래시: 시뮬레이터의 `XR_FB_space_warp` 때문. `DefaultEngine.ini`의 `[SystemSettings] xr.OpenXRAcquireMode=1`로 우회한다 (에디터 재시작 필요).
   - 시뮬레이터 `Viewport`(눈 선택)와 언리얼 프리뷰 창의 관전자 화면(왼쪽 눈)은 별개다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
+  - **새 VR 입력 매핑(IMC)은 `프로젝트 세팅 > Enhanced Input > Default Mapping Contexts`에 등록해야** OpenXR 런타임이 그 버튼을 보내 준다(세션 시작 시 이 목록으로 액션을 만든다). 코드가 잡을 때 켜는 매핑이면 `Add Immediately`는 끈다.
+  - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼
 - **일반 테스트**: 플레이 버튼 (VR 없이 로직 검증용)
 
 ---
@@ -300,8 +302,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 5-1: `USafetyStep`(`bLocked`, `EditInstanceOnly` `bInitiallyLocked`=true, 잠겨 있으면 Failed, `ToggleSafety`/`SetLocked`/`IsLocked`, 바뀔 때만 `OnSafetyChanged`) — 커맨드라인 빌드, `BP_SafetyStep`(실패·변경 피드백 Print String), `BP_TestWeapon`에 부착, `DA_TestWeapon` `FireSequence`=[`BP_SafetyStep`, `MagazineStep`], 레벨 블루프린트 `G` → `ToggleSafety`. 일반 Play에서 잠금 시 1/2단계 중단, 풀면 발사 확인. 코어·탄창 코드 변경 없음
 
+- [x] Step 5-2: 추상 부모 `UWeaponInputComponent`(`EnableForHand`/`DisableForHand`, `IsHandInputEnabled`, `FindGripComponent`, 손별 `Left/RightContext`·`Left/RightAction`, 자식은 `HandleAction`만 재정의, 켜진 입력 컴포넌트가 없을 때만 액터 입력 끔), `UTriggerInputComponent`는 `RequestFire`·햅틱만, `USafetyInputComponent`(같은 액터 `USafetyStep::ToggleSafety`), 바뀐 이름은 `DefaultEngine.ini` `[CoreRedirects]`로 연결 — 빌드, `Portfolio/Input/IA_Safety_*`·`IMC_Safety_*`(A/X 누름), `BP_SafetyInput`(`BP_TriggerInput` 그래프 복제), `BP_TestWeapon`에 부착, VR Preview에서 잡기 → `B`로 풀기 → 발사·햅틱 → 다시 잠금 → `Safety on` 중단 → 놓으면 마지막 하나만 `actor input off` 확인
+  - 처음엔 A/X가 무반응: 새 IMC가 `Default Mapping Contexts`에 없어 OpenXR 액션으로 등록되지 않았음 → 등록(`Add Immediately` 끔)으로 해결 (3.6)
+
 ### 현재 위치
-- **Step 5-2** 시작 전 (입력 부모 `UWeaponInputComponent` 분리 + `USafetyInputComponent`)
+- **Step 5-3** 시작 전 (두 손 파지 `UTwoHandGripStep`, 설계 판단)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 

@@ -262,6 +262,8 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - 잠금 상태 `bLocked`는 실행 중 상태값이고 변경은 `SetLocked`/`ToggleSafety`로만 한다. 배치 시 처음 상태는 배치별 초기값 `bInitiallyLocked`(`EditInstanceOnly`, 기본 잠김)다.
 - **VR에서는 무기를 잡은 손의 A/X 버튼으로 토글한다.** 템플릿이 쓰지 않는 버튼(`OculusTouch_Right_A_Click`, `OculusTouch_Left_X_Click`)이다. 트리거처럼 잡을 때 그 손의 입력 매핑을 켜고 놓을 때 끈다. 시뮬레이터에서는 `B` 키다.
 - **버튼은 단계가 아니라 입력 컴포넌트가 받는다(4.7).** 트리거와 안전장치 입력의 공통부분(잡은 손의 매핑 켜고 끄기, 버튼 바인딩, 무기 액터 입력 켜고 끄기)을 추상 부모 `UWeaponInputComponent`로 꺼내고, 자식은 버튼이 눌렸을 때 할 일만 구현한다. `UTriggerInputComponent`는 `RequestFire`, `USafetyInputComponent`는 같은 액터의 `USafetyStep::ToggleSafety`를 부른다. 무기 액터의 입력은 켜진 입력 컴포넌트가 하나도 없을 때만 끈다.
+  - 부모는 `EnableForHand`/`DisableForHand`, 손별 `LeftContext`/`RightContext`와 `LeftAction`/`RightAction`을 갖고, 자식은 `HandleAction`만 재정의한다. 트리거 쪽에서 바뀐 이름(`DisableTrigger`, `Left/RightFireAction`)은 `DefaultEngine.ini`의 `[CoreRedirects]`로 기존 블루프린트에 잇는다.
+  - 입력 매핑 `IMC_Safety_Left/Right`는 OpenXR이 세션 시작 때 액션을 만들 수 있게 `Default Mapping Contexts`에 등록한다(`Add Immediately` 끔, 켜고 끄기는 입력 컴포넌트가 한다).
 - 어느 손인지는 지금처럼 입력 컴포넌트의 블루프린트 자식(`BP_TriggerInput`, `BP_SafetyInput`)이 각자 잡기 컴포넌트를 구독해 판별한다. C++ 형제 클래스라 그래프를 물려받지 못해 복제되므로, 입력 컴포넌트가 더 늘면 `UGripStep`이 잡은 손도 발행하는 방식을 다시 검토한다.
 
 ---
