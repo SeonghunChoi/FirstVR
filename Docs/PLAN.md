@@ -187,14 +187,20 @@ class IHittable {
 class UDamageReceiver {
   +UEnemyDataAsset EnemyData
   +ReceiveHit(Hit, Ammo, DamageScale)
-  +OnDamaged / OnLimpStarted / OnDied
+  +OnDamaged / OnLimpStarted(InjuredLeg) / OnDied
 }
 class UEnemyDataAsset {
   +float MaxHealth
   +float Armor
   +TMap BoneMultipliers
-  +TArray LegBones
+  +TArray LeftLegBones / RightLegBones
   +float LimpThreshold
+}
+class UEnemyAnimInstance {
+  +float PelvisDrop
+  +FVector InjuredFootOffset
+  -bool bLimping
+  -ELegSide InjuredLeg
 }
 class UHitReaction {
   +FPhysicalAnimationData PhysicalAnimationData
@@ -218,6 +224,7 @@ AProjectile ..> IHittable : 피격
 IHittable <|.. UDamageReceiver
 UDamageReceiver --> UEnemyDataAsset
 UHitReaction ..> UDamageReceiver : OnDamaged 구독
+UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 ```
 
 **구조도에서 확인할 점**
@@ -312,7 +319,7 @@ UHitReaction ..> UDamageReceiver : OnDamaged 구독
 
 - **부위 배율은 본마다 둔다.** `BoneMultipliers`(`TMap<본 이름, 배율>`)에 적고, 없는 본은 1.0이다. 키는 피직스 에셋에 바디가 있는 본 이름이다(Hit 결과에는 그 본만 들어온다). 1.0이 아닌 본만 적으면 된다.
 - **방어력은 비율로 반영한다.** 관통력이 방어력 이상이면 100%, 모자라면 `관통력 / 방어력`만큼 들어간다. 피해가 0이 되지 않아 약한 탄은 "더 많이 맞춰야" 한다(6.2). 공식 계산은 `UDamageReceiver`가 한다.
-- **절뚝임은 다리 누적 피해(절대값)로 판단한다.** 다리 본 목록 `LegBones`에 든 본에 들어간 최종 피해의 합이 `LimpThreshold` 이상이면 절뚝인다. 좌우 다리는 합쳐서 센다. 방어력과 관통력이 그대로 반영되고, 체력을 바꿔도 기준은 그대로다.
+- **절뚝임은 다리 누적 피해(절대값)로 판단한다.** 다리 본 목록 `LeftLegBones`·`RightLegBones`에 든 본에 들어간 최종 피해의 합이 `LimpThreshold` 이상이면 절뚝인다. 좌우 다리는 합쳐서 센다(목록을 좌우로 나눈 이유는 6.7). 방어력과 관통력이 그대로 반영되고, 체력을 바꿔도 기준은 그대로다.
 - **최대 체력 `MaxHealth`도 적 데이터에 둔다.** 현재 체력은 `UDamageReceiver`의 상태값이다.
 
 ### 6.5 결정: 피격 전달과 결과 알림 ✅
@@ -329,6 +336,14 @@ UHitReaction ..> UDamageReceiver : OnDamaged 구독
 - 블렌드 가중치는 `RecoverTime` 동안 1 → 0으로 줄이고, 끝나면 물리를 끈다. 반응 중인 부위 안쪽을 다시 맞으면 그 반응을 다시 시작하고, 바깥(조상 본)을 맞으면 안쪽 반응을 흡수한다.
 - **충격량 = 탄의 `ImpactImpulse` × (최종 피해 / `BaseDamage`).** 탄마다 미는 세기를 정하면서(탄을 따라가는 값, 5.1) 부위 배율·`DamageScale`·방어력도 밀림에 반영된다(6.2). 단위는 속도 변화(cm/s)라 바디 질량과 무관하다.
 - `OnDamaged`는 탄 데이터도 함께 넘긴다: `OnDamaged(본, 피해, Hit, Ammo)`.
+
+### 6.7 결정: 절뚝임 상태 ✅
+
+- **절뚝임 자세는 절차적 보정으로 만든다.** 쓸 수 있는 애니메이션(Idle, 나중에 Walk) 위에서 골반을 내리고 다친 발의 IK 목표를 들어 올린 뒤 `Leg IK`로 두 다리를 푼다. 성한 발은 제자리에 붙어 무릎이 굽고, 다친 다리는 들린다. 절뚝임 애니메이션 에셋이 필요 없고 Phase 4의 걷기에도 같은 보정을 얹는다.
+- **다친 다리는 절뚝임을 시작시킨 탄이 맞은 쪽이다.** 누적 판단은 좌우 합산(6.4) 그대로 두고, 좌우는 적 데이터의 `LeftLegBones`/`RightLegBones`로 구분한다. 판단이 데이터에만 있어 메시나 본 이름 규칙을 몰라도 된다. `OnLimpStarted(InjuredLeg)`로 넘긴다.
+- **애니메이션 블루프린트는 C++ 부모 `UEnemyAnimInstance`가 `OnLimpStarted`를 구독해서 상태를 안다.** 상태값을 매 프레임 읽지 않고 다른 반응과 같은 "발행하고 구독" 모양을 따른다. 부모가 골반·발 오프셋을 `LimpBlendTime` 동안 0에서 목표값까지 계산해 두고, 애님 그래프는 그 값을 노드에 꽂기만 한다.
+- 오프셋 크기(`PelvisDrop`, `InjuredFootOffset`)는 스켈레톤 자세에 묶인 값이라 애니메이션 블루프린트의 클래스 기본값에 둔다.
+- 상태 머신은 쓰지 않는다. 절뚝임은 재생 중인 애니메이션을 바꾸지 않고 위에 얹는 보정이라, 전환은 `LimpAlpha` 블렌드로 충분하다. 걷기 상태 머신은 Phase 4에서 이 보정 앞단에 둔다.
 
 ---
 

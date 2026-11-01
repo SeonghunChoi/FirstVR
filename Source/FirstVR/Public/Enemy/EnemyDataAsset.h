@@ -4,6 +4,15 @@
 #include "Engine/DataAsset.h"
 #include "EnemyDataAsset.generated.h"
 
+/** 다리 좌우. 다리가 아닌 본은 None이다. */
+UENUM(BlueprintType)
+enum class ELegSide : uint8
+{
+	None,
+	Left,
+	Right
+};
+
 /** 적 종류 하나의 설정. 맞은 대상과 부위를 따라가는 값만 둔다. 피해 계산은 UDamageReceiver가 한다. */
 UCLASS(BlueprintType)
 class FIRSTVR_API UEnemyDataAsset : public UPrimaryDataAsset
@@ -15,9 +24,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	float GetBoneMultiplier(FName BoneName) const;
 
-	/** 맞은 본이 다리(LegBones)인지. */
+	/** 맞은 본이 다리(LeftLegBones 또는 RightLegBones)인지. */
 	UFUNCTION(BlueprintPure, Category = "Enemy")
 	bool IsLegBone(FName BoneName) const;
+
+	/** 맞은 본이 어느 쪽 다리인지. 다리가 아니면 None. */
+	UFUNCTION(BlueprintPure, Category = "Enemy")
+	ELegSide GetLegSide(FName BoneName) const;
 
 	/** 최대 체력. 현재 체력은 UDamageReceiver가 들고 있다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy", meta = (ClampMin = "1.0"))
@@ -31,9 +44,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Body")
 	TMap<FName, float> BoneMultipliers;
 
-	/** 다리로 셀 본 이름. 여기에 든 본에 들어간 피해가 절뚝임 누적에 더해진다. 좌우를 합쳐서 센다. */
+	/** 왼쪽 다리로 셀 본 이름. 다리 본에 들어간 피해는 좌우를 합쳐 절뚝임 누적에 더해진다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Body")
-	TArray<FName> LegBones;
+	TArray<FName> LeftLegBones;
+
+	/** 오른쪽 다리로 셀 본 이름. 절뚝임을 시작시킨 탄이 맞은 쪽이 다친 다리가 된다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Body")
+	TArray<FName> RightLegBones;
 
 	/** 다리 누적 피해가 이 값 이상이면 절뚝인다. 최종 피해(방어력, 배율 적용 후) 기준이다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0"))

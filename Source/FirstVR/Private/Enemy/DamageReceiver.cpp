@@ -63,7 +63,8 @@ void UDamageReceiver::ReceiveHit(const FHitResult& Hit, UAmmoDataAsset* Ammo, fl
 	else if (!bLimping && LegDamage >= EnemyData->LimpThreshold && LegDamage > 0.f)
 	{
 		bLimping = true;
-		UE_LOG(LogEnemy, Log, TEXT("[%s] Limp started"), *GetNameSafe(GetOwner()));
-		OnLimpStarted.Broadcast();
+		InjuredLeg = EnemyData->GetLegSide(BoneName);
+		UE_LOG(LogEnemy, Log, TEXT("[%s] Limp started (%s leg)"), *GetNameSafe(GetOwner()), *UEnum::GetDisplayValueAsText(InjuredLeg).ToString());
+		OnLimpStarted.Broadcast(InjuredLeg);
 	}
 }
