@@ -10,7 +10,7 @@ class USphereComponent;
 class UStaticMeshComponent;
 
 /**
- * 발사된 탄. 탄 데이터와 DamageScale을 들고 날아가 맞은 대상에 전달한다.
+ * 발사된 탄. 탄 데이터와 DamageScale을 들고 날아가 맞은 액터의 IHittable 컴포넌트에 전달한다.
  * 무기 시스템과 적 시스템이 만나는 유일한 지점이다.
  */
 UCLASS(Abstract)

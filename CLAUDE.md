@@ -274,8 +274,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 4-1: `UEnemyDataAsset`(`MaxHealth`, `Armor`, `BoneMultipliers`(없는 본 1.0), `LegBones`, `LimpThreshold`, `GetBoneMultiplier`/`IsLegBone`), Third Person 콘텐츠 팩으로 전신 마네킹(`Characters/Mannequins`) 추가, `Portfolio/Data/DA_Enemy_Mannequin` — 커맨드라인 빌드, 에디터에서 분류·값 저장 확인
   - 맵 키는 `PA_Mannequin`에 바디가 있는 본만 쓴다: `pelvis`, `spine_02~05`, `neck_01`, `neck_02`, `head`, `clavicle_l/r`, `upperarm_l/r`, `lowerarm_l/r`, `hand_l/r`, `thigh_l/r`, `calf_l/r`, `foot_l/r`
 
+- [x] Step 4-2: `IHittable`(`Weapon/Hittable.h`, C++ 전용 `UINTERFACE`), `UDamageReceiver`(`IHittable` 구현, `CalculateDamage`, `CurrentHealth`/`LegDamage`/`bLimping`/`bDead`, `OnDamaged`/`OnLimpStarted`/`OnDied`, `LogEnemy`), 투사체가 `FindComponentByInterface<IHittable>()`로 전달, Launch/Hit 로그에 위치 — 커맨드라인 빌드, `Portfolio/Enemies/BP_EnemyMannequin`(루트 `SKM_Manny_Simple`, `PhysicsActor`, `Damage Receiver`), 일반 Play에서 `thigh_r` 16 피해 누적 → 48/40에서 `Limp started` 한 번 확인
+  - `DA_TestWeapon`의 `FireSequence`에서 `BP_GripStep`을 빼서 일반 Play `F`로 쏠 수 있게 함 (VR 권총 `DA_Pistol`은 그대로)
+  - 레벨에 오래전 배치한 `BP_TestWeapon` 인스턴스의 `Muzzle`이 `Body`에 붙어 있지 않아 탄이 월드 (20, 0, 5)에서 나갔음 → 인스턴스를 다시 배치하고 레벨 블루프린트 참조를 다시 연결. **C++ 생성자의 컴포넌트 계층을 바꾸면 이미 배치된 인스턴스는 다시 배치한다.**
+  - 스크린샷: Play 중 `F9` 또는 `HighResShot 1` (`Saved/Screenshots/WindowsEditor/`), 간단히는 `Shift+F1` → `Win+Shift+S`
+
 ### 현재 위치
-- **Step 4-2** 시작 전 (`UDamageReceiver`: `ReceiveHit(Hit, Ammo, DamageScale)`에서 피해 계산, `LogEnemy` 카테고리)
+- **Step 4-3** 시작 전 (`UHitReaction`: `OnDamaged` 구독, 맞은 본 아래만 물리 시뮬레이션 후 블렌딩)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -291,3 +296,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-10-31: 트리거 입력은 무기 쪽 입력 전용 컴포넌트 `UTriggerInputComponent`(발사 단계 아님)가 받아 `RequestFire`를 부른다. 잡히면 잡은 손의 템플릿 입력 매핑(`IMC_Weapon_*`, `IA_Shoot_*`)을 켜고 놓으면 끈다. 손 판별은 `BP_TriggerInput`이 `GetHeldByHand`로 한다. (`Docs/PLAN.md` 4.7)
 - 2026-10-31: 권총은 `BP_PistolWeapon` + `DA_Pistol`로 새로 만들고 `BP_TestWeapon`은 실험용으로 남긴다. 기준점은 `Muzzle`·`Grip`·`MagazineWell`(자리만). 코어는 발사 시 `OnFired(Recoil)`만 발행하고, 발사 햅틱은 `UTriggerInputComponent`가 구독해서 준다. 시각 반동은 나중에. (`Docs/PLAN.md` 4.8)
 - 2026-10-31: 적 데이터는 본마다 배율(`BoneMultipliers`, 없는 본은 1.0), 방어력은 비율(`min(1, Penetration / Armor)`, 계산은 `UDamageReceiver`), 절뚝임은 `LegBones`에 든 본의 누적 최종 피해(좌우 합산)가 `LimpThreshold` 이상일 때. `MaxHealth`도 적 데이터에 둔다. (`Docs/PLAN.md` 5.2, 6.4)
+- 2026-11-01: 투사체는 인터페이스 `IHittable`(`Weapon/Hittable.h`, C++ 전용)로 피해를 넘긴다. 구현은 컴포넌트 `UDamageReceiver`가 하고, 투사체는 `FindComponentByInterface<IHittable>()`로 찾는다. `UDamageReceiver`는 `OnDamaged`/`OnLimpStarted`/`OnDied`를 발행만 하고 반응 쪽이 구독한다. 로그 카테고리 `LogEnemy`. (`Docs/PLAN.md` 4.6, 6.5)
