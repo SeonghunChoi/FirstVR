@@ -283,8 +283,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 골반(루트 바디)을 맞으면 몸이 돌아간 채 남던 문제: 메시 기본값 `SimulationUpatesComponentTransform`이 컴포넌트를 루트 바디에 따라가게 해서 월드 기준 목표 자세도 같이 움직였음 → `UHitReaction::BeginPlay`에서 `PhysicsTransformUpdateMode = ComponentTransformIsKinematic` (Live Coding으로 반영)
   - 움직임을 느리게 보려면 Play 중 콘솔 `slomo 0.2` (`slomo 1`로 복귀)
 
+- [x] Step 4-4: `ELegSide`, 적 데이터 `LeftLegBones`/`RightLegBones`·`GetLegSide`, `OnLimpStarted(InjuredLeg)`, `UEnemyAnimInstance`(`NativeBeginPlay`에서 구독, `LimpAlpha`로 `PelvisOffset`·`Left/RightFootOffset` 계산) — 빌드, `Portfolio/Enemies/ABP_EnemyMannequin`(`MM_Idle` → `Transform (Modify) Bone` ×3(`pelvis`, `ik_foot_l`, `ik_foot_r`, `Add to Existing`) → `Leg IK`), `BP_EnemyMannequin` 메시에 연결, 일반 Play에서 오른쪽·왼쪽 다리 절뚝임 자세 확인
+  - `Transform (Modify) Bone`은 디테일 패널에서 `Bone to Modify`와 `Translation Mode`만 바꾸면 된다 (나머지는 기본값이 `Ignore`/`Component Space`)
+  - 포즈 핀은 로컬 → `Local To Component` → 컴포넌트 공간 노드들 → `Component To Local` → `Output Pose`로 한 줄이어야 한다
+
 ### 현재 위치
-- **Step 4-4** 시작 전 (다리 피해 누적 시 애니메이션 블루프린트 상태 전환, `OnLimpStarted` 구독)
+- **Step 4-5** 시작 전 (사망 처리: `OnDied` 구독)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -302,3 +306,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-10-31: 적 데이터는 본마다 배율(`BoneMultipliers`, 없는 본은 1.0), 방어력은 비율(`min(1, Penetration / Armor)`, 계산은 `UDamageReceiver`), 절뚝임은 `LegBones`에 든 본의 누적 최종 피해(좌우 합산)가 `LimpThreshold` 이상일 때. `MaxHealth`도 적 데이터에 둔다. (`Docs/PLAN.md` 5.2, 6.4)
 - 2026-11-01: 투사체는 인터페이스 `IHittable`(`Weapon/Hittable.h`, C++ 전용)로 피해를 넘긴다. 구현은 컴포넌트 `UDamageReceiver`가 하고, 투사체는 `FindComponentByInterface<IHittable>()`로 찾는다. `UDamageReceiver`는 `OnDamaged`/`OnLimpStarted`/`OnDied`를 발행만 하고 반응 쪽이 구독한다. 로그 카테고리 `LogEnemy`. (`Docs/PLAN.md` 4.6, 6.5)
 - 2026-11-01: 피격 반응은 맞은 본 아래만 물리로 돌리고 `UPhysicalAnimationComponent`(월드 기준 모터)로 애니메이션 자세에 당긴 뒤 `RecoverTime` 동안 블렌드 가중치 1 → 0. 충격량은 탄의 `ImpactImpulse`(속도 변화 cm/s) × (최종 피해 / `BaseDamage`). `OnDamaged`에 `Ammo`를 추가했다. 컴포넌트가 루트 바디를 따라가지 않게 메시의 `PhysicsTransformUpdateMode`는 `ComponentTransformIsKinematic`. (`Docs/PLAN.md` 6.6)
+- 2026-11-01: 절뚝임 자세는 절차적 보정(골반 내림 + 다친 발 IK 목표 올림 + `Leg IK`)이다. 다친 다리는 절뚝임을 시작시킨 탄이 맞은 쪽이고, 적 데이터 `LegBones`를 `LeftLegBones`/`RightLegBones`로 나눠 구분한다. `OnLimpStarted(InjuredLeg)`를 C++ 부모 `UEnemyAnimInstance`가 구독하고 오프셋을 계산해 애님 그래프에 넘긴다. 상태 머신 없이 `LimpAlpha` 블렌드. (`Docs/PLAN.md` 6.7)

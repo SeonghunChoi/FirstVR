@@ -8,5 +8,18 @@ float UEnemyDataAsset::GetBoneMultiplier(FName BoneName) const
 
 bool UEnemyDataAsset::IsLegBone(FName BoneName) const
 {
-	return LegBones.Contains(BoneName);
+	return GetLegSide(BoneName) != ELegSide::None;
+}
+
+ELegSide UEnemyDataAsset::GetLegSide(FName BoneName) const
+{
+	if (LeftLegBones.Contains(BoneName))
+	{
+		return ELegSide::Left;
+	}
+	if (RightLegBones.Contains(BoneName))
+	{
+		return ELegSide::Right;
+	}
+	return ELegSide::None;
 }
