@@ -4,6 +4,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Weapon/AmmoDataAsset.h"
+#include "Weapon/Hittable.h"
 #include "Weapon/WeaponTypes.h"
 
 AWeaponProjectile::AWeaponProjectile()
@@ -42,11 +43,19 @@ void AWeaponProjectile::Launch(UAmmoDataAsset* InAmmo, float InDamageScale)
 	const float Speed = Ammo ? Ammo->Speed : 0.f;
 	Movement->Velocity = GetActorForwardVector() * Speed;
 
-	UE_LOG(LogWeapon, Log, TEXT("[%s] Launch (Ammo %s, Speed %.0f, DamageScale %.2f)"), *GetName(), *GetNameSafe(Ammo), Speed, DamageScale);
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Launch (Ammo %s, Speed %.0f, DamageScale %.2f) from %s"), *GetName(), *GetNameSafe(Ammo), Speed, DamageScale, *GetActorLocation().ToCompactString());
 }
 
 void AWeaponProjectile::HandleStop(const FHitResult& Hit)
 {
-	UE_LOG(LogWeapon, Log, TEXT("[%s] Hit %s"), *GetName(), *GetNameSafe(Hit.GetActor()));
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Hit %s (%s) at %s"), *GetName(), *GetNameSafe(Hit.GetActor()), *Hit.BoneName.ToString(), *Hit.ImpactPoint.ToCompactString());
+
+	if (AActor* HitActor = Hit.GetActor())
+	{
+		if (IHittable* Hittable = HitActor->FindComponentByInterface<IHittable>())
+		{
+			Hittable->ReceiveHit(Hit, Ammo, DamageScale);
+		}
+	}
 	Destroy();
 }

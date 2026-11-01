@@ -179,9 +179,14 @@ class AProjectile {
   +UAmmoDataAsset Ammo
   +float DamageScale
 }
+class IHittable {
+  <<interface>>
+  +ReceiveHit(Hit, Ammo, DamageScale)
+}
 class UDamageReceiver {
   +UEnemyDataAsset EnemyData
   +ReceiveHit(Hit, Ammo, DamageScale)
+  +OnDamaged / OnLimpStarted / OnDied
 }
 class UEnemyDataAsset {
   +float MaxHealth
@@ -206,14 +211,16 @@ UWeaponStepComponent <|-- UBowDrawStep
 UMagazineStep --> UAmmoDataAsset : 장전 탄
 AWeaponBase ..> AProjectile : 발사
 AProjectile --> UAmmoDataAsset
-AProjectile ..> UDamageReceiver : 피격
+AProjectile ..> IHittable : 피격
+IHittable <|.. UDamageReceiver
 UDamageReceiver --> UEnemyDataAsset
-UDamageReceiver ..> UHitReaction : 반응
+UHitReaction ..> UDamageReceiver : OnDamaged 구독
 ```
 
 **구조도에서 확인할 점**
 - `AWeaponBase`는 추상 타입 `UWeaponStepComponent`만 알고, 구체 단계 클래스와 직접 연결되지 않는다. 새 단계는 상속선만 늘어난다.
 - 무기 시스템과 적 시스템은 `AProjectile`이 탄 데이터를 전달하는 지점에서만 만난다. 피해 계산은 `UDamageReceiver`에서 처리한다.
+  - **만나는 지점은 인터페이스 `IHittable`이다.** ✅ 무기 쪽(`Weapon/Hittable.h`)이 정의하고 투사체는 이것만 안다. 의존 방향은 적 → 무기 한쪽뿐이다(6.5).
 - 메시 교체를 위해 발사 원점, 파지 위치, 탄창 결합부는 이름이 정해진 소켓 또는 Scene Component로 두고, 컴포넌트는 그 이름으로만 위치를 찾는다.
   - **발사 원점 `Muzzle`은 코어(`AWeaponBase` 생성자)가 만든다.** ✅ 모든 무기에 빠짐없이 있고, 블루프린트는 위치만 옮긴다. 투사체는 `Muzzle`의 앞 방향(X)으로 나간다.
   - **무기 루트는 코어가 만드는 박스 충돌체 `Body`다.** ✅ 메시, 잡기 컴포넌트, `Muzzle`은 모두 그 아래에 둔다. 루트가 빈 Scene Component면 템플릿 잡기가 루트 아래의 메시만 손에 붙여 `Muzzle`이 제자리에 남는다. 충돌체 루트는 메시 종류(스태틱/스켈레탈)와 무관하고, 놓을 때 물리도 루트에 걸린다.
@@ -304,6 +311,13 @@ UDamageReceiver ..> UHitReaction : 반응
 - **방어력은 비율로 반영한다.** 관통력이 방어력 이상이면 100%, 모자라면 `관통력 / 방어력`만큼 들어간다. 피해가 0이 되지 않아 약한 탄은 "더 많이 맞춰야" 한다(6.2). 공식 계산은 `UDamageReceiver`가 한다.
 - **절뚝임은 다리 누적 피해(절대값)로 판단한다.** 다리 본 목록 `LegBones`에 든 본에 들어간 최종 피해의 합이 `LimpThreshold` 이상이면 절뚝인다. 좌우 다리는 합쳐서 센다. 방어력과 관통력이 그대로 반영되고, 체력을 바꿔도 기준은 그대로다.
 - **최대 체력 `MaxHealth`도 적 데이터에 둔다.** 현재 체력은 `UDamageReceiver`의 상태값이다.
+
+### 6.5 결정: 피격 전달과 결과 알림 ✅
+
+- **투사체는 인터페이스 `IHittable`로 피해를 넘긴다.** 투사체가 적 클래스를 include하지 않는다. 기본 데미지 경로(`ApplyPointDamage`)는 숫자 하나만 넘겨서 관통력·방어력을 받는 쪽에서 계산하려면 적이 투사체를 캐스트해야 하므로 쓰지 않는다.
+- **인터페이스는 컴포넌트(`UDamageReceiver`)가 구현한다.** 투사체는 맞은 액터에서 `FindComponentByInterface<IHittable>()`로 찾는다. 적 블루프린트는 컴포넌트를 붙이기만 하면 되고 전달 노드를 이을 필요가 없다. 컴포넌트 없는 대상(상자 등)이 생기면 투사체에 "액터가 구현했는지 먼저 보기"만 더한다.
+- **`UDamageReceiver`는 결과를 델리게이트로 발행만 한다.** `OnDamaged(본, 피해, Hit)`, `OnLimpStarted`, `OnDied`. 피격 반응(`UHitReaction`), 애니메이션 상태, 사망 연출이 각자 구독한다. 무기의 `OnFired` → `UTriggerInputComponent`(햅틱)와 같은 모양이다.
+- 사망한 뒤의 피격은 무시한다. 치명타가 다리에 맞아도 절뚝임 대신 사망만 발행한다.
 
 ---
 
