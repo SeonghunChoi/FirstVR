@@ -287,8 +287,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `Transform (Modify) Bone`은 디테일 패널에서 `Bone to Modify`와 `Translation Mode`만 바꾸면 된다 (나머지는 기본값이 `Ignore`/`Component Space`)
   - 포즈 핀은 로컬 → `Local To Component` → 컴포넌트 공간 노드들 → `Component To Local` → `Output Pose`로 한 줄이어야 한다
 
+- [x] Step 4-5: `UHitReaction`이 `OnDied` 구독 → `StartRagdoll`(반응 비우고 틱 끔, `SetStrengthMultiplyer(0)`, 전신 물리, 이후 `ApplyPhysicalHit` 무시), `UEnemyDataAsset::CorpseLifeSpan`(기본 10초, 0이면 남김), `UDamageReceiver`가 사망 시 `SetLifeSpan` — 커맨드라인 빌드, 일반 Play에서 사망 → 래그돌 → 쓰러진 몸 피격 무시 → 제거 확인
+- [x] ✅ **Step 4 마일스톤**: 마네킹의 부위별 피해와 물리 피격 반응, 절뚝임, 사망 래그돌 확인
+
 ### 현재 위치
-- **Step 4-5** 시작 전 (사망 처리: `OnDied` 구독)
+- **Step 5** 시작 전 (`Docs/PLAN.md` Phase 3 확장성 증명을 스텝화)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -307,3 +310,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-01: 투사체는 인터페이스 `IHittable`(`Weapon/Hittable.h`, C++ 전용)로 피해를 넘긴다. 구현은 컴포넌트 `UDamageReceiver`가 하고, 투사체는 `FindComponentByInterface<IHittable>()`로 찾는다. `UDamageReceiver`는 `OnDamaged`/`OnLimpStarted`/`OnDied`를 발행만 하고 반응 쪽이 구독한다. 로그 카테고리 `LogEnemy`. (`Docs/PLAN.md` 4.6, 6.5)
 - 2026-11-01: 피격 반응은 맞은 본 아래만 물리로 돌리고 `UPhysicalAnimationComponent`(월드 기준 모터)로 애니메이션 자세에 당긴 뒤 `RecoverTime` 동안 블렌드 가중치 1 → 0. 충격량은 탄의 `ImpactImpulse`(속도 변화 cm/s) × (최종 피해 / `BaseDamage`). `OnDamaged`에 `Ammo`를 추가했다. 컴포넌트가 루트 바디를 따라가지 않게 메시의 `PhysicsTransformUpdateMode`는 `ComponentTransformIsKinematic`. (`Docs/PLAN.md` 6.6)
 - 2026-11-01: 절뚝임 자세는 절차적 보정(골반 내림 + 다친 발 IK 목표 올림 + `Leg IK`)이다. 다친 다리는 절뚝임을 시작시킨 탄이 맞은 쪽이고, 적 데이터 `LegBones`를 `LeftLegBones`/`RightLegBones`로 나눠 구분한다. `OnLimpStarted(InjuredLeg)`를 C++ 부모 `UEnemyAnimInstance`가 구독하고 오프셋을 계산해 애님 그래프에 넘긴다. 상태 머신 없이 `LimpAlpha` 블렌드. (`Docs/PLAN.md` 6.7)
+- 2026-11-01: 사망은 모터를 끈 전신 래그돌이고 `UHitReaction`이 `OnDied`를 구독해 맡는다(메시 물리를 만지는 컴포넌트는 하나). 사망 후 피격은 무시. 쓰러진 몸은 적 데이터 `CorpseLifeSpan`(초, 0이면 남김) 뒤 제거하고, 수명은 `UDamageReceiver`가 사망 시 `SetLifeSpan`으로 건다. (`Docs/PLAN.md` 6.8)

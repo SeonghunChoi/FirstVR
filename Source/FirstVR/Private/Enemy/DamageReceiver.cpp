@@ -57,7 +57,8 @@ void UDamageReceiver::ReceiveHit(const FHitResult& Hit, UAmmoDataAsset* Ammo, fl
 	if (CurrentHealth <= 0.f)
 	{
 		bDead = true;
-		UE_LOG(LogEnemy, Log, TEXT("[%s] Died"), *GetNameSafe(GetOwner()));
+		UE_LOG(LogEnemy, Log, TEXT("[%s] Died, corpse life span %.1fs"), *GetNameSafe(GetOwner()), EnemyData->CorpseLifeSpan);
+		GetOwner()->SetLifeSpan(EnemyData->CorpseLifeSpan);
 		OnDied.Broadcast();
 	}
 	else if (!bLimping && LegDamage >= EnemyData->LimpThreshold && LegDamage > 0.f)
