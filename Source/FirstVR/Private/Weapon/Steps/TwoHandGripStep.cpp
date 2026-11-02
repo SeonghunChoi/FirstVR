@@ -1,5 +1,6 @@
 #include "Weapon/Steps/TwoHandGripStep.h"
 
+#include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "GameFramework/Actor.h"
 
@@ -56,6 +57,7 @@ void UTwoHandGripStep::SetMainHand(USceneComponent* Hand)
 	MainHand = Hand;
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Main %s (%s)"), *GetName(), Hand ? TEXT("held") : TEXT("released"), *GetNameSafe(Hand));
 	UpdateTwoHandAim();
+	UpdateSupportHold();
 }
 
 void UTwoHandGripStep::SetSupportHand(USceneComponent* Hand)
@@ -68,6 +70,7 @@ void UTwoHandGripStep::SetSupportHand(USceneComponent* Hand)
 	SupportHand = Hand;
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Support %s (%s)"), *GetName(), Hand ? TEXT("held") : TEXT("released"), *GetNameSafe(Hand));
 	UpdateTwoHandAim();
+	UpdateSupportHold();
 }
 
 void UTwoHandGripStep::UpdateTwoHandAim()
@@ -119,6 +122,57 @@ void UTwoHandGripStep::EndTwoHandAim()
 
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Two-hand aim off%s"), *GetName(), bRestore ? TEXT(", one-hand pose restored") : TEXT(""));
 	AimParent.Reset();
+}
+
+void UTwoHandGripStep::UpdateSupportHold()
+{
+	const bool bSupportOnly = SupportHand && !MainHand;
+	if (bSupportOnly && !bHeldBySupport)
+	{
+		AttachToSupportHand();
+	}
+	else if (!bSupportOnly && bHeldBySupport)
+	{
+		if (MainHand)
+		{
+			bHeldBySupport = false;
+			UE_LOG(LogWeapon, Log, TEXT("[%s] Main hand took over"), *GetName());
+		}
+		else
+		{
+			DropFromSupportHand();
+		}
+	}
+}
+
+void UTwoHandGripStep::AttachToSupportHand()
+{
+	UPrimitiveComponent* Body = GetOwner() ? Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()) : nullptr;
+	if (!Body || !SupportHand)
+	{
+		UE_LOG(LogWeapon, Error, TEXT("[%s] Root is not a primitive component, cannot attach to support hand"), *GetName());
+		return;
+	}
+
+	Body->SetSimulatePhysics(false);
+	Body->AttachToComponent(SupportHand, FAttachmentTransformRules::KeepWorldTransform);
+	bHeldBySupport = true;
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Attached to support hand (%s)"), *GetName(), *GetNameSafe(SupportHand.Get()));
+}
+
+void UTwoHandGripStep::DropFromSupportHand()
+{
+	bHeldBySupport = false;
+
+	UPrimitiveComponent* Body = GetOwner() ? Cast<UPrimitiveComponent>(GetOwner()->GetRootComponent()) : nullptr;
+	if (!Body)
+	{
+		return;
+	}
+
+	Body->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	Body->SetSimulatePhysics(true);
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Dropped from support hand"), *GetName());
 }
 
 USceneComponent* UTwoHandGripStep::FindGripComponent() const

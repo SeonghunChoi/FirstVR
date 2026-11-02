@@ -278,6 +278,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **보조 손은 발사 조건이 아니다.** `UTwoHandGripStep`은 항상 `Success`이고, 두 손이면 작은 `RecoilScale`, 한 손이면 큰 `RecoilScale`을 `FFireContext`에 기록한다. 발사 흐름을 멈추지 않는 첫 단계다. 배율 두 값은 단계 컴포넌트의 설정값(`EditDefaultsOnly`)이다.
 - **보조 손을 잡으면 두 손 조준을 한다.** 총구 방향을 주 손잡이에서 보조 손 쪽으로 매 틱 맞춘다. 조준도 `UTwoHandGripStep`이 직접 맡는다(두 손 파지에 관한 상태와 동작을 한 컴포넌트에 모은다). 두 손일 때만 틱을 켠다.
 - **두 손 상태에서 주 손만 놓으면 보조 손이 무기를 이어받는다.** 무기는 보조 손에 붙은 채 남고, 트리거 입력은 주 손잡이를 따라 꺼진다. 보조 손까지 놓으면 무기가 떨어진다.
+  - ✅ (5-3c) **주 손 없이 보조 손잡이만 잡아도 무기가 보조 손에 들린다.** 이어받기와 같은 상태로 본다: "보조 손만 잡고 있음"이면 붙이고(월드 위치 유지), 그 상태에서 주 손잡이를 잡으면 템플릿이 주 손에 다시 붙이고 두 손 조준으로 돌아가며, 보조 손을 놓으면 떼고 물리를 켠다. 트리거는 주 손잡이를 잡아야 켜지므로 보조 손만으로는 쏠 수 없다.
 - 보조 손잡이도 템플릿 잡기 컴포넌트지만 **무기를 손에 붙이지 않는 잡기 종류**로 둔다. 붙이면 두 번째 손이 무기를 빼앗아 간다. 템플릿과의 연결은 `BP_GripStep`처럼 블루프린트 자식(`BP_TwoHandGripStep`)이 이름(`GripComponentName`, `SupportComponentName`)으로 두 잡기 컴포넌트를 찾아 구독한다.
   - 템플릿 `BP_GrabComponent` 분석: `Custom` 잡기는 `IsHeld`와 `MotionControllerRef`(잡은 손)만 기록하고 `OnGrabbed`·햅틱을 낸다. 물리를 끄거나 붙이지 않는다. 놓을 때도 `IsHeld = false` 후 `OnDropped`만 낸다. Free/Snap 놓기는 잡기 컴포넌트의 부모(`Body`)를 손에서 떼고 `bSimulateOnDrop`이면 물리를 켠다. `GetHeldByHand`는 `MotionControllerRef`의 `MotionSource` 앞 네 글자로 판별하므로 `Custom`에서도 맞다.
   - 그래서 이어받기(5-3c)에서는 주 손이 떨어질 때 템플릿이 뗀 무기를 보조 손에 다시 붙이고, 보조 손까지 놓을 때 떼고 물리를 되돌리는 일을 직접 한다.
