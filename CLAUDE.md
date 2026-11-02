@@ -311,8 +311,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 5-3a: `UTwoHandGripStep`(추상, 항상 Success, `SetMainHand`/`SetSupportHand`(손 `USceneComponent`, 놓이면 None), `IsTwoHanded`, `One/TwoHandRecoilScale`=1.0/0.4를 `RecoilScale`에 곱함, `GripComponentName`="Grip"·`SupportComponentName`="SupportGrip") — 빌드, `BP_TwoHandGripStep`(BeginPlay에서 두 잡기 컴포넌트의 `OnGrabbed`/`OnDropped` 구독 → `MotionControllerRef` 전달), `BP_TestWeapon`에 `SupportGrip`(`BP_GrabComponent`, Custom) 추가, `DA_TestWeapon` `FireSequence`=[`BP_TwoHandGripStep`, `BP_SafetyStep`, `MagazineStep`]. VR Preview에서 한 손 x1.00, 두 손 x0.40 → `FIRE` `Recoil 0.40`·햅틱 0.40, 보조 손만 잡아도 무기는 붙지 않음 확인
   - 블루프린트에서 다른 컴포넌트의 변수는 그 컴포넌트 변수 핀에서 GET으로 꺼낸다 (셀프 대상 SET 노드를 놓으면 `Target` 연결 오류)
 
+- [x] Step 5-3b: `UTwoHandGripStep` 두 손 조준 — 두 손일 때만 틱(`TG_PostPhysics`), 조준 시작 시 무기 루트의 부모(주 손)·상대 트랜스폼·두 손잡이 액터 기준 위치 저장, 매 틱 저장한 한 손 자세에서 `FindBetweenNormals`로 주 손잡이를 축 삼아 보조 손을 향하게 회전, 보조 손을 놓으면 한 손 자세 복원(주 손을 놓아 이미 떨어졌으면 복원 안 함) — Rider 빌드, VR Preview에서 `Two-hand aim on/off`, 회전과 복원 확인
+  - 두 손 상태에서 주 손을 놓으면 무기는 떨어지지만 보조 손의 Custom 잡기는 `Support held`로 남는다 → 5-3c에서 처리
+
 ### 현재 위치
-- **Step 5-3b** (두 손 조준) 시작 전
+- **Step 5-3c** (보조 손 이어받기) 시작 전
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 

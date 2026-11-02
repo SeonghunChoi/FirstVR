@@ -1,6 +1,40 @@
 #include "Weapon/Steps/TwoHandGripStep.h"
 
 #include "Components/SceneComponent.h"
+#include "GameFramework/Actor.h"
+
+UTwoHandGripStep::UTwoHandGripStep()
+{
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.TickGroup = TG_PostPhysics;
+}
+
+void UTwoHandGripStep::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	AActor* Owner = GetOwner();
+	USceneComponent* Root = Owner ? Owner->GetRootComponent() : nullptr;
+	USceneComponent* Parent = AimParent.Get();
+	if (!Root || !Parent || Root->GetAttachParent() != Parent || !SupportHand)
+	{
+		return;
+	}
+
+	const FTransform BaseWorld = AimBaseRelative * Parent->GetSocketTransform(Root->GetAttachSocketName());
+	const FVector GripWorld = BaseWorld.TransformPosition(GripLocal);
+	const FVector CurrentDir = BaseWorld.TransformPosition(SupportLocal) - GripWorld;
+	const FVector TargetDir = SupportHand->GetComponentLocation() - GripWorld;
+	if (CurrentDir.IsNearlyZero() || TargetDir.IsNearlyZero())
+	{
+		return;
+	}
+
+	const FQuat Delta = FQuat::FindBetweenNormals(CurrentDir.GetSafeNormal(), TargetDir.GetSafeNormal());
+	const FVector NewLocation = GripWorld + Delta.RotateVector(BaseWorld.GetLocation() - GripWorld);
+	Owner->SetActorLocationAndRotation(NewLocation, Delta * BaseWorld.GetRotation());
+}
 
 void UTwoHandGripStep::Execute(FFireContext& Context)
 {
@@ -21,6 +55,7 @@ void UTwoHandGripStep::SetMainHand(USceneComponent* Hand)
 
 	MainHand = Hand;
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Main %s (%s)"), *GetName(), Hand ? TEXT("held") : TEXT("released"), *GetNameSafe(Hand));
+	UpdateTwoHandAim();
 }
 
 void UTwoHandGripStep::SetSupportHand(USceneComponent* Hand)
@@ -32,6 +67,58 @@ void UTwoHandGripStep::SetSupportHand(USceneComponent* Hand)
 
 	SupportHand = Hand;
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Support %s (%s)"), *GetName(), Hand ? TEXT("held") : TEXT("released"), *GetNameSafe(Hand));
+	UpdateTwoHandAim();
+}
+
+void UTwoHandGripStep::UpdateTwoHandAim()
+{
+	if (IsTwoHanded() && !bAiming)
+	{
+		BeginTwoHandAim();
+	}
+	else if (!IsTwoHanded() && bAiming)
+	{
+		EndTwoHandAim();
+	}
+}
+
+void UTwoHandGripStep::BeginTwoHandAim()
+{
+	AActor* Owner = GetOwner();
+	USceneComponent* Root = Owner ? Owner->GetRootComponent() : nullptr;
+	USceneComponent* Grip = FindGripComponent();
+	USceneComponent* Support = FindSupportComponent();
+	if (!Root || !Root->GetAttachParent() || !Grip || !Support)
+	{
+		UE_LOG(LogWeapon, Warning, TEXT("[%s] Two-hand aim skipped (weapon not attached or grips missing)"), *GetName());
+		return;
+	}
+
+	const FTransform& ActorTransform = Owner->GetActorTransform();
+	GripLocal = ActorTransform.InverseTransformPosition(Grip->GetComponentLocation());
+	SupportLocal = ActorTransform.InverseTransformPosition(Support->GetComponentLocation());
+	AimParent = Root->GetAttachParent();
+	AimBaseRelative = Root->GetRelativeTransform();
+
+	bAiming = true;
+	SetComponentTickEnabled(true);
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Two-hand aim on (parent %s)"), *GetName(), *GetNameSafe(AimParent.Get()));
+}
+
+void UTwoHandGripStep::EndTwoHandAim()
+{
+	bAiming = false;
+	SetComponentTickEnabled(false);
+
+	USceneComponent* Root = GetOwner() ? GetOwner()->GetRootComponent() : nullptr;
+	const bool bRestore = Root && AimParent.IsValid() && Root->GetAttachParent() == AimParent.Get();
+	if (bRestore)
+	{
+		Root->SetRelativeTransform(AimBaseRelative);
+	}
+
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Two-hand aim off%s"), *GetName(), bRestore ? TEXT(", one-hand pose restored") : TEXT(""));
+	AimParent.Reset();
 }
 
 USceneComponent* UTwoHandGripStep::FindGripComponent() const
