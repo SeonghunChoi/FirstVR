@@ -294,6 +294,9 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - 무기가 쓸 수 있는 발사 모드는 트리거 컴포넌트의 설정값(`EditDefaultsOnly`), 현재 모드는 실행 중 상태값이다. 모드 전환 버튼(조정간)을 안전장치와 합칠지는 그때 정한다.
 - 단계가 맞는 곳은 약실 상태다: 볼트액션은 "약실이 비었으면 Failed" 단계 + 손으로 장전. 소총 종류는 `볼트액션 = 단발 트리거 + 약실 단계`, `반자동 = 단발 트리거`, `자동 = 연발 가능 트리거 (+ 조정간)`으로 조립한다.
 - 스텝: 5-4a 단발 소총(새 C++ 없음) → 5-4b 트리거 발사 모드.
+- ✅ (5-4b) **조정간은 A/X 하나로 `안전 → 단발 → 연발 → 안전`을 돌린다.** 새 입력 컴포넌트 `USelectorInputComponent`가 맡고, 위치 목록은 "안전(같은 액터에 `USafetyStep`이 있을 때만) + 트리거의 `FireModes` 순서"다. 잠김은 `USafetyStep`, 모드는 `UTriggerInputComponent`가 그대로 가진다. 안전장치 입력(`USafetyInputComponent`)은 남겨 두고, 연발 소총에만 그 대신 조정간을 붙인다.
+- ✅ **연발 중 한 발이 Failed면 반복을 멈추고, 다시 당겨야 쏜다.** 코어가 `OnFireAborted`를 발행하고 트리거가 구독한다. 반복은 트리거가 연발 중에만 틱을 켜고 코어의 `CanRequestFire()`(진행 중 아님 + `FireRate` 간격 지남)가 참일 때 `RequestFire`를 부른다.
+- 놓음을 알아야 하므로 입력 부모가 `Completed`도 바인딩한다(`HandleActionReleased`, 입력이 꺼질 때도 호출). 템플릿 `IA_Shoot_*`은 `Pressed` 트리거라 누른 다음 프레임에 `Completed`가 와서 쓸 수 없다 → 트리거 없는 `IA_Fire_*`/`IMC_Fire_*`를 새로 만든다. 템플릿 `IMC_Weapon_*`(우선순위 0, 항상 켜짐)이 같은 키를 먼저 소비하지 않도록 무기 입력 매핑은 우선순위 1로 넣는다.
 
 ---
 

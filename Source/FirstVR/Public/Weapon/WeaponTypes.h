@@ -20,6 +20,14 @@ enum class EStepResult : uint8
 	Pending
 };
 
+/** 트리거 발사 모드. 단발은 당길 때마다 한 발, 연발은 당기고 있는 동안 FireRate 간격으로 계속 쏜다. */
+UENUM(BlueprintType)
+enum class EFireMode : uint8
+{
+	Single,
+	Auto
+};
+
 USTRUCT(BlueprintType)
 struct FIRSTVR_API FFireContext
 {

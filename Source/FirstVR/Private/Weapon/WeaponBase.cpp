@@ -65,8 +65,7 @@ void AWeaponBase::RequestFire()
 		return;
 	}
 
-	const double Interval = 1.0 / WeaponData->FireRate;
-	if (GetWorld()->GetTimeSeconds() - LastFireTime < Interval)
+	if (IsCoolingDown())
 	{
 		UE_LOG(LogWeapon, Log, TEXT("[%s] Fire ignored: cooldown"), *GetName());
 		return;
@@ -75,6 +74,17 @@ void AWeaponBase::RequestFire()
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Fire requested"), *GetName());
 	Context = FFireContext();
 	RunStep(0);
+}
+
+bool AWeaponBase::CanRequestFire() const
+{
+	return !IsFiring() && !Steps.IsEmpty() && !IsCoolingDown();
+}
+
+bool AWeaponBase::IsCoolingDown() const
+{
+	const double Interval = 1.0 / WeaponData->FireRate;
+	return GetWorld()->GetTimeSeconds() - LastFireTime < Interval;
 }
 
 void AWeaponBase::RunStep(int32 Index)
@@ -104,6 +114,7 @@ void AWeaponBase::HandleStepResult(EStepResult Result)
 	{
 		UE_LOG(LogWeapon, Log, TEXT("[%s] Fire aborted at step %d/%d"), *GetName(), CurrentStepIndex + 1, Steps.Num());
 		CurrentStepIndex = INDEX_NONE;
+		OnFireAborted.Broadcast();
 		return;
 	}
 
