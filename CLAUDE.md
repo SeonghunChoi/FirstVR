@@ -214,7 +214,9 @@ Content/Portfolio/
   - 5-3a. 보조 손잡이(붙이지 않는 잡기) 상태 + 한 손/두 손 `RecoilScale` 기록, 항상 Success → VR Preview에서 `FIRE` 로그·햅틱 세기
   - 5-3b. 두 손 조준: 두 손일 때만 틱, 총구를 주 손잡이 → 보조 손 방향으로
   - 5-3c. 주 손을 놓으면 보조 손이 이어받기, 보조 손까지 놓으면 떨어짐
-- 5-4. 소총: 새 탄 데이터 + `DA_Rifle` + `BP_RifleWeapon`, 새 C++ 없이 기존 컴포넌트 재조합
+- 5-4. 소총 (발사 모드 설계 판단 완료, `Docs/PLAN.md` 4.11)
+  - 5-4a. 단발 소총: 새 탄 데이터 + `DA_Rifle` + `BP_RifleWeapon`, 새 C++ 없이 기존 컴포넌트 재조합
+  - 5-4b. `UTriggerInputComponent` 발사 모드: 쓸 수 있는 모드(설정값) + 현재 모드(상태), 연발이면 누르는 동안 반복 요청
 - 5-5. 빈 무기에 컴포넌트를 붙여 가는 시나리오 정리 (조합표, 스크린샷)
 - ✅ 마일스톤: `소총 = 파지 → 안전장치 → 탄창 → 발사`를 추가 C++ 없이 조립
 
@@ -318,8 +320,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 5-3c: `UTwoHandGripStep` 보조 손 들기 — `UpdateSupportHold`가 "보조 손만 잡음"(`SupportHand && !MainHand`) 변화를 보고 `AttachToSupportHand`(물리 끄고 `KeepWorldTransform`으로 붙임) / 주 손이 다시 잡으면 `Main hand took over` / `DropFromSupportHand`(떼고 물리 켬), 상태 `bHeldBySupport` — Rider 빌드, VR Preview에서 보조 손잡이만 잡아 들고 옮기기·떨어뜨리기, 보조 손에 들린 무기를 주 손이 잡아 두 손 조준 복귀 확인
   - **두 손 상태에서 주 손만 놓는 이어받기는 미검증**: 시뮬레이터는 두 손을 함께 선택해야 동시에 잡을 수 있고 `U`를 떼면 양손이 같이 풀린다. 같은 붙이기 경로(`AttachToSupportHand`)를 쓰므로 동작할 것으로 보고, 헤드셋이 생기면 확인한다
 
+- [x] Step 5-4a: 단발 소총을 새 C++ 없이 조립 — `DA_Ammo_556`(`Speed` 90000, `Penetration` 3, `BaseDamage` 35, `ImpactImpulse` 800, 투사체는 `BP_Projectile_9mm` 재사용), `DA_Rifle`(`FireSequence`=[`BP_GripStep`, `BP_TwoHandGripStep`, `BP_SafetyStep`, `BP_MagazineStep`], `Recoil` 1.5, `FireRate` 6), `BP_RifleWeapon`(`BP_PistolWeapon` 복제 + `SupportGrip`(Custom)·두 손 파지·안전장치·안전장치 입력, 탄창 30/`DA_Ammo_556`) — VR Preview에서 잠금 시 3/4단계 중단, 풀면 `FIRE (DA_Ammo_556, Recoil 1.50)`·햅틱 1.00, 머리 명중 105 피해로 사망 확인. 권총 에셋은 변경 없음
+  - 상속(자식 블루프린트)이 아니라 복제: 소총은 권총의 한 종류가 아니라 다른 조합이다
+
 ### 현재 위치
-- **Step 5-4** (소총: 새 탄 데이터 + `DA_Rifle` + `BP_RifleWeapon`) 시작 전
+- **Step 5-4b** (`UTriggerInputComponent` 발사 모드) 시작 전
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -342,3 +347,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-02: Step 5 순서는 안전장치 → 두 손 파지 → 소총 → 정리. 안전장치는 발사 단계 `USafetyStep`(잠기면 Failed, 배치별 초기값 `bInitiallyLocked`)이고, VR에서는 잡은 손의 A/X로 토글한다. 버튼은 입력 컴포넌트가 받으며, 트리거와 공통부분을 추상 부모 `UWeaponInputComponent`로 꺼낸다. 손 판별은 입력 BP 자식마다 잡기 컴포넌트를 구독한다. (`Docs/PLAN.md` 4.9)
 - 2026-11-02: 두 손 파지는 발사 조건이 아니다. `UTwoHandGripStep`은 항상 Success이고 한 손/두 손 `RecoilScale`을 기록한다. 보조 손을 잡으면 이 단계가 직접 틱으로 두 손 조준을 하고, 두 손 상태에서 주 손을 놓으면 보조 손이 무기를 이어받는다. 보조 손잡이는 무기를 손에 붙이지 않는 템플릿 잡기다. 5-3a/b/c로 나눠 진행. (`Docs/PLAN.md` 4.10)
 - 2026-11-02: 주 손 없이 보조 손잡이만 잡아도 무기가 보조 손에 들린다(이어받기와 같은 "보조 손만 잡음" 상태, 붙이기·내려놓기는 `UTwoHandGripStep`이 직접). 보조 손만으로는 쏠 수 없다. (`Docs/PLAN.md` 4.10)
+- 2026-11-02: 연발은 발사 단계가 아니라 트리거 입력 컴포넌트가 맡는다(누르는 동안 반복 요청, 속도는 코어 `FireRate`). 쓸 수 있는 모드는 트리거 설정값, 현재 모드는 상태값. 단계는 약실 상태(볼트액션) 같은 "이번 한 발" 조건에 쓴다. 단발 소총(5-4a) → 발사 모드(5-4b). (`Docs/PLAN.md` 4.11)
