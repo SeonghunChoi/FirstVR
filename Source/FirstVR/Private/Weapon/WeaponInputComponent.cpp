@@ -40,10 +40,12 @@ void UWeaponInputComponent::EnableForHand(bool bRightHand)
 		return;
 	}
 	BindingHandle = Input->BindAction(Action, ETriggerEvent::Started, this, &UWeaponInputComponent::HandleAction).GetHandle();
+	ReleaseBindingHandle = Input->BindAction(Action, ETriggerEvent::Completed, this, &UWeaponInputComponent::HandleActionReleased).GetHandle();
 
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 	{
-		Subsystem->AddMappingContext(Context, 0);
+		// 템플릿 매핑(우선순위 0)이 같은 키를 먼저 소비하지 않도록 한 단계 높인다.
+		Subsystem->AddMappingContext(Context, 1);
 	}
 
 	ActiveContext = Context;
@@ -62,6 +64,7 @@ void UWeaponInputComponent::DisableForHand()
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(Owner->InputComponent))
 	{
 		Input->RemoveBindingByHandle(BindingHandle);
+		Input->RemoveBindingByHandle(ReleaseBindingHandle);
 	}
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
@@ -75,6 +78,8 @@ void UWeaponInputComponent::DisableForHand()
 
 	ActiveContext = nullptr;
 	BindingHandle = 0;
+	ReleaseBindingHandle = 0;
+	HandleActionReleased();
 
 	// 같은 무기의 다른 입력 컴포넌트가 아직 켜져 있으면 액터 입력을 남겨 둔다.
 	const bool bActorInputDisabled = PlayerController && !IsAnyWeaponInputEnabled();

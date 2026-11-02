@@ -45,6 +45,9 @@ protected:
 	/** 버튼이 눌렸을 때(Started) 부른다. 자식이 할 일을 구현한다. */
 	virtual void HandleAction() {}
 
+	/** 버튼을 뗐을 때(Completed)와 입력이 꺼질 때 부른다. 누르고 있는 동안 동작하는 자식이 구현한다. */
+	virtual void HandleActionReleased() {}
+
 	/** 지금 입력이 켜진 손. 꺼져 있으면 마지막으로 켜졌던 손. */
 	EControllerHand GetActiveHand() const { return ActiveHand; }
 
@@ -79,6 +82,7 @@ private:
 	UPROPERTY(VisibleInstanceOnly, Category = "Weapon|Input|State")
 	TObjectPtr<UInputMappingContext> ActiveContext;
 
-	/** 버튼 바인딩. 끌 때 이 번호로 지운다. */
+	/** 버튼 바인딩(누름, 뗌). 끌 때 이 번호로 지운다. */
 	uint32 BindingHandle = 0;
+	uint32 ReleaseBindingHandle = 0;
 };

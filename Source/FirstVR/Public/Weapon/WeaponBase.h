@@ -11,6 +11,7 @@ class UWeaponDataAsset;
 class UWeaponStepComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFired, float, Recoil);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponFireAborted);
 
 UCLASS(Abstract)
 class FIRSTVR_API AWeaponBase : public AActor
@@ -28,9 +29,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	bool IsFiring() const { return CurrentStepIndex != INDEX_NONE; }
 
+	/** 지금 RequestFire를 부르면 흐름이 시작되는지(진행 중이 아니고 FireRate 간격이 지났는지). 연발 입력이 매 프레임 확인한다. */
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	bool CanRequestFire() const;
+
 	/** 투사체를 발사한 직후. 반동 세기(Recoil × RecoilScale)를 넘긴다. 발사 피드백은 이 이벤트를 구독해서 준다. */
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FOnWeaponFired OnFired;
+
+	/** 어떤 단계가 Failed를 보고해 발사 흐름이 중단된 직후. */
+	UPROPERTY(BlueprintAssignable, Category = "Weapon")
+	FOnWeaponFireAborted OnFireAborted;
 
 protected:
 	virtual void BeginPlay() override;
@@ -45,6 +54,9 @@ protected:
 private:
 	void BuildSteps();
 	void RunStep(int32 Index);
+
+	/** 마지막 발사 뒤 FireRate 간격이 아직 지나지 않았는지. */
+	bool IsCoolingDown() const;
 
 	UFUNCTION()
 	void HandleStepResult(EStepResult Result);
