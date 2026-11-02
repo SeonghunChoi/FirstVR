@@ -282,6 +282,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   - 템플릿 `BP_GrabComponent` 분석: `Custom` 잡기는 `IsHeld`와 `MotionControllerRef`(잡은 손)만 기록하고 `OnGrabbed`·햅틱을 낸다. 물리를 끄거나 붙이지 않는다. 놓을 때도 `IsHeld = false` 후 `OnDropped`만 낸다. Free/Snap 놓기는 잡기 컴포넌트의 부모(`Body`)를 손에서 떼고 `bSimulateOnDrop`이면 물리를 켠다. `GetHeldByHand`는 `MotionControllerRef`의 `MotionSource` 앞 네 글자로 판별하므로 `Custom`에서도 맞다.
   - 그래서 이어받기(5-3c)에서는 주 손이 떨어질 때 템플릿이 뗀 무기를 보조 손에 다시 붙이고, 보조 손까지 놓을 때 떼고 물리를 되돌리는 일을 직접 한다.
   - 단계는 손을 `SetMainHand`/`SetSupportHand(USceneComponent*)`로 받는다(놓이면 None). 블루프린트 자식이 두 잡기 컴포넌트의 `MotionControllerRef`를 넘긴다.
+  - 두 손 조준(5-3b): 조준을 시작할 때 무기 루트가 붙은 부모(주 손)와 상대 트랜스폼을 저장하고, 매 틱 그 한 손 자세에서 출발해 주 손잡이를 축으로 "주 손잡이 → 보조 손잡이" 방향을 "주 손잡이 → 보조 손" 방향으로 돌린다(최소 회전이라 손목 비틀기는 주 손을 따른다). 지난 프레임 결과에 누적하지 않으므로 오차가 쌓이지 않고, 보조 손을 놓으면 저장한 상대 트랜스폼으로 한 손 자세를 되돌린다. 손 위치가 갱신된 뒤 계산하도록 `TG_PostPhysics`에서 틱한다.
 - 스텝은 셋으로 나눈다: 보조 손 상태와 반동 배율 → 두 손 조준 → 보조 손 이어받기.
 
 ---
