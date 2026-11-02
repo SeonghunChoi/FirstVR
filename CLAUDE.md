@@ -209,7 +209,10 @@ Content/Portfolio/
 ### Step 5. 확장성 증명 (`Docs/PLAN.md` Phase 3)
 - 5-1. `USafetyStep`: 잠금 상태, 잠겨 있으면 Failed + 피드백, `ToggleSafety`/`SetLocked`, 배치별 초기 잠금 → 일반 Play에서 키로 토글
 - 5-2. 입력 부모 `UWeaponInputComponent` 분리(트리거 리팩터링) + `USafetyInputComponent`(잡은 손 A/X) → VR Preview
-- 5-3. 두 손 파지 `UTwoHandGripStep`: 보조 손잡이, `RecoilScale` 기록 (**설계 판단**)
+- 5-3. 두 손 파지 `UTwoHandGripStep` (설계 판단 완료, `Docs/PLAN.md` 4.10)
+  - 5-3a. 보조 손잡이(붙이지 않는 잡기) 상태 + 한 손/두 손 `RecoilScale` 기록, 항상 Success → VR Preview에서 `FIRE` 로그·햅틱 세기
+  - 5-3b. 두 손 조준: 두 손일 때만 틱, 총구를 주 손잡이 → 보조 손 방향으로
+  - 5-3c. 주 손을 놓으면 보조 손이 이어받기, 보조 손까지 놓으면 떨어짐
 - 5-4. 소총: 새 탄 데이터 + `DA_Rifle` + `BP_RifleWeapon`, 새 C++ 없이 기존 컴포넌트 재조합
 - 5-5. 빈 무기에 컴포넌트를 붙여 가는 시나리오 정리 (조합표, 스크린샷)
 - ✅ 마일스톤: `소총 = 파지 → 안전장치 → 탄창 → 발사`를 추가 C++ 없이 조립
@@ -305,8 +308,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 5-2: 추상 부모 `UWeaponInputComponent`(`EnableForHand`/`DisableForHand`, `IsHandInputEnabled`, `FindGripComponent`, 손별 `Left/RightContext`·`Left/RightAction`, 자식은 `HandleAction`만 재정의, 켜진 입력 컴포넌트가 없을 때만 액터 입력 끔), `UTriggerInputComponent`는 `RequestFire`·햅틱만, `USafetyInputComponent`(같은 액터 `USafetyStep::ToggleSafety`), 바뀐 이름은 `DefaultEngine.ini` `[CoreRedirects]`로 연결 — 빌드, `Portfolio/Input/IA_Safety_*`·`IMC_Safety_*`(A/X 누름), `BP_SafetyInput`(`BP_TriggerInput` 그래프 복제), `BP_TestWeapon`에 부착, VR Preview에서 잡기 → `B`로 풀기 → 발사·햅틱 → 다시 잠금 → `Safety on` 중단 → 놓으면 마지막 하나만 `actor input off` 확인
   - 처음엔 A/X가 무반응: 새 IMC가 `Default Mapping Contexts`에 없어 OpenXR 액션으로 등록되지 않았음 → 등록(`Add Immediately` 끔)으로 해결 (3.6)
 
+- [x] Step 5-3a: `UTwoHandGripStep`(추상, 항상 Success, `SetMainHand`/`SetSupportHand`(손 `USceneComponent`, 놓이면 None), `IsTwoHanded`, `One/TwoHandRecoilScale`=1.0/0.4를 `RecoilScale`에 곱함, `GripComponentName`="Grip"·`SupportComponentName`="SupportGrip") — 빌드, `BP_TwoHandGripStep`(BeginPlay에서 두 잡기 컴포넌트의 `OnGrabbed`/`OnDropped` 구독 → `MotionControllerRef` 전달), `BP_TestWeapon`에 `SupportGrip`(`BP_GrabComponent`, Custom) 추가, `DA_TestWeapon` `FireSequence`=[`BP_TwoHandGripStep`, `BP_SafetyStep`, `MagazineStep`]. VR Preview에서 한 손 x1.00, 두 손 x0.40 → `FIRE` `Recoil 0.40`·햅틱 0.40, 보조 손만 잡아도 무기는 붙지 않음 확인
+  - 블루프린트에서 다른 컴포넌트의 변수는 그 컴포넌트 변수 핀에서 GET으로 꺼낸다 (셀프 대상 SET 노드를 놓으면 `Target` 연결 오류)
+
 ### 현재 위치
-- **Step 5-3** 시작 전 (두 손 파지 `UTwoHandGripStep`, 설계 판단)
+- **Step 5-3b** (두 손 조준) 시작 전
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -327,3 +333,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-01: 절뚝임 자세는 절차적 보정(골반 내림 + 다친 발 IK 목표 올림 + `Leg IK`)이다. 다친 다리는 절뚝임을 시작시킨 탄이 맞은 쪽이고, 적 데이터 `LegBones`를 `LeftLegBones`/`RightLegBones`로 나눠 구분한다. `OnLimpStarted(InjuredLeg)`를 C++ 부모 `UEnemyAnimInstance`가 구독하고 오프셋을 계산해 애님 그래프에 넘긴다. 상태 머신 없이 `LimpAlpha` 블렌드. (`Docs/PLAN.md` 6.7)
 - 2026-11-01: 사망은 모터를 끈 전신 래그돌이고 `UHitReaction`이 `OnDied`를 구독해 맡는다(메시 물리를 만지는 컴포넌트는 하나). 사망 후 피격은 무시. 쓰러진 몸은 적 데이터 `CorpseLifeSpan`(초, 0이면 남김) 뒤 제거하고, 수명은 `UDamageReceiver`가 사망 시 `SetLifeSpan`으로 건다. (`Docs/PLAN.md` 6.8)
 - 2026-11-02: Step 5 순서는 안전장치 → 두 손 파지 → 소총 → 정리. 안전장치는 발사 단계 `USafetyStep`(잠기면 Failed, 배치별 초기값 `bInitiallyLocked`)이고, VR에서는 잡은 손의 A/X로 토글한다. 버튼은 입력 컴포넌트가 받으며, 트리거와 공통부분을 추상 부모 `UWeaponInputComponent`로 꺼낸다. 손 판별은 입력 BP 자식마다 잡기 컴포넌트를 구독한다. (`Docs/PLAN.md` 4.9)
+- 2026-11-02: 두 손 파지는 발사 조건이 아니다. `UTwoHandGripStep`은 항상 Success이고 한 손/두 손 `RecoilScale`을 기록한다. 보조 손을 잡으면 이 단계가 직접 틱으로 두 손 조준을 하고, 두 손 상태에서 주 손을 놓으면 보조 손이 무기를 이어받는다. 보조 손잡이는 무기를 손에 붙이지 않는 템플릿 잡기다. 5-3a/b/c로 나눠 진행. (`Docs/PLAN.md` 4.10)

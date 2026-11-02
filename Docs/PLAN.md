@@ -154,7 +154,14 @@ class UGripStep {
   +SetHeld(bool)
 }
 class UTwoHandGripStep {
+  +FName GripComponentName
   +FName SupportComponentName
+  +float OneHandRecoilScale
+  +float TwoHandRecoilScale
+  -USceneComponent MainHand
+  -USceneComponent SupportHand
+  +SetMainHand(Hand)
+  +SetSupportHand(Hand)
 }
 class USafetyStep {
   +bool bInitiallyLocked
@@ -265,6 +272,17 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   - 부모는 `EnableForHand`/`DisableForHand`, 손별 `LeftContext`/`RightContext`와 `LeftAction`/`RightAction`을 갖고, 자식은 `HandleAction`만 재정의한다. 트리거 쪽에서 바뀐 이름(`DisableTrigger`, `Left/RightFireAction`)은 `DefaultEngine.ini`의 `[CoreRedirects]`로 기존 블루프린트에 잇는다.
   - 입력 매핑 `IMC_Safety_Left/Right`는 OpenXR이 세션 시작 때 액션을 만들 수 있게 `Default Mapping Contexts`에 등록한다(`Add Immediately` 끔, 켜고 끄기는 입력 컴포넌트가 한다).
 - 어느 손인지는 지금처럼 입력 컴포넌트의 블루프린트 자식(`BP_TriggerInput`, `BP_SafetyInput`)이 각자 잡기 컴포넌트를 구독해 판별한다. C++ 형제 클래스라 그래프를 물려받지 못해 복제되므로, 입력 컴포넌트가 더 늘면 `UGripStep`이 잡은 손도 발행하는 방식을 다시 검토한다.
+
+### 4.10 결정: 두 손 파지 ✅
+
+- **보조 손은 발사 조건이 아니다.** `UTwoHandGripStep`은 항상 `Success`이고, 두 손이면 작은 `RecoilScale`, 한 손이면 큰 `RecoilScale`을 `FFireContext`에 기록한다. 발사 흐름을 멈추지 않는 첫 단계다. 배율 두 값은 단계 컴포넌트의 설정값(`EditDefaultsOnly`)이다.
+- **보조 손을 잡으면 두 손 조준을 한다.** 총구 방향을 주 손잡이에서 보조 손 쪽으로 매 틱 맞춘다. 조준도 `UTwoHandGripStep`이 직접 맡는다(두 손 파지에 관한 상태와 동작을 한 컴포넌트에 모은다). 두 손일 때만 틱을 켠다.
+- **두 손 상태에서 주 손만 놓으면 보조 손이 무기를 이어받는다.** 무기는 보조 손에 붙은 채 남고, 트리거 입력은 주 손잡이를 따라 꺼진다. 보조 손까지 놓으면 무기가 떨어진다.
+- 보조 손잡이도 템플릿 잡기 컴포넌트지만 **무기를 손에 붙이지 않는 잡기 종류**로 둔다. 붙이면 두 번째 손이 무기를 빼앗아 간다. 템플릿과의 연결은 `BP_GripStep`처럼 블루프린트 자식(`BP_TwoHandGripStep`)이 이름(`GripComponentName`, `SupportComponentName`)으로 두 잡기 컴포넌트를 찾아 구독한다.
+  - 템플릿 `BP_GrabComponent` 분석: `Custom` 잡기는 `IsHeld`와 `MotionControllerRef`(잡은 손)만 기록하고 `OnGrabbed`·햅틱을 낸다. 물리를 끄거나 붙이지 않는다. 놓을 때도 `IsHeld = false` 후 `OnDropped`만 낸다. Free/Snap 놓기는 잡기 컴포넌트의 부모(`Body`)를 손에서 떼고 `bSimulateOnDrop`이면 물리를 켠다. `GetHeldByHand`는 `MotionControllerRef`의 `MotionSource` 앞 네 글자로 판별하므로 `Custom`에서도 맞다.
+  - 그래서 이어받기(5-3c)에서는 주 손이 떨어질 때 템플릿이 뗀 무기를 보조 손에 다시 붙이고, 보조 손까지 놓을 때 떼고 물리를 되돌리는 일을 직접 한다.
+  - 단계는 손을 `SetMainHand`/`SetSupportHand(USceneComponent*)`로 받는다(놓이면 None). 블루프린트 자식이 두 잡기 컴포넌트의 `MotionControllerRef`를 넘긴다.
+- 스텝은 셋으로 나눈다: 보조 손 상태와 반동 배율 → 두 손 조준 → 보조 손 이어받기.
 
 ---
 
