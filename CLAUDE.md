@@ -110,6 +110,7 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
   - **새 VR 입력 매핑(IMC)은 `프로젝트 세팅 > Enhanced Input > Default Mapping Contexts`에 등록해야** OpenXR 런타임이 그 버튼을 보내 준다(세션 시작 시 이 목록으로 액션을 만든다). 코드가 잡을 때 켜는 매핑이면 `Add Immediately`는 끈다.
   - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼
+  - 두 손으로 동시에 잡으려면 `]`/`[`로 두 손을 함께 선택해야 하고, 이때 `U`를 떼면 양손이 같이 풀린다 (한 손만 놓는 동작은 시뮬레이터로 시험할 수 없다)
 - **일반 테스트**: 플레이 버튼 (VR 없이 로직 검증용)
 
 ---
@@ -314,8 +315,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 5-3b: `UTwoHandGripStep` 두 손 조준 — 두 손일 때만 틱(`TG_PostPhysics`), 조준 시작 시 무기 루트의 부모(주 손)·상대 트랜스폼·두 손잡이 액터 기준 위치 저장, 매 틱 저장한 한 손 자세에서 `FindBetweenNormals`로 주 손잡이를 축 삼아 보조 손을 향하게 회전, 보조 손을 놓으면 한 손 자세 복원(주 손을 놓아 이미 떨어졌으면 복원 안 함) — Rider 빌드, VR Preview에서 `Two-hand aim on/off`, 회전과 복원 확인
   - 두 손 상태에서 주 손을 놓으면 무기는 떨어지지만 보조 손의 Custom 잡기는 `Support held`로 남는다 → 5-3c에서 처리
 
+- [x] Step 5-3c: `UTwoHandGripStep` 보조 손 들기 — `UpdateSupportHold`가 "보조 손만 잡음"(`SupportHand && !MainHand`) 변화를 보고 `AttachToSupportHand`(물리 끄고 `KeepWorldTransform`으로 붙임) / 주 손이 다시 잡으면 `Main hand took over` / `DropFromSupportHand`(떼고 물리 켬), 상태 `bHeldBySupport` — Rider 빌드, VR Preview에서 보조 손잡이만 잡아 들고 옮기기·떨어뜨리기, 보조 손에 들린 무기를 주 손이 잡아 두 손 조준 복귀 확인
+  - **두 손 상태에서 주 손만 놓는 이어받기는 미검증**: 시뮬레이터는 두 손을 함께 선택해야 동시에 잡을 수 있고 `U`를 떼면 양손이 같이 풀린다. 같은 붙이기 경로(`AttachToSupportHand`)를 쓰므로 동작할 것으로 보고, 헤드셋이 생기면 확인한다
+
 ### 현재 위치
-- **Step 5-3c** (보조 손 이어받기) 시작 전
+- **Step 5-4** (소총: 새 탄 데이터 + `DA_Rifle` + `BP_RifleWeapon`) 시작 전
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -337,3 +341,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-01: 사망은 모터를 끈 전신 래그돌이고 `UHitReaction`이 `OnDied`를 구독해 맡는다(메시 물리를 만지는 컴포넌트는 하나). 사망 후 피격은 무시. 쓰러진 몸은 적 데이터 `CorpseLifeSpan`(초, 0이면 남김) 뒤 제거하고, 수명은 `UDamageReceiver`가 사망 시 `SetLifeSpan`으로 건다. (`Docs/PLAN.md` 6.8)
 - 2026-11-02: Step 5 순서는 안전장치 → 두 손 파지 → 소총 → 정리. 안전장치는 발사 단계 `USafetyStep`(잠기면 Failed, 배치별 초기값 `bInitiallyLocked`)이고, VR에서는 잡은 손의 A/X로 토글한다. 버튼은 입력 컴포넌트가 받으며, 트리거와 공통부분을 추상 부모 `UWeaponInputComponent`로 꺼낸다. 손 판별은 입력 BP 자식마다 잡기 컴포넌트를 구독한다. (`Docs/PLAN.md` 4.9)
 - 2026-11-02: 두 손 파지는 발사 조건이 아니다. `UTwoHandGripStep`은 항상 Success이고 한 손/두 손 `RecoilScale`을 기록한다. 보조 손을 잡으면 이 단계가 직접 틱으로 두 손 조준을 하고, 두 손 상태에서 주 손을 놓으면 보조 손이 무기를 이어받는다. 보조 손잡이는 무기를 손에 붙이지 않는 템플릿 잡기다. 5-3a/b/c로 나눠 진행. (`Docs/PLAN.md` 4.10)
+- 2026-11-02: 주 손 없이 보조 손잡이만 잡아도 무기가 보조 손에 들린다(이어받기와 같은 "보조 손만 잡음" 상태, 붙이기·내려놓기는 `UTwoHandGripStep`이 직접). 보조 손만으로는 쏠 수 없다. (`Docs/PLAN.md` 4.10)

@@ -10,6 +10,7 @@ class USceneComponent;
  * 두 손 파지 단계. 발사를 막지 않고 항상 Success이며, 두 손이면 TwoHandRecoilScale, 한 손이면 OneHandRecoilScale을 RecoilScale에 곱한다.
  * 주 손과 보조 손은 SetMainHand/SetSupportHand로 받는다(놓이면 None). 보조 손잡이는 무기를 손에 붙이지 않는 잡기다.
  * 두 손일 때만 틱을 켜고, 주 손잡이를 축으로 무기를 돌려 주 손잡이 → 보조 손잡이 방향이 보조 손을 향하게 한다.
+ * 주 손 없이 보조 손만 잡고 있으면(주 손을 놓았거나 보조 손잡이만 잡았을 때) 무기를 보조 손에 붙이고, 보조 손까지 놓으면 떼고 물리를 켠다.
  * 템플릿 잡기와의 연결은 블루프린트 자식(BP_TwoHandGripStep)이 한다.
  */
 UCLASS(Abstract)
@@ -68,6 +69,15 @@ private:
 	void UpdateTwoHandAim();
 	void BeginTwoHandAim();
 	void EndTwoHandAim();
+
+	/** 보조 손만 잡고 있는지가 바뀌었으면 무기를 보조 손에 붙이거나 내려놓는다. */
+	void UpdateSupportHold();
+	void AttachToSupportHand();
+	void DropFromSupportHand();
+
+	/** 무기가 보조 손에 붙어 있는지(주 손 없이 보조 손만 잡은 상태). */
+	UPROPERTY(VisibleInstanceOnly, Transient, Category = "Weapon|TwoHand|State")
+	bool bHeldBySupport = false;
 
 	/** 두 손 조준 중인지. 조준 중에만 틱이 켜진다. */
 	UPROPERTY(VisibleInstanceOnly, Transient, Category = "Weapon|TwoHand|State")
