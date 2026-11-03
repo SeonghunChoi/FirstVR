@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Enemy/EnemyDataAsset.h"
 #include "GameFramework/Character.h"
 #include "EnemyCharacter.generated.h"
 
@@ -10,7 +11,7 @@ class UPhysicalAnimationComponent;
 
 /**
  * 적의 몸. 캡슐 루트와 걷기 이동(ACharacter) 위에 피해 판정과 물리 피격 반응 컴포넌트를 만들어 둔다.
- * 피해, 절뚝임, 피격 반응, 래그돌 판단은 각 컴포넌트가 하고, 이 클래스는 몸 전체에 걸친 처리(사망 시 캡슐과 이동 정지)만 맡는다.
+ * 피해, 절뚝임, 피격 반응, 래그돌 판단은 각 컴포넌트가 하고, 이 클래스는 몸 전체에 걸친 처리(걷는 속도, 사망 시 캡슐과 이동 정지)만 맡는다.
  * 메시와 위치, 적 데이터는 블루프린트 자식에서 정한다.
  */
 UCLASS(Abstract)
@@ -39,6 +40,12 @@ protected:
 	TObjectPtr<UHitReaction> HitReaction;
 
 private:
+	/** 적 데이터의 걷는 속도를 캐릭터 무브먼트에 넣는다. 절뚝이면 LimpSpeedScale을 곱한다. */
+	void ApplyWalkSpeed();
+
+	UFUNCTION()
+	void HandleLimpStarted(ELegSide InjuredLeg);
+
 	UFUNCTION()
 	void HandleDied();
 };

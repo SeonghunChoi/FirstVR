@@ -41,6 +41,7 @@ public:
 	FOnEnemyLimpStarted OnLimpStarted;
 
 	bool IsLimping() const { return bLimping; }
+	const UEnemyDataAsset* GetEnemyData() const { return EnemyData; }
 	ELegSide GetInjuredLeg() const { return InjuredLeg; }
 
 	/** 체력이 0이 됐을 때 한 번. */
