@@ -64,6 +64,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Movement", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float LimpSpeedScale = 0.5f;
 
+	/** 공격 거리. 몸 중심에서 플레이어 머리 아래 바닥까지의 수평 거리다. 추적은 이 거리에서 멈추고, 공격은 이 거리 안에서 한다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack", meta = (ClampMin = "0.0", ForceUnits = "cm"))
+	float AttackRange = 100.f;
+
 	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))
 	float CorpseLifeSpan = 10.f;

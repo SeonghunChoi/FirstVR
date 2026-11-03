@@ -409,6 +409,13 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **탄 보급은 탄창 교체다.** 탄창을 따로 집는 액터로 만들고 `MagazineWell`에 끼우면 장전된다(3장 "권총: 외장 탄창 교체"). 탄의 원본을 탄창 액터로 옮길지 등 세부는 그 스텝에서 정한다.
 - 걷기는 `BS_Idle_Walk_Run`(Third Person 팩) 위에 기존 절뚝임 보정(6.7)을 얹는다. 새 애니메이션 에셋은 쓰지 않는다.
 
+**추적 (Step 6-3)**
+
+- **적이 쫓는 목표는 플레이어 머리(HMD) 아래 바닥이다.** VR 폰의 액터 위치는 트래킹 원점(플레이 공간 바닥)이라, 플레이어가 방 안에서 움직이면 폰 위치와 실제 플레이어가 어긋난다. 카메라 위치를 폰 바닥 높이로 내린 점을 쓴다. 6-4의 "주먹 ↔ HMD" 판정과 기준이 같다.
+- **목표 계산은 C++ State Tree 전역 태스크 `FEnemyTargetTask`가 한다.** 매 틱 `TargetLocation`(머리 아래 바닥), `Distance`(수평 거리), `AttackRange`, `bInRange`를 출력 칸으로 내고, 이동은 엔진 기본 `Move To` 태스크가 그 출력에 바인딩해서 한다. 판단에 쓰는 값이 State Tree 안에 모이고, 상태(추적·대기·공격)는 출력만 보고 고른다. 거리 안/밖은 경계에서 번갈아 바뀌지 않게 여유(`RangeHysteresis`)를 둔다.
+- **State Tree는 C++ `AEnemyAIController`가 돌린다.** 생성자에서 `StateTreeAI` 컴포넌트를 만들고, 폰을 잡고 게임이 시작된 뒤 시작하며 폰을 놓으면 멈춘다. 어떤 State Tree 에셋을 쓸지는 블루프린트 자식에서 정한다. `AEnemyCharacter`가 기본 AI 컨트롤러로 지정하고(배치·스폰 모두 자동 빙의), 사망하면 컨트롤러를 떼어 판단을 멈춘다.
+- **멈출 거리는 적 데이터 `AttackRange`다.** `Move To`의 멈추는 거리와 6-4의 "공격 거리 안" 조건이 같은 값을 쓰고, 적 종류마다 다르게 줄 수 있다.
+
 ---
 
 ## 7. 범위와 우선순위

@@ -356,9 +356,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 6-2: 적 데이터 `WalkSpeed`(150 cm/s)·`LimpSpeedScale`(0.5), `AEnemyCharacter`가 `BeginPlay`와 `OnLimpStarted`에서 `MaxWalkSpeed` 갱신, `UDamageReceiver::GetEnemyData`, `UEnemyAnimInstance::GroundSpeed`(폰 수평 속도) — 커맨드라인 빌드, `ABP_EnemyMannequin`의 `MM_Idle`을 `BS_Idle_Walk_Run` 블렌드 스페이스 플레이어(`Ground Speed`)로 교체, 레벨에 내비 메시 바운드 볼륨, 레벨 블루프린트 `M` → `AI MoveTo`(플레이어 폰) — 일반 Play에서 `Walk speed 150 (x1.00)`, 다가오는 중 `thigh_l` 48/40 → `Limp started (Left leg)` → `Walk speed 75 (x0.50)` 확인
   - 상속받은 C++ 변수는 `내 블루프린트 (My Blueprint)`에서 `상속된 변수 표시 (Show Inherited Variables)`를 켜야 보인다. 그래프 우클릭 검색(`Ground Speed`)은 설정과 상관없이 나온다
   - 출력 로그의 `LogCrowdFollowing: Unable to find RecastNavMesh ... UCrowdManager` 경고는 Play 종료(`BeginTearingDown`) 때만 나온다. 이동에는 영향 없음
+- [x] Step 6-3: `StateTree`·`GameplayStateTree` 플러그인, `Build.cs`에 `AIModule`·`StateTreeModule`·`GameplayStateTreeModule`, 적 데이터 `AttackRange`(100 cm), `AEnemyAIController`(`StateTreeAI` 컴포넌트, 자동 시작 끄고 폰을 잡고 게임이 시작된 뒤 `StartLogic`, 폰을 놓으면 `StopLogic`), 글로벌 작업 `FEnemyTargetTask`(머리 아래 바닥 `TargetLocation`·수평 `Distance`·`AttackRange`·`bInRange`, 들어올 때 +10 / 나갈 때 +`RangeHysteresis` 50), `AEnemyCharacter`가 기본 AI 컨트롤러·`PlacedInWorldOrSpawned`, 사망 시 `DetachFromControllerPendingDestroy` — 커맨드라인 빌드, `Portfolio/Enemies/BP_EnemyAIController`(`StateTreeAI`=`ST_Enemy`), `ST_Enemy`(스키마 `StateTree AI Component`, 글로벌 작업 `Enemy Target`, `Chase`(조건 `bInRange = False`, `다음으로 이동` 대상 ← `TargetLocation`·허용 가능 반경 ← `AttackRange`·대상 이동 허용치 30·반경 포함 둘 다 끔, 상태 완료 시 → `Root`), `Hold`(`딜레이 작업` 영구 실행, `On Tick` + `bInRange = False` → `Chase`)), `BP_EnemyManny` AI 컨트롤러 클래스 지정, 레벨 블루프린트 `M` 키 제거 — 일반 Play에서 1500 cm를 9.2초에 걸어와 `Target in range (109)` → `Chase` → `Hold` 한 번 전환, VR Preview에서 머리를 옮기면 `out of range (152)` → `Chase` → `in range (109)` → `Hold`, 머리 명중 사망 → `Body stopped` → `StopLogic ... 'Unpossessed'` → `State Tree stopped` 확인
+  - 상태 전환을 보려면 Play 중 콘솔 `log LogStateTree Verbose` (Play를 끝내면 꺼진다). `ST_Enemy` 에디터를 열어 두면 활성 상태가 강조된다
+  - `Target tracking started`는 컨트롤러의 `State Tree started`보다 먼저 찍힌다(`StartLogic` 안에서 글로벌 작업이 먼저 시작)
 
 ### 현재 위치
-- **Step 6-3** 시작 전 (State Tree 추적)
+- **Step 6-4** 시작 전 (공격)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -385,3 +388,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-02: 조정간은 새 컴포넌트 `USelectorInputComponent`가 A/X로 `안전 → 트리거 FireModes 순서`를 돌린다(안전장치 입력은 유지, 연발 소총만 교체). 연발 중 Failed면 반복을 멈추고 다시 당겨야 한다(코어 `OnFireAborted`). 트리거 입력은 놓음(`Completed`)을 받기 위해 템플릿 대신 트리거 없는 `IA_Fire_*`/`IMC_Fire_*`를 쓴다. (`Docs/PLAN.md` 4.11)
 - 2026-11-03: 5-5 결과물은 조합표(기존 무기 3종)와 빈 무기에서 다시 조립하는 따라하기 둘 다다. 다시 조립할 무기는 기존 연발 소총과 같은 조합이다. 연발은 5-4b에서 C++을 추가한 뒤 조립했으므로, 문서에는 무기마다 그때 늘어난 C++을 그대로 적는다. (`Docs/PLAN.md` 9.2)
 - 2026-11-03: 전투 구간은 적이 다가와 공격하고 플레이어 체력 0이면 실패, 웨이브 데이터를 다 막으면 승리. 적 판단은 State Tree, 공격 판정은 타격 순간(Anim Notify) 주먹 주변 ↔ HMD, 피해는 언리얼 기본 데미지(`ApplyDamage` → `OnTakeAnyDamage`, 총알 경로 `IHittable`은 그대로). 적의 몸은 C++ `AEnemyCharacter`(`ACharacter`). 탄 보급은 탄창 교체. (`Docs/PLAN.md` 6.9)
+- 2026-11-03: 적 추적 목표는 플레이어 머리(HMD) 아래 바닥. C++ State Tree 전역 태스크 `FEnemyTargetTask`가 목표 위치·거리·`AttackRange`·`bInRange`를 출력하고 엔진 기본 `Move To`가 바인딩한다. State Tree는 C++ `AEnemyAIController`(`StateTreeAI` 컴포넌트, 에셋은 BP 자식)가 돌리고, 멈출 거리는 적 데이터 `AttackRange`. (`Docs/PLAN.md` 6.9 추적)
