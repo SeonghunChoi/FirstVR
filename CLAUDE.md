@@ -353,9 +353,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 6-1: `AEnemyCharacter`(추상, `ACharacter`, 생성자에서 `DamageReceiver`·`PhysicalAnimation`·`HitReaction`, 메시 충돌 `Ragdoll` 프로필, `OnDied` 구독 → 캡슐 충돌 끔·이동 정지), 투사체가 `Pawn` 채널 무시(캡슐을 지나 메시 바디에 맞음) — 커맨드라인 빌드, `Portfolio/Enemies/BP_EnemyManny`(`SKM_Manny_Simple`, `ABP_EnemyMannequin`, 메시 Z -90·Yaw -90, `DA_Enemy_Mannequin`), 일반 Play에서 `thigh_r` 누적 48/40 `Limp started (Right leg)`, 머리 60 ×2 → `Died` → `Ragdoll` → `Body stopped` 확인. 기존 적 컴포넌트 코드 변경 없음
   - 콘텐츠 브라우저에서 스켈레탈 메시를 끌어 놓으면 블루프린트가 아니라 `SkeletalMeshActor`가 생긴다. 적은 블루프린트(`BP_EnemyManny`)를 끌어 놓는다
   - 옛 `BP_EnemyMannequin`(메시 루트)은 에디터에서 삭제(레벨 인스턴스 포함)
+- [x] Step 6-2: 적 데이터 `WalkSpeed`(150 cm/s)·`LimpSpeedScale`(0.5), `AEnemyCharacter`가 `BeginPlay`와 `OnLimpStarted`에서 `MaxWalkSpeed` 갱신, `UDamageReceiver::GetEnemyData`, `UEnemyAnimInstance::GroundSpeed`(폰 수평 속도) — 커맨드라인 빌드, `ABP_EnemyMannequin`의 `MM_Idle`을 `BS_Idle_Walk_Run` 블렌드 스페이스 플레이어(`Ground Speed`)로 교체, 레벨에 내비 메시 바운드 볼륨, 레벨 블루프린트 `M` → `AI MoveTo`(플레이어 폰) — 일반 Play에서 `Walk speed 150 (x1.00)`, 다가오는 중 `thigh_l` 48/40 → `Limp started (Left leg)` → `Walk speed 75 (x0.50)` 확인
+  - 상속받은 C++ 변수는 `내 블루프린트 (My Blueprint)`에서 `상속된 변수 표시 (Show Inherited Variables)`를 켜야 보인다. 그래프 우클릭 검색(`Ground Speed`)은 설정과 상관없이 나온다
+  - 출력 로그의 `LogCrowdFollowing: Unable to find RecastNavMesh ... UCrowdManager` 경고는 Play 종료(`BeginTearingDown`) 때만 나온다. 이동에는 영향 없음
 
 ### 현재 위치
-- **Step 6-2** 시작 전 (걷기 애니메이션)
+- **Step 6-3** 시작 전 (State Tree 추적)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 

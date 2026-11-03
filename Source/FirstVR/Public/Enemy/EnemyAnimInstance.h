@@ -7,7 +7,7 @@
 
 /**
  * 적 애니메이션 블루프린트의 부모. UDamageReceiver의 OnLimpStarted를 구독해 절뚝임 상태를 들고,
- * 애님 그래프가 그대로 꽂아 쓸 수 있게 골반과 발 IK 목표의 오프셋(컴포넌트 공간)을 매 프레임 계산한다.
+ * 애님 그래프가 그대로 꽂아 쓸 수 있게 이동 속도와 골반·발 IK 목표의 오프셋(컴포넌트 공간)을 매 프레임 계산한다.
  */
 UCLASS()
 class FIRSTVR_API UEnemyAnimInstance : public UAnimInstance
@@ -17,6 +17,10 @@ class FIRSTVR_API UEnemyAnimInstance : public UAnimInstance
 protected:
 	virtual void NativeBeginPlay() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	/** 땅 위 이동 속도(cm/s). 블렌드 스페이스(Idle·걷기·달리기)의 가로축에 꽂는다. */
+	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Movement")
+	float GroundSpeed = 0.f;
 
 	/** 절뚝임 자세에서 골반을 내리는 거리. 성한 다리는 Leg IK가 발을 붙잡아 무릎이 굽는다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp", meta = (ClampMin = "0.0", ForceUnits = "cm"))

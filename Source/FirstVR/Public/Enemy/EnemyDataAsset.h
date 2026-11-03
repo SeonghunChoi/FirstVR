@@ -56,6 +56,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0"))
 	float LimpThreshold = 40.f;
 
+	/** 걷는 속도(cm/s). 캐릭터 무브먼트의 최대 걷기 속도로 들어가고, 애니메이션은 실제 속도를 따라 Idle·걷기를 섞는다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Movement", meta = (ClampMin = "0.0", ForceUnits = "cm/s"))
+	float WalkSpeed = 150.f;
+
+	/** 절뚝이기 시작하면 걷는 속도에 곱하는 배율. 다리를 쏴서 접근을 늦추는 선택지가 된다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Movement", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float LimpSpeedScale = 0.5f;
+
 	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))
 	float CorpseLifeSpan = 10.f;

@@ -1,6 +1,7 @@
 #include "Enemy/EnemyAnimInstance.h"
 
 #include "Enemy/DamageReceiver.h"
+#include "GameFramework/Pawn.h"
 
 void UEnemyAnimInstance::NativeBeginPlay()
 {
@@ -24,6 +25,9 @@ void UEnemyAnimInstance::NativeBeginPlay()
 void UEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
+
+	const APawn* Pawn = TryGetPawnOwner();
+	GroundSpeed = Pawn ? Pawn->GetVelocity().Size2D() : 0.f;
 
 	LimpAlpha = FMath::FInterpConstantTo(LimpAlpha, bLimping ? 1.f : 0.f, DeltaSeconds, 1.f / LimpBlendTime);
 	PelvisOffset = FVector(0.f, 0.f, -PelvisDrop * LimpAlpha);
