@@ -326,13 +326,18 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 상속(자식 블루프린트)이 아니라 복제: 소총은 권총의 한 종류가 아니라 다른 조합이다
 
 - [x] Step 5-4b: `EFireMode`(`Single`/`Auto`), 코어 `CanRequestFire()`·`OnFireAborted`, 입력 부모에 `HandleActionReleased`(Completed 바인딩)·매핑 우선순위 1, `UTriggerInputComponent` 발사 모드(`FireModes` 설정값, `FireMode` 상태, 연발 중에만 틱으로 `CanRequestFire`일 때 요청, 놓거나 Failed면 멈춤), `USelectorInputComponent`(A/X로 안전 → `FireModes` 순서 순환) — 커맨드라인 빌드, `Portfolio/Input/IA_Fire_*`·`IMC_Fire_*`(트리거 없음, 키 `Oculus Touch (L/R) 트리거`, `Default Mapping Contexts` 등록), `BP_TriggerInput`을 `IMC_Fire_*`/`IA_Fire_*`로 교체, `BP_SelectorInput`(`BP_SafetyInput` 복제 후 부모 변경), `BP_AutoRifleWeapon`(`BP_RifleWeapon` 복제, 안전장치 입력 → 조정간, `FireModes`=[`Single`, `Auto`]) — VR Preview에서 `B`로 안전 → 단발 → 연발, 단발은 당길 때 한 발, 연발은 약 0.17초 간격(`FireRate` 6) 반복 후 놓으면 `trigger released`, 빈 탄창에서는 한 번 `Empty` 후 `fire aborted`로 멈춤 확인
-  - 미확인: 연발 → 안전 순환, 권총·단발 소총 회귀 (같은 코드 경로라 위험은 낮음)
+  - 미확인: 권총·단발 소총 회귀 (같은 코드 경로라 위험은 낮음). 연발 → 안전 순환은 5-5b에서 확인
   - 출력 로그의 `IMC_* has a Description, "" ... Identical localized descriptions` 경고는 IMC의 `Description`을 비워 둬서다. 이름으로 대체되어 동작에는 문제없고, IMC마다 `Description`을 채우면 사라진다
 
 - [x] Step 5-5a: `Docs/WEAPON_ASSEMBLY.md`(조립 규칙, 권총·단발 소총·연발 소총 조합표와 흐름 한 줄, 무기마다 늘어난 C++, 5-5b 계획), 스크린샷 6장 `Docs/Images/Assembly/`(세 무기 `Components` 패널, `DA_Pistol`·`DA_Rifle`, 연발 소총 `Fire Modes`) — 스크린샷과 표 대조, `Recoil`/`FireRate`(권총 1.0/3, 소총 1.5/6)와 외형 행 추가
 
+- [x] Step 5-5b: 빈 `AWeaponBase` BP에서 다시 조립 — `Portfolio/Weapons/BP_AssembledRifle` + `Portfolio/Data/DA_AssembledRifle`, 단계 0(빈 무기 `WeaponData is not set`) → 1(잡기·트리거, `No ammo in context`) → 2(탄창, 3발 후 `Fire aborted at step 2/2`) → 3(안전장치, 데이터만 먼저 넣어 `No component for step` 확인) → 4(두 손, `Recoil` 1.50 → 0.60) → 5(조정간·`FireModes`=[`Single`, `Auto`], 데이터 변경 없음, 연발 반복·떼면 멈춤·안전에서 `fire aborted`·빈 탄창 멈춤), 단계마다 VR Preview 로그와 스크린샷 `Docs/Images/Assembly/step*_*.png`, `Docs/WEAPON_ASSEMBLY.md` 4장에 결과와 연발 소총 대조표. C++ 빌드 없음
+  - `BP_AutoRifleWeapon` 외형 `Shoulder` → `Gunstock` 이름 변경, `autorifle_components.png` 다시 촬영
+  - 재조립 무기에는 `MagazineWell`(쓰는 시스템이 없는 자리 표시)을 넣지 않았다
+- [x] ✅ **Step 5 마일스톤**: `소총 = 파지 → 안전장치 → 탄창 → 발사`를 추가 C++ 없이 조립 (단발 소총 5-4a, 빈 무기에서 연발 소총 재조립 5-5b)
+
 ### 현재 위치
-- **Step 5-5b** 다음 (빈 무기에서 연발 소총 조합 다시 조립)
+- **Step 5 완료.** 다음은 Step 6(`Docs/PLAN.md` Phase 4 전투 구간)의 스텝화
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
