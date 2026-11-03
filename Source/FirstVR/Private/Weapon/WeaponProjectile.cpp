@@ -1,4 +1,4 @@
-#include "Weapon/WeaponProjectile.h"
+﻿#include "Weapon/WeaponProjectile.h"
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -15,6 +15,8 @@ AWeaponProjectile::AWeaponProjectile()
 	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	Collision->InitSphereRadius(2.f);
 	Collision->SetCollisionProfileName(TEXT("BlockAllDynamic"));
+	// 캐릭터 캡슐(Pawn)은 지나쳐서 그 안의 메시 바디에 맞아야 본 이름이 나온다.
+	Collision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	SetRootComponent(Collision);
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));

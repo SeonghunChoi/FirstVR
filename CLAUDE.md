@@ -222,8 +222,21 @@ Content/Portfolio/
   - 5-5b. 빈 무기에서 다시 조립: `AWeaponBase` 빈 BP에 파지 → 탄창 → 안전장치 → 두 손 → 조정간 순서로 붙이며 단계마다 VR Preview 로그·스크린샷, 결과는 연발 소총과 같은 조합
 - ✅ 마일스톤: `소총 = 파지 → 안전장치 → 탄창 → 발사`를 추가 C++ 없이 조립
 
-### Step 6 이후
-- `Docs/PLAN.md` Phase 4(전투 구간)를 같은 방식으로 스텝화한다.
+### Step 6. 전투 구간 (`Docs/PLAN.md` Phase 4, 설계 6.9)
+- 6-1. `AEnemyCharacter`(C++, `ACharacter`): 캡슐 루트, 메시 아래로, 기존 적 컴포넌트를 생성자에서, 사망 시 캡슐·이동 정지 → 새 적 BP로 일반 Play에서 부위 피해·절뚝임·래그돌 회귀
+- 6-2. 걷기: 애님 블루프린트에 `BS_Idle_Walk_Run`(속도) + 절뚝임 보정 유지, 적 데이터 이동 속도·절뚝일 때 배율
+- 6-3. State Tree 추적: 내비메시, AI 컨트롤러, 플레이어를 향한 MoveTo → VR Preview에서 다가옴
+- 6-4. 공격: 공격 거리 상태, `MM_Attack_*` 몽타주, Anim Notify 타격 순간 주먹 주변 ↔ HMD 판정, `ApplyDamage`, 적 데이터 공격 값
+- 6-5. 플레이어 체력: `OnTakeAnyDamage` 구독 컴포넌트, 피격 피드백, 0이면 실패와 재시작
+- 6-6. 웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리
+- 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (세부 설계 판단은 이 스텝에서)
+- 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
+- 6-9. 플레이 테스트와 데이터 튜닝
+- 6-10. 실기기 검증 (헤드셋 확보 시, 시뮬레이터 런타임 토글 해제)
+- ✅ 마일스톤: VR Preview에서 무기를 집어 웨이브를 막아 내거나 맞아서 실패하는 한 구간
+
+### Step 7 이후
+- `Docs/PLAN.md` Phase 5(PDF 제작)
 
 ---
 
@@ -336,8 +349,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 재조립 무기에는 `MagazineWell`(쓰는 시스템이 없는 자리 표시)을 넣지 않았다
 - [x] ✅ **Step 5 마일스톤**: `소총 = 파지 → 안전장치 → 탄창 → 발사`를 추가 C++ 없이 조립 (단발 소총 5-4a, 빈 무기에서 연발 소총 재조립 5-5b)
 
+- [x] Step 6 설계 판단과 스텝 나누기 (`Docs/PLAN.md` 6.9)
+- [x] Step 6-1: `AEnemyCharacter`(추상, `ACharacter`, 생성자에서 `DamageReceiver`·`PhysicalAnimation`·`HitReaction`, 메시 충돌 `Ragdoll` 프로필, `OnDied` 구독 → 캡슐 충돌 끔·이동 정지), 투사체가 `Pawn` 채널 무시(캡슐을 지나 메시 바디에 맞음) — 커맨드라인 빌드, `Portfolio/Enemies/BP_EnemyManny`(`SKM_Manny_Simple`, `ABP_EnemyMannequin`, 메시 Z -90·Yaw -90, `DA_Enemy_Mannequin`), 일반 Play에서 `thigh_r` 누적 48/40 `Limp started (Right leg)`, 머리 60 ×2 → `Died` → `Ragdoll` → `Body stopped` 확인. 기존 적 컴포넌트 코드 변경 없음
+  - 콘텐츠 브라우저에서 스켈레탈 메시를 끌어 놓으면 블루프린트가 아니라 `SkeletalMeshActor`가 생긴다. 적은 블루프린트(`BP_EnemyManny`)를 끌어 놓는다
+  - 옛 `BP_EnemyMannequin`(메시 루트)은 에디터에서 삭제(레벨 인스턴스 포함)
+
 ### 현재 위치
-- **Step 5 완료.** 다음은 Step 6(`Docs/PLAN.md` Phase 4 전투 구간)의 스텝화
+- **Step 6-2** 시작 전 (걷기 애니메이션)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -363,3 +381,4 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-02: 연발은 발사 단계가 아니라 트리거 입력 컴포넌트가 맡는다(누르는 동안 반복 요청, 속도는 코어 `FireRate`). 쓸 수 있는 모드는 트리거 설정값, 현재 모드는 상태값. 단계는 약실 상태(볼트액션) 같은 "이번 한 발" 조건에 쓴다. 단발 소총(5-4a) → 발사 모드(5-4b). (`Docs/PLAN.md` 4.11)
 - 2026-11-02: 조정간은 새 컴포넌트 `USelectorInputComponent`가 A/X로 `안전 → 트리거 FireModes 순서`를 돌린다(안전장치 입력은 유지, 연발 소총만 교체). 연발 중 Failed면 반복을 멈추고 다시 당겨야 한다(코어 `OnFireAborted`). 트리거 입력은 놓음(`Completed`)을 받기 위해 템플릿 대신 트리거 없는 `IA_Fire_*`/`IMC_Fire_*`를 쓴다. (`Docs/PLAN.md` 4.11)
 - 2026-11-03: 5-5 결과물은 조합표(기존 무기 3종)와 빈 무기에서 다시 조립하는 따라하기 둘 다다. 다시 조립할 무기는 기존 연발 소총과 같은 조합이다. 연발은 5-4b에서 C++을 추가한 뒤 조립했으므로, 문서에는 무기마다 그때 늘어난 C++을 그대로 적는다. (`Docs/PLAN.md` 9.2)
+- 2026-11-03: 전투 구간은 적이 다가와 공격하고 플레이어 체력 0이면 실패, 웨이브 데이터를 다 막으면 승리. 적 판단은 State Tree, 공격 판정은 타격 순간(Anim Notify) 주먹 주변 ↔ HMD, 피해는 언리얼 기본 데미지(`ApplyDamage` → `OnTakeAnyDamage`, 총알 경로 `IHittable`은 그대로). 적의 몸은 C++ `AEnemyCharacter`(`ACharacter`). 탄 보급은 탄창 교체. (`Docs/PLAN.md` 6.9)
