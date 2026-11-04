@@ -2,8 +2,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "Engine/CollisionProfile.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogPlayer, Log, All);
+#include "Player/PlayerHealth.h"
 
 UPlayerBody::UPlayerBody()
 {

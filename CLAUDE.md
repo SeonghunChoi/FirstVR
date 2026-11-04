@@ -229,7 +229,11 @@ Content/Portfolio/
 - 6-2. 걷기: 애님 블루프린트에 `BS_Idle_Walk_Run`(속도) + 절뚝임 보정 유지, 적 데이터 이동 속도·절뚝일 때 배율
 - 6-3. State Tree 추적: 내비메시, AI 컨트롤러, 플레이어를 향한 MoveTo → VR Preview에서 다가옴
 - 6-4. 공격: 공격 거리 상태, `MM_Attack_*` 몽타주, Anim Notify 타격 순간 주먹 주변 ↔ HMD 판정, `ApplyDamage`, 적 데이터 공격 값
-- 6-5. 플레이어 체력: `OnTakeAnyDamage` 구독 컴포넌트, 피격 피드백, 0이면 실패와 재시작
+- 6-5. 플레이어 체력 (설계 판단 완료, `Docs/PLAN.md` 6.9)
+  - 6-5a. `UPlayerHealth`(`OnTakeAnyDamage` 구독, `OnHealthChanged`/`OnDied`) + C++ 게임 모드 뼈대(`SetPlayerDefaults`에서 구독, 실패 상태) + 콘솔 명령 → 로그
+  - 6-5b. `UPlayerHitFeedback`: 화면 붉게 번쩍임, 양손 진동, 피격음
+  - 6-5c. 왼손 손목 체력 위젯
+  - 6-5d. 실패 화면(3D 위젯) + 위젯 포인터로 '다시 시작' → 레벨 다시 열기
 - 6-6. 웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리
 - 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (세부 설계 판단은 이 스텝에서)
 - 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
@@ -371,9 +375,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 나이아가라 템플릿 `DynamicBeam`은 루프마다 빔을 새로 만들어 주기적으로 꺼진다. 계속 켜 둘 빔은 한 번만 생성하고 파티클이 죽지 않게 한다
   - 놓으면 `Laser off`로 꺼짐 확인. 소총들에는 아직 붙이지 않음
 
+- [x] Step 6-5a: `UPlayerHealth`(`Player/`, 폰 `OnTakeAnyDamage` 구독, `MaxHealth` 100, `TakeHealthDamage`, 시작할 때 한 번·바뀔 때마다 `OnHealthChanged(Current, Max, Damage)`, 0이면 `OnDied`, 죽은 뒤 피해 무시, `LogPlayer`를 여기로 옮김), `AFirstVRGameMode`(`Game/`, `SetPlayerDefaults`에서 `OnDied` 구독 → `EEncounterState::Failed`, `OnEncounterStateChanged`, `RestartEncounter`는 현재 레벨 다시 열기, `LogEncounter`), 콘솔 명령 `Player.Damage [Amount]`·`Encounter.Restart`, `UPlayerBody`는 스폰 중 충돌을 끄고 BeginPlay에서 켬 — 빌드, `Portfolio/Game/BP_FirstVRGameMode`(`L_WeaponTest` 월드 세팅 게임 모드 오버라이드), `BP_XRPawn`에 `Player Health` 부착 — VR Preview에서 `Watching ... health` → `Health 100/100`, 적 공격 20 ×5 → `Player died` → `Encounter Failed`, `Encounter.Restart` → `Restarting L_WeaponTest` → 다시 `Watching`·`Health 100/100` 확인
+  - 일반 Play는 헤드셋이 없어 카메라가 폰 원점(바닥, `PlayerStart` Z 0)에 있고 몸 캡슐이 50cm라 적 공격 시험은 VR Preview에서 한다
+  - 죽은 뒤에도 적은 계속 공격한다. 실패 시 적을 멈추는 것은 6-5d/6-6에서
+
 ### 현재 위치
-- **Step 6-4**와 레이저 사이트 완료
-- 다음: Step 6-5 플레이어 체력
+- **Step 6-5b** 다음 (피격 피드백 `UPlayerHitFeedback`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -405,4 +412,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 공격 몽타주의 루트 모션은 살리고, 플레이어 몸 캡슐 `UPlayerBody`(HMD를 따라가는 `Pawn` 캡슐, `BP_XRPawn`에 부착)가 적을 막는다. 적 타격은 몸 캡슐 전체에 판정한다(노티파이 `Radius` 기본 15cm, 캡슐 표면까지 거리). 템플릿 폰에 충돌체가 없어 적이 플레이어를 지나쳐 타격이 머리 뒤에서 났기 때문이다. (`Docs/PLAN.md` 6.9 공격)
 - 2026-11-04: 절뚝임 `Leg IK`는 절뚝일 때만 켜고 몽타주 재생 중에는 끈다(`UEnemyAnimInstance::LegIKAlpha` = `LimpAlpha` × (1 − `DefaultSlot` 몽타주 가중치)). 항상 켜 두면 발차기 발이 `ik_foot`에 묶여 바닥에 남았다. (`Docs/PLAN.md` 6.9 공격)
 - 2026-11-04: 레이저 사이트는 발사 단계가 아닌 조준 보조 부품 `ULaserSightComponent`(추상)다. 잡았을 때만 켜고(BP 자식 `BP_LaserSight`가 잡기 컴포넌트 구독), `Muzzle`에 붙인 나이아가라 빔(`DynamicBeam` 템플릿에서 시작)에 매 틱 트레이스한 시작·끝 위치를 User Parameter로 넘긴다. 트레이스는 `Pawn`과 무기 자신을 무시한다. (`Docs/PLAN.md` 4.12)
+- 2026-11-04: 플레이어 체력은 폰 컴포넌트 `UPlayerHealth`(`OnTakeAnyDamage` 구독, `OnHealthChanged`/`OnDied` 발행만)가 갖는다. 피격 피드백(화면 붉게·양손 진동·피격음)은 `UPlayerHitFeedback`, 남은 체력은 왼손 손목 3D 위젯이 따로 구독한다. 실패·웨이브 같은 구간 규칙은 C++ 게임 모드가 `SetPlayerDefaults`에서 `OnDied`를 구독해 맡고, 실패하면 눈앞 실패 화면(3D 위젯)의 '다시 시작'을 손 위젯 포인터로 눌러 레벨을 다시 연다. 6-5a~d로 나눠 진행. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
