@@ -384,8 +384,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `Fire_Cue`는 one-shot이 아니라 `PlaySound2D` 때 `orphaned sound` 경고가 나온다. 임시 소리라 그대로 두고, 짧은 사운드 웨이브로 교체하면 사라질 것
   - 진동은 시뮬레이터에서 느낄 수 없어 미확인
 
+- [x] Step 6-5c: `UPlayerHealthWidget`(`UI/`, 추상 `UUserWidget`, `BindWidget` `HealthBar`·`BindWidgetOptional` `HealthText`, `NativeConstruct`에서 `GetOwningPlayerPawn`의 `UPlayerHealth` 구독(디자인 타임 제외)·구독 즉시 현재 값 표시, `NativeDestruct`에서 해제, `BindToHealth`, `OnHealthDisplayUpdated`), `Build.cs`에 `UMG`·`Slate`/`SlateCore` — 빌드, `Portfolio/UI/WBP_WristHealth`(Vertical Box > `HealthBar`·`HealthText`), `BP_XRPawn` `MotionControllerLeftGrip` 아래 Widget `WristHealth`(`Space` World, `Draw Size` 200×60, 스케일 0.05, `NoCollision`, 뷰포트에서 손등에 맞춤) — VR Preview에서 `Health widget bound`, 손목을 따라 움직이고 맞을 때마다 막대·글자 갱신 확인
+  - 손 메시는 컨트롤러 아래에서 따로 회전돼 있어 컨트롤러 축으로 짐작한 위치는 손목 옆이 됐다. 손에 붙이는 것은 `BP_XRPawn` 뷰포트에서 손 메시를 보며 맞춘다
+  - 적을 잠깐 멈추려면 레벨 인스턴스의 `Auto Possess AI`를 `Disabled`로(컨트롤러가 없어 State Tree가 돌지 않음). 언리얼 액터에는 `SetActive` 같은 단일 스위치가 없다
+  - `Encounter.Restart` 뒤 표시는 직접 보지 않음 (새 Play마다 `bound`·`100/100`으로 시작하는 것은 확인, 다시 열기도 같은 경로)
+
 ### 현재 위치
-- **Step 6-5c** 다음 (왼손 손목 체력 위젯)
+- **Step 6-5d** 다음 (실패 화면 3D 위젯 + 위젯 포인터 '다시 시작')
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -419,4 +424,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 레이저 사이트는 발사 단계가 아닌 조준 보조 부품 `ULaserSightComponent`(추상)다. 잡았을 때만 켜고(BP 자식 `BP_LaserSight`가 잡기 컴포넌트 구독), `Muzzle`에 붙인 나이아가라 빔(`DynamicBeam` 템플릿에서 시작)에 매 틱 트레이스한 시작·끝 위치를 User Parameter로 넘긴다. 트레이스는 `Pawn`과 무기 자신을 무시한다. (`Docs/PLAN.md` 4.12)
 - 2026-11-04: 플레이어 체력은 폰 컴포넌트 `UPlayerHealth`(`OnTakeAnyDamage` 구독, `OnHealthChanged`/`OnDied` 발행만)가 갖는다. 피격 피드백(화면 붉게·양손 진동·피격음)은 `UPlayerHitFeedback`, 남은 체력은 왼손 손목 3D 위젯이 따로 구독한다. 실패·웨이브 같은 구간 규칙은 C++ 게임 모드가 `SetPlayerDefaults`에서 `OnDied`를 구독해 맡고, 실패하면 눈앞 실패 화면(3D 위젯)의 '다시 시작'을 손 위젯 포인터로 눌러 레벨을 다시 연다. 6-5a~d로 나눠 진행. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 피격 피드백 `UPlayerHitFeedback`은 `OnHealthChanged`(피해 > 0)를 구독해 카메라 포스트 프로세스 비네트(가장자리만 붉게, 세기 파라미터를 `FlashDuration` 동안 0으로, 쉴 때 가중치 0), 양손 같은 햅틱, 2D 피격음을 낸다. 피격음은 임시로 `Fire_Cue` 낮은 피치, 나중에 교체. (`Docs/PLAN.md` 6.9 플레이어 체력)
+- 2026-11-05: 체력 표시는 C++ 위젯 부모 `UPlayerHealthWidget`(`UI/`, `BindWidget` `HealthBar` 필수·`BindWidgetOptional` `HealthText`, 소유 폰의 `UPlayerHealth` 구독, 연출용 `OnHealthDisplayUpdated`)이 로직, WBP가 배치. 손목 위젯은 `BP_XRPawn` 왼손 컨트롤러 아래 Widget Component로 항상 보임. `Build.cs`에 `UMG`(공개)·`Slate`/`SlateCore`(비공개). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
