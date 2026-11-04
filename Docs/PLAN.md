@@ -298,6 +298,14 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - ✅ **연발 중 한 발이 Failed면 반복을 멈추고, 다시 당겨야 쏜다.** 코어가 `OnFireAborted`를 발행하고 트리거가 구독한다. 반복은 트리거가 연발 중에만 틱을 켜고 코어의 `CanRequestFire()`(진행 중 아님 + `FireRate` 간격 지남)가 참일 때 `RequestFire`를 부른다.
 - 놓음을 알아야 하므로 입력 부모가 `Completed`도 바인딩한다(`HandleActionReleased`, 입력이 꺼질 때도 호출). 템플릿 `IA_Shoot_*`은 `Pressed` 트리거라 누른 다음 프레임에 `Completed`가 와서 쓸 수 없다 → 트리거 없는 `IA_Fire_*`/`IMC_Fire_*`를 새로 만든다. 템플릿 `IMC_Weapon_*`(우선순위 0, 항상 켜짐)이 같은 키를 먼저 소비하지 않도록 무기 입력 매핑은 우선순위 1로 넣는다.
 
+### 4.12 결정: 레이저 사이트 ✅
+
+- 시뮬레이터에서 조준하기 어려워서 만든 조준 보조 부품이다. 발사 단계가 아니며, 붙이면 생기고 떼면 사라진다. 코어와 단계는 모른다.
+- **잡았을 때만 켠다.** 잡기 감지는 기존 입력·파지 부품과 같이 BP 자식(`BP_LaserSight`)이 템플릿 잡기 컴포넌트의 `OnGrabbed`/`OnDropped`를 구독해 C++ 부모 `ULaserSightComponent`(추상)의 `SetLaserEnabled`를 부른다. 템플릿 의존은 BP에만 남는다.
+- **나이아가라 빔으로 그린다.** 부품이 BeginPlay에서 `Muzzle`(이름으로 찾음)에 나이아가라 컴포넌트를 붙이고, 켜져 있는 동안 틱에서 `Muzzle` 앞으로 트레이스해 시작·끝 위치를 User Parameter로 넘긴다. 빔 에셋은 엔진 이미터 템플릿 `DynamicBeam`(매 프레임 끝점을 다시 계산)에서 시작한다.
+- 트레이스는 탄과 같은 대상(월드, 적 메시)을 맞히고 `Pawn`(적 캡슐, 플레이어 몸)과 무기 자신은 무시한다. 맞은 곳이 없으면 최대 거리까지 그린다.
+- 빔 에셋·최대 거리·`Muzzle` 이름·파라미터 이름은 부품 설정값(`EditDefaultsOnly`)이다.
+
 ---
 
 ## 5. 데이터 구조
