@@ -379,8 +379,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 일반 Play는 헤드셋이 없어 카메라가 폰 원점(바닥, `PlayerStart` Z 0)에 있고 몸 캡슐이 50cm라 적 공격 시험은 VR Preview에서 한다
   - 죽은 뒤에도 적은 계속 공격한다. 실패 시 적을 멈추는 것은 6-5d/6-6에서
 
+- [x] Step 6-5b: `UPlayerHitFeedback`(`Player/`, `OnHealthChanged` 피해 > 0 구독, `FlashMaterial`의 MID를 카메라 `AddOrUpdateBlendable`로 넣고 `Intensity`를 `FlashDuration` 0.4초 동안 1 → 0(이때만 틱, 쉴 때 가중치 0), 양손 `PlayHapticEffect`, `PlaySound2D`(`HitSoundVolume`/`HitSoundPitch`)) — 빌드, `Portfolio/Player/M_HitVignette`(도메인 Post Process, `PostProcessInput0` RGB와 `Color`(RGB)를 `ScreenPosition` `ViewportUV` → `RadialGradientExponential` → `1-x` × `Intensity` → `Saturate`로 `Lerp` → 이미시브 컬러), `BP_XRPawn`에 `Player Hit Feedback`(`PistolFireHapticEffect`, `Fire_Cue` 피치 0.5) — VR Preview에서 `Hit feedback ready`, 적 공격·`Player.Damage`마다 `Hit feedback`, 가장자리 붉게 번쩍임과 피격음 확인
+  - 머티리얼 `Lerp`는 A·B 채널 수가 같아야 한다. 벡터 파라미터는 `RGBA`가 아니라 `RGB` 핀을 쓴다. `Lerp` 노드는 검색에서 `LinearInterpolate`(단축키 `L`+클릭)
+  - `Fire_Cue`는 one-shot이 아니라 `PlaySound2D` 때 `orphaned sound` 경고가 나온다. 임시 소리라 그대로 두고, 짧은 사운드 웨이브로 교체하면 사라질 것
+  - 진동은 시뮬레이터에서 느낄 수 없어 미확인
+
 ### 현재 위치
-- **Step 6-5b** 다음 (피격 피드백 `UPlayerHitFeedback`)
+- **Step 6-5c** 다음 (왼손 손목 체력 위젯)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -413,4 +418,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 절뚝임 `Leg IK`는 절뚝일 때만 켜고 몽타주 재생 중에는 끈다(`UEnemyAnimInstance::LegIKAlpha` = `LimpAlpha` × (1 − `DefaultSlot` 몽타주 가중치)). 항상 켜 두면 발차기 발이 `ik_foot`에 묶여 바닥에 남았다. (`Docs/PLAN.md` 6.9 공격)
 - 2026-11-04: 레이저 사이트는 발사 단계가 아닌 조준 보조 부품 `ULaserSightComponent`(추상)다. 잡았을 때만 켜고(BP 자식 `BP_LaserSight`가 잡기 컴포넌트 구독), `Muzzle`에 붙인 나이아가라 빔(`DynamicBeam` 템플릿에서 시작)에 매 틱 트레이스한 시작·끝 위치를 User Parameter로 넘긴다. 트레이스는 `Pawn`과 무기 자신을 무시한다. (`Docs/PLAN.md` 4.12)
 - 2026-11-04: 플레이어 체력은 폰 컴포넌트 `UPlayerHealth`(`OnTakeAnyDamage` 구독, `OnHealthChanged`/`OnDied` 발행만)가 갖는다. 피격 피드백(화면 붉게·양손 진동·피격음)은 `UPlayerHitFeedback`, 남은 체력은 왼손 손목 3D 위젯이 따로 구독한다. 실패·웨이브 같은 구간 규칙은 C++ 게임 모드가 `SetPlayerDefaults`에서 `OnDied`를 구독해 맡고, 실패하면 눈앞 실패 화면(3D 위젯)의 '다시 시작'을 손 위젯 포인터로 눌러 레벨을 다시 연다. 6-5a~d로 나눠 진행. (`Docs/PLAN.md` 6.9 플레이어 체력)
+- 2026-11-04: 피격 피드백 `UPlayerHitFeedback`은 `OnHealthChanged`(피해 > 0)를 구독해 카메라 포스트 프로세스 비네트(가장자리만 붉게, 세기 파라미터를 `FlashDuration` 동안 0으로, 쉴 때 가중치 0), 양손 같은 햅틱, 2D 피격음을 낸다. 피격음은 임시로 `Fire_Cue` 낮은 피치, 나중에 교체. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
