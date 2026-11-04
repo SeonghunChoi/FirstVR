@@ -367,9 +367,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 시뮬레이터 이동 속도는 `%APPDATA%\MetaXR\MetaXrSimulator\persistent_data.json`의 `movement_speed`(지금 5.0)
   - `bToggleGrab`은 시뮬레이터 시험용 모드 스위치다(누를 때마다 잡기/놓기, 놓음 이벤트 무시). 실기기에서는 끈다
 
+- [x] 레이저 사이트(Step 6-4 뒤 추가, 시뮬레이터 조준 보조): `ULaserSightComponent`(추상, 잡았을 때만 `SetLaserEnabled`, `Muzzle` 아래 런타임 `UNiagaraComponent`, 매 틱 `WorldStatic`·`WorldDynamic`·`PhysicsBody` 트레이스(무기 자신·날아가는 탄 무시), `SetVariablePosition`으로 `BeamStart`/`BeamEnd`, 최대 3000cm), `Build.cs`에 `Niagara` — 빌드, `Portfolio/Weapons/FX/NS_LaserBeam`(`DynamicBeam` 템플릿, User Parameter `BeamStart`/`BeamEnd`(Position) → `Beam Emitter Setup`(Absolute), `Scale Curve` 0.5, `Emitter State` `Once` + `Infinite`, 수명 끝나도 파티클 유지), `Portfolio/Weapons/Steps/BP_LaserSight`(잡기 컴포넌트 `OnGrabbed`/`OnDropped` 구독), `BP_PistolWeapon`에 부착 — VR Preview에서 잡으면 `Laser on`·놓으면 `Laser off`, 빔이 맞은 곳에서 끊기고 끊김 없이 유지 확인
+  - 나이아가라 템플릿 `DynamicBeam`은 루프마다 빔을 새로 만들어 주기적으로 꺼진다. 계속 켜 둘 빔은 한 번만 생성하고 파티클이 죽지 않게 한다
+  - 놓으면 `Laser off`로 꺼짐 확인. 소총들에는 아직 붙이지 않음
+
 ### 현재 위치
-- **Step 6-4** 완료, 커밋 대기
-- 다음: 레이저 사이트 무기 부품(시뮬레이터 조준 보조, 설계 판단부터) → Step 6-5
+- **Step 6-4**와 레이저 사이트 완료
+- 다음: Step 6-5 플레이어 체력
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -400,4 +404,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 적 공격은 컴포넌트 `UEnemyAttack`(머리 쪽으로 돈 뒤 몽타주, 휘두르는 동안은 고정, 판정·`ApplyDamage`, `OnStrike`/`OnAttackFinished`)이 맡고, State Tree는 조건 `Enemy Can Attack` + 태스크 `Enemy Attack`으로 시작과 대기만 한다. 타격 순간·본·반경은 Anim Notify `Enemy Strike`, 몽타주 목록·피해·쿨다운은 적 데이터. (`Docs/PLAN.md` 6.9 공격)
 - 2026-11-04: 공격 몽타주의 루트 모션은 살리고, 플레이어 몸 캡슐 `UPlayerBody`(HMD를 따라가는 `Pawn` 캡슐, `BP_XRPawn`에 부착)가 적을 막는다. 적 타격은 몸 캡슐 전체에 판정한다(노티파이 `Radius` 기본 15cm, 캡슐 표면까지 거리). 템플릿 폰에 충돌체가 없어 적이 플레이어를 지나쳐 타격이 머리 뒤에서 났기 때문이다. (`Docs/PLAN.md` 6.9 공격)
 - 2026-11-04: 절뚝임 `Leg IK`는 절뚝일 때만 켜고 몽타주 재생 중에는 끈다(`UEnemyAnimInstance::LegIKAlpha` = `LimpAlpha` × (1 − `DefaultSlot` 몽타주 가중치)). 항상 켜 두면 발차기 발이 `ik_foot`에 묶여 바닥에 남았다. (`Docs/PLAN.md` 6.9 공격)
+- 2026-11-04: 레이저 사이트는 발사 단계가 아닌 조준 보조 부품 `ULaserSightComponent`(추상)다. 잡았을 때만 켜고(BP 자식 `BP_LaserSight`가 잡기 컴포넌트 구독), `Muzzle`에 붙인 나이아가라 빔(`DynamicBeam` 템플릿에서 시작)에 매 틱 트레이스한 시작·끝 위치를 User Parameter로 넘긴다. 트레이스는 `Pawn`과 무기 자신을 무시한다. (`Docs/PLAN.md` 4.12)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
