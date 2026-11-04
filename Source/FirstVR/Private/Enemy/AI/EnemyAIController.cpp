@@ -32,9 +32,26 @@ void AEnemyAIController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
+void AEnemyAIController::HaltLogic(const FString& Reason)
+{
+	if (bHalted)
+	{
+		return;
+	}
+
+	bHalted = true;
+	if (StateTreeAI->IsRunning())
+	{
+		// 상태를 빠져나가며 Move To는 이동을 멈추고, 공격 태스크는 몽타주를 끊는다(ExitState → CancelAttack).
+		StateTreeAI->StopLogic(Reason);
+	}
+	StopMovement();
+	UE_LOG(LogEnemy, Log, TEXT("[%s] State Tree halted (%s)"), *GetName(), *Reason);
+}
+
 void AEnemyAIController::TryStartLogic()
 {
-	if (!HasActorBegunPlay() || !GetPawn() || StateTreeAI->IsRunning())
+	if (bHalted || !HasActorBegunPlay() || !GetPawn() || StateTreeAI->IsRunning())
 	{
 		return;
 	}

@@ -110,6 +110,7 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
   - **새 VR 입력 매핑(IMC)은 `프로젝트 세팅 > Enhanced Input > Default Mapping Contexts`에 등록해야** OpenXR 런타임이 그 버튼을 보내 준다(세션 시작 시 이 목록으로 액션을 만든다). 코드가 잡을 때 켜는 매핑이면 `Add Immediately`는 끈다.
   - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼
+  - 템플릿 메뉴·실패 화면 버튼은 레이저로 가리키고 시뮬레이터 마우스 왼쪽 클릭으로 누른다
   - 잡기 토글: `BP_XRPawn`의 `bToggleGrab`(기본값)을 켜면 `U`를 한 번 눌러 잡고 한 번 더 눌러 놓는다. 실기기에서는 끈다
   - 시험용 콘솔 명령(프리뷰 창에서 `~`): `Enemy.Limp [Left|Right]` 절뚝임, `Enemy.Kill` 사망
   - 두 손으로 동시에 잡으려면 `]`/`[`로 두 손을 함께 선택해야 하고, 이때 `U`를 떼면 양손이 같이 풀린다 (한 손만 놓는 동작은 시뮬레이터로 시험할 수 없다)
@@ -389,8 +390,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 적을 잠깐 멈추려면 레벨 인스턴스의 `Auto Possess AI`를 `Disabled`로(컨트롤러가 없어 State Tree가 돌지 않음). 언리얼 액터에는 `SetActive` 같은 단일 스위치가 없다
   - `Encounter.Restart` 뒤 표시는 직접 보지 않음 (새 Play마다 `bound`·`100/100`으로 시작하는 것은 확인, 다시 열기도 같은 경로)
 
+- [x] Step 6-5d: `UFailScreenWidget`(`UI/`, 추상, `BindWidget` `RestartButton` `OnClicked` → 한 번만 누르게 끄고 게임 모드 `RestartEncounter`), 게임 모드 `FailScreenClass`·`FailScreenDistance`(100) → 실패 시 `HaltEnemies`(`TActorIterator<AEnemyAIController>`) + 머리 앞 수평 방향에 스폰, `AEnemyAIController::HaltLogic`(State Tree `StopLogic` + `StopMovement`, `bHalted`면 다시 시작 안 함) — 빌드, `Portfolio/UI/WBP_FailScreen`(`FAILED` + `RestartButton`/`Restart`), `Portfolio/UI/BP_FailScreen`(템플릿 `BP_Menu` 복제, 위젯 클래스만 교체), `BP_FirstVRGameMode` `Fail Screen Class` — VR Preview에서 `Player died` → `Encounter Failed` → `Attack interrupted` → `State Tree halted` → `Halted 1 enemies` → `Fail screen ... spawned`, 레이저로 `Restart`를 마우스 왼쪽 클릭 → `Restart clicked` → `Restarting L_WeaponTest` → `Health 100/100`, 다시 시작한 판에서도 같은 흐름 확인
+  - WBP에 `BindWidget` 이름의 위젯이 없으면 `"RestartButton" 필수 위젯 바인딩을 찾지 못했습니다` 컴파일 오류가 난다(버튼 이름을 맞추면 사라짐)
+- [x] ✅ **Step 6-5**: 플레이어 체력·피격 피드백·손목 체력·실패 화면과 다시 시작
+
 ### 현재 위치
-- **Step 6-5d** 다음 (실패 화면 3D 위젯 + 위젯 포인터 '다시 시작')
+- **Step 6-6** 다음 (웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -425,4 +430,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 플레이어 체력은 폰 컴포넌트 `UPlayerHealth`(`OnTakeAnyDamage` 구독, `OnHealthChanged`/`OnDied` 발행만)가 갖는다. 피격 피드백(화면 붉게·양손 진동·피격음)은 `UPlayerHitFeedback`, 남은 체력은 왼손 손목 3D 위젯이 따로 구독한다. 실패·웨이브 같은 구간 규칙은 C++ 게임 모드가 `SetPlayerDefaults`에서 `OnDied`를 구독해 맡고, 실패하면 눈앞 실패 화면(3D 위젯)의 '다시 시작'을 손 위젯 포인터로 눌러 레벨을 다시 연다. 6-5a~d로 나눠 진행. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 피격 피드백 `UPlayerHitFeedback`은 `OnHealthChanged`(피해 > 0)를 구독해 카메라 포스트 프로세스 비네트(가장자리만 붉게, 세기 파라미터를 `FlashDuration` 동안 0으로, 쉴 때 가중치 0), 양손 같은 햅틱, 2D 피격음을 낸다. 피격음은 임시로 `Fire_Cue` 낮은 피치, 나중에 교체. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 체력 표시는 C++ 위젯 부모 `UPlayerHealthWidget`(`UI/`, `BindWidget` `HealthBar` 필수·`BindWidgetOptional` `HealthText`, 소유 폰의 `UPlayerHealth` 구독, 연출용 `OnHealthDisplayUpdated`)이 로직, WBP가 배치. 손목 위젯은 `BP_XRPawn` 왼손 컨트롤러 아래 Widget Component로 항상 보임. `Build.cs`에 `UMG`(공개)·`Slate`/`SlateCore`(비공개). (`Docs/PLAN.md` 6.9 플레이어 체력)
+- 2026-11-05: 실패 화면은 템플릿 `BP_Menu`를 복제한 `BP_FailScreen`(배치·레이저·포인터 입력은 템플릿 그대로) 안에 C++ 부모 `UFailScreenWidget`(`BindWidget` `RestartButton` → `RestartEncounter`)의 WBP를 넣는다. 게임 모드는 실패 시 `FailScreenClass`를 머리 앞에 스폰하고, `AEnemyAIController::HaltLogic`으로 레벨의 적 판단을 멈춘다(게임 모드가 적을 알고 적은 게임 모드를 모름). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
