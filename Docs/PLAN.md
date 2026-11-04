@@ -443,6 +443,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **구간 규칙(실패, 나중에 웨이브와 승리)은 C++ 게임 모드가 맡는다.** 게임 모드가 플레이어 폰을 준비할 때(`SetPlayerDefaults`) 체력 컴포넌트의 `OnDied`를 구독한다. 플레이어 쪽은 게임 모드를 모른다. 유니티의 GameManager 자리이고, 6-6 웨이브도 여기에 더한다.
 - **실패하면 눈앞에 실패 화면(3D 위젯)을 띄우고, 손 위젯 포인터로 '다시 시작' 버튼을 눌러 레벨을 다시 연다.** 템플릿 메뉴(`BP_Menu`·`WBP_Menu`)와 같은 조작이다.
 - **붉은 번쩍임은 화면 전체가 아니라 가장자리 비네트다.** VR에서는 시야 전체가 확 바뀌면 부담스러워서, 카메라 포스트 프로세스에 비네트 머티리얼(세기 스칼라 파라미터)을 넣고 `UPlayerHitFeedback`이 맞은 순간 세기를 올렸다가 `FlashDuration` 동안 0으로 내린다. 쉴 때는 블렌더블 가중치를 0으로 꺼 비용을 없앤다. 진동은 양손에 같은 햅틱 에셋, 피격음은 위치 없는 2D 재생이다. 피격음 에셋이 없어서 지금은 `Fire_Cue`를 낮은 피치로 쓰고, 소리는 나중에 교체한다(설정값 한 칸).
+- **체력 표시는 C++ 위젯 부모 `UPlayerHealthWidget`(`UUserWidget`)이 로직을, WBP가 배치를 맡는다.** 부모가 생성될 때 소유 폰의 `UPlayerHealth`를 찾아 `OnHealthChanged`를 구독하고 막대와 글자를 갱신한다. WBP는 이름이 정해진 `HealthBar`(ProgressBar, `BindWidget` 필수)와 `HealthText`(TextBlock, `BindWidgetOptional`)를 놓기만 하고, 연출은 `OnHealthDisplayUpdated` 이벤트에 단다. 이름이 맞지 않으면 WBP 컴파일 오류로 바로 드러난다. 손목 위젯은 `BP_XRPawn` 왼손 컨트롤러 아래 Widget Component(월드 공간)로 늘 보인다. 6-5d 실패 화면도 같은 방식으로 만든다.
 - 스텝: 6-5a 체력과 게임 모드 뼈대(로그·콘솔 명령) → 6-5b 피격 피드백 → 6-5c 손목 체력 표시 → 6-5d 실패 화면과 재시작.
 
 ---
