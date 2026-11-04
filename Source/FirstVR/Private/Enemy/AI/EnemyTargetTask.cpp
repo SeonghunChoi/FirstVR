@@ -1,11 +1,9 @@
 ﻿#include "Enemy/AI/EnemyTargetTask.h"
 
-#include "Camera/PlayerCameraManager.h"
 #include "Enemy/DamageReceiver.h"
+#include "Enemy/EnemyAttack.h"
 #include "Enemy/EnemyDataAsset.h"
 #include "GameFramework/Pawn.h"
-#include "GameFramework/PlayerController.h"
-#include "Kismet/GameplayStatics.h"
 #include "StateTreeExecutionContext.h"
 
 EStateTreeRunStatus FEnemyTargetTask::EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const
@@ -36,15 +34,13 @@ void FEnemyTargetTask::UpdateTarget(FInstanceDataType& Data) const
 	Data.AttackRange = EnemyData ? EnemyData->AttackRange : 0.f;
 
 	// VR에서 폰의 위치는 트래킹 원점(플레이 공간 바닥)이다. 플레이어 본인은 카메라(HMD) 위치에 있다.
-	const APlayerController* Player = UGameplayStatics::GetPlayerController(Data.Actor, 0);
-	const APlayerCameraManager* Camera = Player ? Player->PlayerCameraManager.Get() : nullptr;
-	if (!Camera)
+	FVector Head;
+	APawn* PlayerPawn = nullptr;
+	if (!UEnemyAttack::GetPlayerHead(Data.Actor, Head, PlayerPawn))
 	{
 		return;
 	}
 
-	const FVector Head = Camera->GetCameraLocation();
-	const APawn* PlayerPawn = Player->GetPawn();
 	const float FloorZ = PlayerPawn ? PlayerPawn->GetActorLocation().Z : Head.Z;
 	Data.TargetLocation = FVector(Head.X, Head.Y, FloorZ);
 	Data.Distance = FVector::Dist2D(Data.Actor->GetActorLocation(), Data.TargetLocation);

@@ -56,6 +56,17 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Limp")
 	FVector RightFootOffset = FVector::ZeroVector;
 
+	/** 공격 몽타주가 재생되는 슬롯. 이 슬롯의 몽타주가 섞이는 만큼 Leg IK를 끈다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp")
+	FName MontageSlotName = TEXT("DefaultSlot");
+
+	/**
+	 * Leg IK 노드의 Alpha. 절뚝일 때만 켜고(LimpAlpha), 몽타주가 재생되는 동안은 그 가중치만큼 끈다.
+	 * 공격 애니메이션은 ik_foot 본이 발을 따라가지 않아서, 켜 두면 차올린 발이 바닥으로 끌려 내려간다.
+	 */
+	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Limp")
+	float LegIKAlpha = 0.f;
+
 private:
 	UFUNCTION()
 	void HandleLimpStarted(ELegSide InInjuredLeg);

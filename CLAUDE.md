@@ -110,6 +110,8 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
   - **새 VR 입력 매핑(IMC)은 `프로젝트 세팅 > Enhanced Input > Default Mapping Contexts`에 등록해야** OpenXR 런타임이 그 버튼을 보내 준다(세션 시작 시 이 목록으로 액션을 만든다). 코드가 잡을 때 켜는 매핑이면 `Add Immediately`는 끈다.
   - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼
+  - 잡기 토글: `BP_XRPawn`의 `bToggleGrab`(기본값)을 켜면 `U`를 한 번 눌러 잡고 한 번 더 눌러 놓는다. 실기기에서는 끈다
+  - 시험용 콘솔 명령(프리뷰 창에서 `~`): `Enemy.Limp [Left|Right]` 절뚝임, `Enemy.Kill` 사망
   - 두 손으로 동시에 잡으려면 `]`/`[`로 두 손을 함께 선택해야 하고, 이때 `U`를 떼면 양손이 같이 풀린다 (한 손만 놓는 동작은 시뮬레이터로 시험할 수 없다)
 - **일반 테스트**: 플레이 버튼 (VR 없이 로직 검증용)
 
@@ -359,9 +361,15 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 6-3: `StateTree`·`GameplayStateTree` 플러그인, `Build.cs`에 `AIModule`·`StateTreeModule`·`GameplayStateTreeModule`, 적 데이터 `AttackRange`(100 cm), `AEnemyAIController`(`StateTreeAI` 컴포넌트, 자동 시작 끄고 폰을 잡고 게임이 시작된 뒤 `StartLogic`, 폰을 놓으면 `StopLogic`), 글로벌 작업 `FEnemyTargetTask`(머리 아래 바닥 `TargetLocation`·수평 `Distance`·`AttackRange`·`bInRange`, 들어올 때 +10 / 나갈 때 +`RangeHysteresis` 50), `AEnemyCharacter`가 기본 AI 컨트롤러·`PlacedInWorldOrSpawned`, 사망 시 `DetachFromControllerPendingDestroy` — 커맨드라인 빌드, `Portfolio/Enemies/BP_EnemyAIController`(`StateTreeAI`=`ST_Enemy`), `ST_Enemy`(스키마 `StateTree AI Component`, 글로벌 작업 `Enemy Target`, `Chase`(조건 `bInRange = False`, `다음으로 이동` 대상 ← `TargetLocation`·허용 가능 반경 ← `AttackRange`·대상 이동 허용치 30·반경 포함 둘 다 끔, 상태 완료 시 → `Root`), `Hold`(`딜레이 작업` 영구 실행, `On Tick` + `bInRange = False` → `Chase`)), `BP_EnemyManny` AI 컨트롤러 클래스 지정, 레벨 블루프린트 `M` 키 제거 — 일반 Play에서 1500 cm를 9.2초에 걸어와 `Target in range (109)` → `Chase` → `Hold` 한 번 전환, VR Preview에서 머리를 옮기면 `out of range (152)` → `Chase` → `in range (109)` → `Hold`, 머리 명중 사망 → `Body stopped` → `StopLogic ... 'Unpossessed'` → `State Tree stopped` 확인
   - 상태 전환을 보려면 Play 중 콘솔 `log LogStateTree Verbose` (Play를 끝내면 꺼진다). `ST_Enemy` 에디터를 열어 두면 활성 상태가 강조된다
   - `Target tracking started`는 컨트롤러의 `State Tree started`보다 먼저 찍힌다(`StartLogic` 안에서 글로벌 작업이 먼저 시작)
+- [x] Step 6-4: 적 공격 — `UEnemyAttack`(머리 쪽으로 돈 뒤 몽타주, 판정 구간 `Begin/Update/EndStrikeWindow`로 본이 지나간 선분 ↔ 몸 캡슐, 구간당 한 번 `ApplyDamage`, 사망 시 취소), Anim Notify `Enemy Strike`·Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius` 15), State Tree 조건 `Enemy Can Attack`·태스크 `Enemy Attack`, 적 데이터 `AttackMontages`·`AttackDamage`·`AttackCooldown`, `UPlayerBody`(`Player/`, HMD를 따라가는 `Pawn` 캡슐, 바닥은 아래로 트레이스, 스폰 중엔 충돌 끔), `UEnemyAnimInstance::LegIKAlpha`, 시험용 `UDamageReceiver::StartLimp`/`Kill`과 콘솔 명령 `Enemy.Limp [Left|Right]`/`Enemy.Kill` — 빌드, `Portfolio/Enemies/Attack/AM_Attack_01~03`(판정 구간 `hand_r`/`hand_l`/`foot_r`), `ST_Enemy` 공격 상태, `ABP_EnemyMannequin` 슬롯·`Leg IK` Alpha, `BP_XRPawn`에 `PlayerBody`와 잡기 토글(`bToggleGrab`), `PlayerStart` Z 0 — VR Preview에서 세 공격 명중(20 피해), 뒤로 물러나면 `missed`, 절뚝여도 발차기 발이 올라감, 공격 중 `Enemy.Kill` → `Attack interrupted` 확인
+  - VR 폰은 캡슐이 없고 루트가 바닥(트래킹 원점)이다. `PlayerStart`는 캐릭터 캡슐 중심 높이(Z 93)에 놓이므로 VR 레벨에서는 **Z를 바닥(0)으로** 내린다
+  - 레벨 바닥 `Floor`는 `BlockAllDynamic`(오브젝트 타입 `WorldDynamic`)이라 바닥 트레이스는 `WorldStatic`과 `WorldDynamic`을 함께 찾는다
+  - 시뮬레이터 이동 속도는 `%APPDATA%\MetaXR\MetaXrSimulator\persistent_data.json`의 `movement_speed`(지금 5.0)
+  - `bToggleGrab`은 시뮬레이터 시험용 모드 스위치다(누를 때마다 잡기/놓기, 놓음 이벤트 무시). 실기기에서는 끈다
 
 ### 현재 위치
-- **Step 6-4** 시작 전 (공격)
+- **Step 6-4** 완료, 커밋 대기
+- 다음: 레이저 사이트 무기 부품(시뮬레이터 조준 보조, 설계 판단부터) → Step 6-5
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -389,3 +397,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-03: 5-5 결과물은 조합표(기존 무기 3종)와 빈 무기에서 다시 조립하는 따라하기 둘 다다. 다시 조립할 무기는 기존 연발 소총과 같은 조합이다. 연발은 5-4b에서 C++을 추가한 뒤 조립했으므로, 문서에는 무기마다 그때 늘어난 C++을 그대로 적는다. (`Docs/PLAN.md` 9.2)
 - 2026-11-03: 전투 구간은 적이 다가와 공격하고 플레이어 체력 0이면 실패, 웨이브 데이터를 다 막으면 승리. 적 판단은 State Tree, 공격 판정은 타격 순간(Anim Notify) 주먹 주변 ↔ HMD, 피해는 언리얼 기본 데미지(`ApplyDamage` → `OnTakeAnyDamage`, 총알 경로 `IHittable`은 그대로). 적의 몸은 C++ `AEnemyCharacter`(`ACharacter`). 탄 보급은 탄창 교체. (`Docs/PLAN.md` 6.9)
 - 2026-11-03: 적 추적 목표는 플레이어 머리(HMD) 아래 바닥. C++ State Tree 전역 태스크 `FEnemyTargetTask`가 목표 위치·거리·`AttackRange`·`bInRange`를 출력하고 엔진 기본 `Move To`가 바인딩한다. State Tree는 C++ `AEnemyAIController`(`StateTreeAI` 컴포넌트, 에셋은 BP 자식)가 돌리고, 멈출 거리는 적 데이터 `AttackRange`. (`Docs/PLAN.md` 6.9 추적)
+- 2026-11-04: 적 공격은 컴포넌트 `UEnemyAttack`(머리 쪽으로 돈 뒤 몽타주, 휘두르는 동안은 고정, 판정·`ApplyDamage`, `OnStrike`/`OnAttackFinished`)이 맡고, State Tree는 조건 `Enemy Can Attack` + 태스크 `Enemy Attack`으로 시작과 대기만 한다. 타격 순간·본·반경은 Anim Notify `Enemy Strike`, 몽타주 목록·피해·쿨다운은 적 데이터. (`Docs/PLAN.md` 6.9 공격)
+- 2026-11-04: 공격 몽타주의 루트 모션은 살리고, 플레이어 몸 캡슐 `UPlayerBody`(HMD를 따라가는 `Pawn` 캡슐, `BP_XRPawn`에 부착)가 적을 막는다. 적 타격은 몸 캡슐 전체에 판정한다(노티파이 `Radius` 기본 15cm, 캡슐 표면까지 거리). 템플릿 폰에 충돌체가 없어 적이 플레이어를 지나쳐 타격이 머리 뒤에서 났기 때문이다. (`Docs/PLAN.md` 6.9 공격)
+- 2026-11-04: 절뚝임 `Leg IK`는 절뚝일 때만 켜고 몽타주 재생 중에는 끈다(`UEnemyAnimInstance::LegIKAlpha` = `LimpAlpha` × (1 − `DefaultSlot` 몽타주 가중치)). 항상 켜 두면 발차기 발이 `ik_foot`에 묶여 바닥에 남았다. (`Docs/PLAN.md` 6.9 공격)
+- 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
