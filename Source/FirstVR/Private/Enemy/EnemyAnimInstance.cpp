@@ -33,6 +33,7 @@ void UEnemyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	PelvisOffset = FVector(0.f, 0.f, -PelvisDrop * LimpAlpha);
 	LeftFootOffset = InjuredLeg == ELegSide::Left ? InjuredFootOffset * LimpAlpha : FVector::ZeroVector;
 	RightFootOffset = InjuredLeg == ELegSide::Right ? InjuredFootOffset * LimpAlpha : FVector::ZeroVector;
+	LegIKAlpha = LimpAlpha * (1.f - GetSlotMontageGlobalWeight(MontageSlotName));
 }
 
 void UEnemyAnimInstance::HandleLimpStarted(ELegSide InInjuredLeg)

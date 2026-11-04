@@ -6,6 +6,7 @@
 #include "EnemyCharacter.generated.h"
 
 class UDamageReceiver;
+class UEnemyAttack;
 class UHitReaction;
 class UPhysicalAnimationComponent;
 
@@ -38,6 +39,9 @@ protected:
 	/** 맞은 본 아래 물리 반응과 사망 래그돌. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TObjectPtr<UHitReaction> HitReaction;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TObjectPtr<UEnemyAttack> EnemyAttack;
 
 private:
 	/** 적 데이터의 걷는 속도를 캐릭터 무브먼트에 넣는다. 절뚝이면 LimpSpeedScale을 곱한다. */

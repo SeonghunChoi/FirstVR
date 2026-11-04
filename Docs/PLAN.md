@@ -416,6 +416,18 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **State Tree는 C++ `AEnemyAIController`가 돌린다.** 생성자에서 `StateTreeAI` 컴포넌트를 만들고, 폰을 잡고 게임이 시작된 뒤 시작하며 폰을 놓으면 멈춘다. 어떤 State Tree 에셋을 쓸지는 블루프린트 자식에서 정한다. `AEnemyCharacter`가 기본 AI 컨트롤러로 지정하고(배치·스폰 모두 자동 빙의), 사망하면 컨트롤러를 떼어 판단을 멈춘다.
 - **멈출 거리는 적 데이터 `AttackRange`다.** `Move To`의 멈추는 거리와 6-4의 "공격 거리 안" 조건이 같은 값을 쓰고, 적 종류마다 다르게 줄 수 있다.
 
+**공격 (Step 6-4)**
+
+- **공격은 새 컴포넌트 `UEnemyAttack`이 맡는다.** 플레이어 머리 쪽으로 돈 뒤 몽타주를 재생하고, 타격 순간 판정과 `ApplyDamage`를 하고, 결과를 `OnStrike`/`OnAttackFinished`로 발행한다. State Tree는 "언제"만 정한다: 조건 `Enemy Can Attack`(공격 중이 아니고, 쿨다운이 지났고, 살아 있음)이 맞으면 태스크 `Enemy Attack`이 `StartAttack`을 부르고 끝날 때까지 기다린다. 무기의 입력 컴포넌트 → 코어처럼 "판단은 State Tree, 행동은 컴포넌트"로 나눈다. AI 없이 레벨 블루프린트 키로 `StartAttack`을 불러 시험할 수 있고, 사망하면 컴포넌트가 `OnDied`를 구독해 공격을 멈춘다.
+- **휘두르는 동안에는 돌지 않는다.** 머리 쪽으로 `FaceTolerance` 안까지 돈 뒤 몽타주를 재생하고, 그 뒤로는 방향을 고정한다. 플레이어가 몸을 기울이거나 물러나 피할 수 있어야 하기 때문이다.
+- **타격 순간과 판정 범위는 Anim Notify `Enemy Strike`(`UAnimNotify_EnemyStrike`)에 둔다.** 치는 본(`StrikeBone`)과 반경(`Radius`)은 주먹인지 발인지, 동작이 큰지에 따라 정해지는 동작의 성질이므로 애니메이션에 둔다. Notify는 메시 주인의 `UEnemyAttack::Strike`만 부르고, 판정(본 위치 ↔ 플레이어 몸 캡슐 표면 거리)과 피해는 컴포넌트가 한다. 한 몽타주에 여러 개를 놓으면 타격이 여러 번이다.
+- **적 데이터에는 적 종류를 따라가는 공격 값만 둔다:** `AttackMontages`(공격할 때마다 무작위로 하나), `AttackDamage`, `AttackCooldown`(몽타주가 끝난 뒤부터). 쿨다운은 무기 코어의 `FireRate`처럼 컴포넌트가 지킨다.
+- 플레이어 머리 위치 계산(`UEnemyAttack::GetPlayerHead`)은 추적(`FEnemyTargetTask`)과 공격 판정이 같이 쓴다.
+- **플레이어 몸은 HMD를 따라다니는 캡슐 `UPlayerBody`(`UCapsuleComponent` 자식, `Pawn` 프로필)다.** 템플릿 VR 폰에는 충돌체가 없어서, 공격 몽타주의 루트 모션(한 번에 50~100cm 전진)이 적을 플레이어 너머로 데려가 타격이 머리 뒤에서 났다. 루트 모션의 달려드는 느낌은 살리고, 몸 캡슐이 적 캡슐을 막는다. 캡슐은 매 틱 머리 아래 바닥부터 머리 위(`HeadTopMargin`)까지로 맞춘다.
+- **피격 범위는 몸 캡슐 전체다.** 타격 구(`Radius`, 기본 15cm)가 캡슐 표면에 닿으면 맞는다. 주먹은 얼굴·가슴 높이, 발차기는 몸통 높이라 머리 점 하나로는 발차기가 맞지 않았다. 피하려면 고개가 아니라 몸 전체를 움직여야 한다. 몸이 없는 폰이면 머리 위치로 판정한다.
+- **`Leg IK`는 절뚝일 때만 켜고, 몽타주가 재생되는 동안은 끈다.** 4-4에서 항상 켜 둔 `Leg IK`가 발을 `ik_foot` 본으로 당기는데, 공격 애니메이션은 `ik_foot`이 발을 따라가지 않아 발차기 발이 바닥에 묶였다. `UEnemyAnimInstance::LegIKAlpha` = `LimpAlpha` × (1 − 공격 슬롯 몽타주 가중치)를 노드의 Alpha에 꽂는다. 공격하는 동안에는 다친 발 높이 보정이 잠깐 빠진다.
+- **타격은 한 프레임이 아니라 판정 구간(Anim Notify State `Enemy Strike Window`)으로 한다.** 몸에 막혀 서는 거리가 늘 같아도, 옆으로 휘두르는 주먹(01)은 정해 둔 한 프레임에 몸 옆을 지나고 발차기(03)는 몸을 지나친 뒤라 빗나갔다. 반경을 키우는 대신 구간 동안 본이 지나간 선분(지난 프레임 → 지금)을 몸 캡슐과 판정하고, 한 구간에서 한 번만 맞힌다. 격투 게임의 "공격 판정 프레임"과 같다. 한 프레임 노티파이 `Enemy Strike`는 길이 0인 구간으로 남긴다.
+
 ---
 
 ## 7. 범위와 우선순위

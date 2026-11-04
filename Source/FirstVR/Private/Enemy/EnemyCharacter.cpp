@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Enemy/AI/EnemyAIController.h"
 #include "Enemy/DamageReceiver.h"
+#include "Enemy/EnemyAttack.h"
 #include "Enemy/HitReaction.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "PhysicsEngine/PhysicalAnimationComponent.h"
@@ -27,6 +28,7 @@ AEnemyCharacter::AEnemyCharacter()
 	DamageReceiver = CreateDefaultSubobject<UDamageReceiver>(TEXT("DamageReceiver"));
 	PhysicalAnimation = CreateDefaultSubobject<UPhysicalAnimationComponent>(TEXT("PhysicalAnimation"));
 	HitReaction = CreateDefaultSubobject<UHitReaction>(TEXT("HitReaction"));
+	EnemyAttack = CreateDefaultSubobject<UEnemyAttack>(TEXT("EnemyAttack"));
 }
 
 void AEnemyCharacter::BeginPlay()

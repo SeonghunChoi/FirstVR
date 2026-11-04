@@ -40,7 +40,22 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Enemy")
 	FOnEnemyLimpStarted OnLimpStarted;
 
+	/**
+	 * 다리 피해와 상관없이 바로 절뚝이게 한다. 이미 절뚝이거나 죽었으면 무시한다.
+	 * 시험용 콘솔 명령 Enemy.Limp [Left|Right]가 부른다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Enemy")
+	void StartLimp(ELegSide Leg);
+
+	/**
+	 * 체력과 상관없이 바로 죽인다. 이미 죽었으면 무시한다.
+	 * 시험용 콘솔 명령 Enemy.Kill이 부른다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Enemy")
+	void Kill();
+
 	bool IsLimping() const { return bLimping; }
+	bool IsDead() const { return bDead; }
 	const UEnemyDataAsset* GetEnemyData() const { return EnemyData; }
 	ELegSide GetInjuredLeg() const { return InjuredLeg; }
 
@@ -56,6 +71,9 @@ protected:
 	TObjectPtr<UEnemyDataAsset> EnemyData;
 
 private:
+	/** 사망 상태로 바꾸고 시체 수명을 건 뒤 OnDied를 발행한다. */
+	void Die();
+
 	/** 현재 체력. BeginPlay에서 MaxHealth로 채운다. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (AllowPrivateAccess = "true"))
 	float CurrentHealth = 0.f;

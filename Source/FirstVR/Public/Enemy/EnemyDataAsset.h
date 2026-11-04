@@ -4,6 +4,8 @@
 #include "Engine/DataAsset.h"
 #include "EnemyDataAsset.generated.h"
 
+class UAnimMontage;
+
 /** 다리 좌우. 다리가 아닌 본은 None이다. */
 UENUM(BlueprintType)
 enum class ELegSide : uint8
@@ -13,7 +15,7 @@ enum class ELegSide : uint8
 	Right
 };
 
-/** 적 종류 하나의 설정. 맞은 대상과 부위를 따라가는 값만 둔다. 피해 계산은 UDamageReceiver가 한다. */
+/** 적 종류 하나의 설정. 맞은 대상과 부위, 이동, 공격처럼 적 종류를 따라가는 값만 둔다. 피해 계산은 UDamageReceiver, 공격은 UEnemyAttack이 한다. */
 UCLASS(BlueprintType)
 class FIRSTVR_API UEnemyDataAsset : public UPrimaryDataAsset
 {
@@ -67,6 +69,18 @@ public:
 	/** 공격 거리. 몸 중심에서 플레이어 머리 아래 바닥까지의 수평 거리다. 추적은 이 거리에서 멈추고, 공격은 이 거리 안에서 한다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack", meta = (ClampMin = "0.0", ForceUnits = "cm"))
 	float AttackRange = 100.f;
+
+	/** 공격 몽타주 목록. 공격할 때마다 하나를 무작위로 고른다. 타격 순간과 판정 범위는 몽타주의 Enemy Strike 노티파이에 있다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack")
+	TArray<TObjectPtr<UAnimMontage>> AttackMontages;
+
+	/** 타격 한 번이 플레이어 머리에 맞았을 때의 피해. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack", meta = (ClampMin = "0.0"))
+	float AttackDamage = 20.f;
+
+	/** 공격 몽타주가 끝난 뒤 다음 공격을 시작할 수 있을 때까지의 시간. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack", meta = (ClampMin = "0.0", ForceUnits = "s"))
+	float AttackCooldown = 1.5f;
 
 	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))

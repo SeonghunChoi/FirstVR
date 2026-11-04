@@ -1,6 +1,7 @@
-#include "Enemy/DamageReceiver.h"
+﻿#include "Enemy/DamageReceiver.h"
 
 #include "Enemy/EnemyDataAsset.h"
+#include "UObject/UObjectIterator.h"
 #include "Weapon/AmmoDataAsset.h"
 
 DEFINE_LOG_CATEGORY(LogEnemy);
@@ -56,16 +57,73 @@ void UDamageReceiver::ReceiveHit(const FHitResult& Hit, UAmmoDataAsset* Ammo, fl
 
 	if (CurrentHealth <= 0.f)
 	{
-		bDead = true;
-		UE_LOG(LogEnemy, Log, TEXT("[%s] Died, corpse life span %.1fs"), *GetNameSafe(GetOwner()), EnemyData->CorpseLifeSpan);
-		GetOwner()->SetLifeSpan(EnemyData->CorpseLifeSpan);
-		OnDied.Broadcast();
+		Die();
 	}
 	else if (!bLimping && LegDamage >= EnemyData->LimpThreshold && LegDamage > 0.f)
 	{
-		bLimping = true;
-		InjuredLeg = EnemyData->GetLegSide(BoneName);
-		UE_LOG(LogEnemy, Log, TEXT("[%s] Limp started (%s leg)"), *GetNameSafe(GetOwner()), *UEnum::GetDisplayValueAsText(InjuredLeg).ToString());
-		OnLimpStarted.Broadcast(InjuredLeg);
+		StartLimp(EnemyData->GetLegSide(BoneName));
 	}
 }
+
+void UDamageReceiver::StartLimp(ELegSide Leg)
+{
+	if (bLimping || bDead)
+	{
+		return;
+	}
+
+	bLimping = true;
+	InjuredLeg = Leg;
+	UE_LOG(LogEnemy, Log, TEXT("[%s] Limp started (%s leg)"), *GetNameSafe(GetOwner()), *UEnum::GetDisplayValueAsText(InjuredLeg).ToString());
+	OnLimpStarted.Broadcast(InjuredLeg);
+}
+
+void UDamageReceiver::Kill()
+{
+	if (bDead || !EnemyData)
+	{
+		return;
+	}
+
+	CurrentHealth = 0.f;
+	UE_LOG(LogEnemy, Log, TEXT("[%s] Killed by command"), *GetNameSafe(GetOwner()));
+	Die();
+}
+
+void UDamageReceiver::Die()
+{
+	bDead = true;
+	UE_LOG(LogEnemy, Log, TEXT("[%s] Died, corpse life span %.1fs"), *GetNameSafe(GetOwner()), EnemyData->CorpseLifeSpan);
+	GetOwner()->SetLifeSpan(EnemyData->CorpseLifeSpan);
+	OnDied.Broadcast();
+}
+
+/** 플레이 중인 월드의 살아 있는 적마다 Action을 부른다. */
+static void ForEachEnemyInPlay(TFunctionRef<void(UDamageReceiver&)> Action)
+{
+	for (TObjectIterator<UDamageReceiver> It; It; ++It)
+	{
+		const UWorld* World = It->GetWorld();
+		if (World && World->IsGameWorld() && It->HasBegunPlay())
+		{
+			Action(**It);
+		}
+	}
+}
+
+static FAutoConsoleCommand EnemyLimpCommand(
+	TEXT("Enemy.Limp"),
+	TEXT("Makes every living enemy in play limp. Usage: Enemy.Limp [Left|Right] (default Right)"),
+	FConsoleCommandWithArgsDelegate::CreateLambda([](const TArray<FString>& Args)
+	{
+		const ELegSide Leg = Args.Num() > 0 && Args[0].Equals(TEXT("Left"), ESearchCase::IgnoreCase) ? ELegSide::Left : ELegSide::Right;
+		ForEachEnemyInPlay([Leg](UDamageReceiver& Receiver) { Receiver.StartLimp(Leg); });
+	}));
+
+static FAutoConsoleCommand EnemyKillCommand(
+	TEXT("Enemy.Kill"),
+	TEXT("Kills every living enemy in play."),
+	FConsoleCommandDelegate::CreateLambda([]()
+	{
+		ForEachEnemyInPlay([](UDamageReceiver& Receiver) { Receiver.Kill(); });
+	}));
