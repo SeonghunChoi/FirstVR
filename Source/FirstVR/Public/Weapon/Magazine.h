@@ -87,6 +87,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Magazine", meta = (ClampMin = "0.0"))
 	float EjectClearTime = 0.5f;
 
+	/** 버튼으로 빼낸 뒤 사라질 때까지 시간(초). 0이면 남는다. 사라지기 전에 손으로 잡으면 취소된다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Magazine", meta = (ClampMin = "0.0"))
+	float DiscardLifeSpan = 5.f;
+
 private:
 	void RestoreWeaponCollision();
 

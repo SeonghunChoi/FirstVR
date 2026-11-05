@@ -242,7 +242,9 @@ Content/Portfolio/
   - 6-7a. `AMagazine`(탄의 원본) + `UMagazineStep` 개편(끼워진 탄창에서 꺼냄, `AllowedMagazines`, 배치별 `InitialMagazine`) → 기존 무기 회귀
   - 6-7b. 놓아서 끼우기: 탄창 BP `OnDropped` → `HandleDropped`(다음 틱, `InsertRadius`·호환 검사), `OnGrabbed` → `HandleGrabbed` → VR Preview
   - 6-7c. 버튼으로 빼기: `UMagazineReleaseInputComponent`(잡은 손 B/Y) → `EjectMagazine`, 물리로 떨어짐 → VR Preview
-- 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
+- 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝 (설계 판단 완료, `Docs/PLAN.md` 6.9 전투 레벨)
+  - 6-8a. 탄창 보급대 `AMagazineDispenser`(가져가면 `RespawnDelay` 뒤 새 탄창) + 버튼으로 뺀 탄창 `DiscardLifeSpan` 뒤 사라짐 → `L_WeaponTest_Empty`에서 VR Preview
+  - 6-8b. `L_Combat`: 벽으로 둘러싼 방, 입구 여러 개(스폰 지점), 무기 테이블·보급대, 전투 웨이브 데이터
 - 6-9. 플레이 테스트와 데이터 튜닝
 - 6-10. 실기기 검증 (헤드셋 확보 시, 시뮬레이터 런타임 토글 해제)
 - ✅ 마일스톤: VR Preview에서 무기를 집어 웨이브를 막아 내거나 맞아서 실패하는 한 구간
@@ -424,8 +426,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 미확인: `No magazine to eject`(빈 무기에서 다시 누름), 덜 쓴 탄창을 다시 끼운 결과(남은 탄은 탄창 객체에 있어 같은 값일 것), 빈 권총 옆 소총 탄창 거절, `Pulled out by hand`
 - [x] ✅ **Step 6-7**: 탄창 액터, 놓아서 끼우기, 버튼으로 빼기
 
+- [x] Step 6-8a: `AMagazineDispenser`(`Weapon/`, 추상, 배치별 `MagazineClass`, `RespawnDelay` 3·`TakeDistance` 20·`SpawnHeight` 10, 0.25초 타이머로 가져갔는지(붙음·끼워짐·멀어짐·사라짐) 보고 `RespawnDelay` 뒤 새 탄창, `OnMagazineDispensed`, 에디터 전용 화살표), `AMagazine::DiscardLifeSpan`(5초, 버튼으로 뺄 때 `SetLifeSpan`, `HandleGrabbed`에서 취소 `Picked up, kept`) — 빌드, `Portfolio/Weapons/Magazines/BP_MagazineDispenser`(받침 큐브), `L_WeaponTest_Empty`에 권총·소총 탄창 보급대 — VR Preview에서 시작 시 `Dispensed` 두 개, 잡으면 `Magazine taken, next in 3.0s` → 3초 뒤 `Dispensed`, 받은 탄창을 빈 권총에 끼워 `Inserted (15/15)`, `N`으로 `Ejected (15/15 left, gone in 5s)` 세 번 반복 확인
+  - `MagazineClass`를 비운 보급대는 `MagazineClass is not set` 경고만 내고 아무것도 놓지 않는다
+  - 미확인: 사라지기 전에 다시 잡은 `Picked up, kept`
+
 ### 현재 위치
-- **Step 6-8** 다음 (전투 레벨 구성: 무기·탄창 배치, 시작과 끝)
+- **Step 6-8b** 다음 (`L_Combat`: 벽으로 둘러싼 방, 입구 스폰 지점, 무기 테이블·보급대, 전투 웨이브 데이터)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -464,4 +470,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-05: 웨이브는 레벨의 스폰 지점 `AEnemySpawnPoint`를 데이터 `UWaveDataAsset`이 이름(`SpawnPointName`)으로 고른다. 진행은 게임 모드 컴포넌트 `UWaveSpawner`(스폰 타이머·생존 수·다음 웨이브, 이벤트 발행만), 게임 모드는 시작 시 `StartWaves`, 모두 막으면 `Victory`, 실패 시 `StopWaves`. 첫 웨이브는 `StartDelay` 뒤 자동. 승리 화면은 따로(`VictoryScreenClass`), 부모 위젯 공유. 6-6a/b로 나눔. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-05: 결과 화면 위젯 부모를 실패·승리가 함께 쓰도록 `UFailScreenWidget` → `UEncounterResultWidget`, 게임 모드 `FailScreenDistance` → `ResultScreenDistance`로 바꾸고 `DefaultEngine.ini` `[CoreRedirects]`로 잇는다. 게임 모드는 `SpawnResultScreen(Class)` 하나로 실패·승리 화면을 띄운다. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-05: 탄창 교체 — 탄의 원본은 집는 탄창 액터 `AMagazine`(`AmmoType`·`Capacity` 설정, `InitialRounds` 배치별, `Rounds` 상태), `UMagazineStep`은 끼워진 탄창에서 한 발씩 꺼낸다. 호환은 `AllowedMagazines`(탄창 클래스 목록). 끼우기는 `MagazineWell` 근처에서 놓을 때(방향 무시), 빼기는 잡은 손 B/Y(`UMagazineReleaseInputComponent`) → 물리로 떨어짐. 배치 무기는 `InitialMagazine`이 끼워진 채 시작. 6-7a/b/c. (`Docs/PLAN.md` 4.13)
+- 2026-11-05: 전투 레벨 — 새 레벨 `L_Combat`, 벽으로 둘러싼 방에 입구 여러 개(스폰 지점), 가운데 무기 테이블. 탄 보급은 탄창 보급대 `AMagazineDispenser`(가져가면 `RespawnDelay` 뒤 같은 자리에 새 탄창, 줄 탄창은 배치별 `MagazineClass`). 버튼으로 뺀 탄창은 남은 탄과 상관없이 `DiscardLifeSpan`(기본 5초) 뒤 사라지고, 그 전에 잡으면 취소. 시작·끝은 기존 웨이브·결과 화면 규칙. 6-8a/b. (`Docs/PLAN.md` 6.9 전투 레벨)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
