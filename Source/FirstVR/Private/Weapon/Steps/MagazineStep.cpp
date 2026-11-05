@@ -1,77 +1,121 @@
-#include "Weapon/Steps/MagazineStep.h"
+﻿#include "Weapon/Steps/MagazineStep.h"
 
+#include "Engine/World.h"
 #include "Weapon/AmmoDataAsset.h"
+#include "Weapon/Magazine.h"
 
 void UMagazineStep::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CurrentAmmo = 0;
-	LoadedAmmo = nullptr;
-
-	if (InitialAmmo <= 0)
+	if (!InitialMagazine)
 	{
 		return;
 	}
 
-	if (AllowedAmmo.IsEmpty())
+	const USceneComponent* Well = FindMagazineWell();
+	if (!Well)
 	{
-		UE_LOG(LogWeapon, Error, TEXT("[%s] InitialAmmo is set but AllowedAmmo is empty"), *GetName());
+		UE_LOG(LogWeapon, Error, TEXT("[%s] InitialMagazine is set but '%s' was not found on %s"), *GetName(), *MagazineWellName.ToString(), *GetOwner()->GetName());
 		return;
 	}
 
-	AddAmmo(AllowedAmmo[0], InitialAmmo);
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	AMagazine* Magazine = GetWorld()->SpawnActor<AMagazine>(InitialMagazine, Well->GetComponentTransform(), Params);
+	if (Magazine && !InsertMagazine(Magazine))
+	{
+		// 맞지 않는 탄창을 지정했으면 버린다. 이유는 InsertMagazine이 로그로 남긴다.
+		Magazine->Destroy();
+	}
 }
 
 void UMagazineStep::Execute(FFireContext& Context)
 {
-	if (CurrentAmmo <= 0)
+	if (!InsertedMagazine)
+	{
+		UE_LOG(LogWeapon, Log, TEXT("[%s] No magazine"), *GetName());
+		Report(EStepResult::Failed);
+		return;
+	}
+
+	UAmmoDataAsset* Ammo = InsertedMagazine->TakeRound();
+	if (!Ammo)
 	{
 		UE_LOG(LogWeapon, Log, TEXT("[%s] Empty"), *GetName());
 		Report(EStepResult::Failed);
 		return;
 	}
 
-	--CurrentAmmo;
-	Context.Ammo = LoadedAmmo;
-	UE_LOG(LogWeapon, Log, TEXT("[%s] %s, %d/%d left"), *GetName(), *GetNameSafe(LoadedAmmo), CurrentAmmo, Capacity);
-
-	if (CurrentAmmo == 0)
-	{
-		LoadedAmmo = nullptr;
-	}
-
+	Context.Ammo = Ammo;
+	UE_LOG(LogWeapon, Log, TEXT("[%s] %s, %d/%d left"), *GetName(), *Ammo->GetName(), InsertedMagazine->GetRounds(), InsertedMagazine->GetCapacity());
 	Report(EStepResult::Success);
 }
 
-int32 UMagazineStep::AddAmmo(UAmmoDataAsset* Ammo, int32 Count)
+bool UMagazineStep::CanAcceptMagazine(const AMagazine* Magazine) const
 {
-	if (!Ammo || Count <= 0)
+	if (!Magazine)
 	{
-		return 0;
+		return false;
 	}
 
-	if (!AllowedAmmo.Contains(Ammo))
+	for (const TSubclassOf<AMagazine>& Allowed : AllowedMagazines)
 	{
-		UE_LOG(LogWeapon, Log, TEXT("[%s] AddAmmo rejected: %s is not allowed"), *GetName(), *Ammo->GetName());
-		return 0;
+		if (Allowed && Magazine->IsA(Allowed))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UMagazineStep::InsertMagazine(AMagazine* Magazine)
+{
+	if (!Magazine || Magazine->IsInserted())
+	{
+		return false;
 	}
 
-	if (CurrentAmmo > 0 && Ammo != LoadedAmmo)
+	if (InsertedMagazine)
 	{
-		UE_LOG(LogWeapon, Log, TEXT("[%s] AddAmmo rejected: %s loaded, %s given"), *GetName(), *GetNameSafe(LoadedAmmo), *Ammo->GetName());
-		return 0;
+		UE_LOG(LogWeapon, Log, TEXT("[%s] Insert rejected: %s is already inserted"), *GetName(), *InsertedMagazine->GetName());
+		return false;
 	}
 
-	const int32 Added = FMath::Min(Count, Capacity - CurrentAmmo);
-	if (Added <= 0)
+	if (!CanAcceptMagazine(Magazine))
 	{
-		UE_LOG(LogWeapon, Log, TEXT("[%s] AddAmmo rejected: full"), *GetName());
-		return 0;
+		UE_LOG(LogWeapon, Log, TEXT("[%s] Insert rejected: %s does not fit"), *GetName(), *Magazine->GetClass()->GetName());
+		return false;
 	}
 
-	LoadedAmmo = Ammo;
-	CurrentAmmo += Added;
-	UE_LOG(LogWeapon, Log, TEXT("[%s] AddAmmo %s x%d, %d/%d"), *GetName(), *Ammo->GetName(), Added, CurrentAmmo, Capacity);
-	return Added;
+	USceneComponent* Well = FindMagazineWell();
+	if (!Well)
+	{
+		UE_LOG(LogWeapon, Warning, TEXT("[%s] Insert rejected: '%s' not found"), *GetName(), *MagazineWellName.ToString());
+		return false;
+	}
+
+	InsertedMagazine = Magazine;
+	Magazine->AttachToWell(this, Well);
+	OnMagazineChanged(Magazine);
+	return true;
+}
+
+AMagazine* UMagazineStep::EjectMagazine()
+{
+	AMagazine* Magazine = InsertedMagazine;
+	if (!Magazine)
+	{
+		return nullptr;
+	}
+
+	InsertedMagazine = nullptr;
+	Magazine->DetachFromWell(true);
+	OnMagazineChanged(nullptr);
+	return Magazine;
+}
+
+USceneComponent* UMagazineStep::FindMagazineWell() const
+{
+	return FindSceneComponentByName(GetOwner(), MagazineWellName);
 }
