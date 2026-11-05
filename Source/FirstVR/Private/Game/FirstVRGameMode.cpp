@@ -4,12 +4,26 @@
 #include "Enemy/AI/EnemyAIController.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+#include "Game/WaveSpawner.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Player/PlayerHealth.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogEncounter, Log, All);
+
+AFirstVRGameMode::AFirstVRGameMode()
+{
+	WaveSpawner = CreateDefaultSubobject<UWaveSpawner>(TEXT("WaveSpawner"));
+}
+
+void AFirstVRGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	WaveSpawner->OnAllWavesCleared.AddUniqueDynamic(this, &AFirstVRGameMode::HandleAllWavesCleared);
+	WaveSpawner->StartWaves();
+}
 
 void AFirstVRGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 {
@@ -29,9 +43,26 @@ void AFirstVRGameMode::SetPlayerDefaults(APawn* PlayerPawn)
 
 void AFirstVRGameMode::HandlePlayerDied()
 {
+	// 이미 승리했으면 그 뒤의 사망은 결과를 바꾸지 않는다.
+	if (EncounterState != EEncounterState::Playing)
+	{
+		return;
+	}
+
 	SetEncounterState(EEncounterState::Failed);
+	WaveSpawner->StopWaves();
 	HaltEnemies(TEXT("Encounter failed"));
 	SpawnFailScreen();
+}
+
+void AFirstVRGameMode::HandleAllWavesCleared()
+{
+	if (EncounterState != EEncounterState::Playing)
+	{
+		return;
+	}
+
+	SetEncounterState(EEncounterState::Victory);
 }
 
 void AFirstVRGameMode::HaltEnemies(const FString& Reason) const

@@ -448,6 +448,15 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **실패하면 게임 모드가 레벨의 적 판단을 멈춘다**(`AEnemyAIController::HaltLogic` → State Tree 정지, 이동·공격 취소, 다시 시작 안 함). 구간 규칙은 게임 모드 몫이라 게임 모드가 적을 알고, 적은 게임 모드를 모른다. 6-6 웨이브로 스폰한 적도 같은 경로로 멈춘다.
 - 스텝: 6-5a 체력과 게임 모드 뼈대(로그·콘솔 명령) → 6-5b 피격 피드백 → 6-5c 손목 체력 표시 → 6-5d 실패 화면과 재시작.
 
+**웨이브 (Step 6-6)**
+
+- **적은 레벨에 놓은 스폰 지점 액터 `AEnemySpawnPoint`에서 나오고, 웨이브 데이터는 스폰 지점을 이름(`SpawnPointName`)으로 고른다.** 데이터 에셋은 레벨의 액터를 직접 가리킬 수 없다(유니티 ScriptableObject가 씬 오브젝트를 참조하지 못하는 것과 같다). 어느 방향에서 올지는 데이터가, 방 구조는 레벨이 정한다. 메시 대신 이름으로 찾는 `Muzzle`·`Grip` 규칙과 같은 방식이다. 스폰 지점은 바닥 위치와 화살표 방향만 갖는다.
+- **웨이브 데이터 `UWaveDataAsset`**: 첫 웨이브까지 `StartDelay`, 웨이브 목록. 웨이브는 적 묶음 목록(`EnemyClass`·`Count`·`SpawnPointName`·`StartDelay`·`SpawnInterval`)과 다 막은 뒤 쉬는 `RestAfterClear`.
+- **진행은 게임 모드의 컴포넌트 `UWaveSpawner`가 맡는다.** 스폰 타이머, 살아 있는 적 세기(스폰한 적의 `OnDied` 구독), 다음 웨이브 예약을 하고 `OnWaveStarted`/`OnWaveCleared`/`OnAllWavesCleared`를 발행만 한다. 게임 모드는 시작할 때 웨이브를 시작하고, 모두 막으면 `Victory`, 실패하면 웨이브를 멈춘다. 무기·적처럼 "코어 + 컴포넌트" 모양이고 게임 모드가 커지지 않는다.
+- **첫 웨이브는 게임 시작 후 `StartDelay` 뒤 자동으로 시작한다.** 시작 버튼은 두지 않는다.
+- **승리 화면은 실패 화면과 따로 둔다.** 게임 모드에 `VictoryScreenClass`를 더하고 BP·WBP를 하나씩 만든다. 부모 위젯은 실패 화면과 같이 쓴다.
+- 스텝: 6-6a 웨이브 진행(데이터·스폰 지점·`UWaveSpawner`·승리 상태, 로그) → 6-6b 승리 화면.
+
 ---
 
 ## 7. 범위와 우선순위

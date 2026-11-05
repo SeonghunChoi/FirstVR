@@ -236,6 +236,8 @@ Content/Portfolio/
   - 6-5c. 왼손 손목 체력 위젯
   - 6-5d. 실패 화면(3D 위젯) + 위젯 포인터로 '다시 시작' → 레벨 다시 열기
 - 6-6. 웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리
+  - 6-6a. 웨이브 진행: `UWaveDataAsset` + `AEnemySpawnPoint`(이름으로 고름) + 게임 모드 컴포넌트 `UWaveSpawner`, 모두 막으면 `Victory` → 로그와 `Enemy.Kill`로 확인
+  - 6-6b. 승리 화면: `VictoryScreenClass` + BP·WBP (부모 위젯은 실패 화면과 공유)
 - 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (세부 설계 판단은 이 스텝에서)
 - 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
 - 6-9. 플레이 테스트와 데이터 튜닝
@@ -394,8 +396,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - WBP에 `BindWidget` 이름의 위젯이 없으면 `"RestartButton" 필수 위젯 바인딩을 찾지 못했습니다` 컴파일 오류가 난다(버튼 이름을 맞추면 사라짐)
 - [x] ✅ **Step 6-5**: 플레이어 체력·피격 피드백·손목 체력·실패 화면과 다시 시작
 
+- [x] Step 6-6a: `UWaveDataAsset`(`Game/`, `StartDelay`, `Waves` = `FWaveDefinition`(`Groups`, `RestAfterClear`), 묶음 `FWaveSpawnGroup`(`EnemyClass`·`Count`·`SpawnPointName`·`StartDelay`·`SpawnInterval`, 0이면 한꺼번에)), `AEnemySpawnPoint`(바닥 위치·에디터 전용 화살표·`EditInstanceOnly` `SpawnPointName`), 게임 모드 컴포넌트 `UWaveSpawner`(묶음마다 반복 타이머, CDO 캡슐 반 높이만큼 올려 스폰, 스폰한 적 `OnDied` 구독으로 생존 수, 다 나오고 0명이면 `OnWaveCleared` → `RestAfterClear` 뒤 다음, 마지막이면 `OnAllWavesCleared`, 스폰 실패도 남은 수를 줄임, `StopWaves`, `LogWave`), `EEncounterState::Victory`, 게임 모드 `BeginPlay`에서 `StartWaves`, 모두 막으면 `Victory`, 실패 시 `StopWaves`, 결과가 난 뒤의 사망·승리 무시 — 빌드, 레벨 배치 적 삭제, 스폰 지점 `Front`·`Left`, `Portfolio/Data/DA_Waves_Test`(웨이브 1: `Front` 1명, 웨이브 2: `Front` 2명 간격 3 + `Left` 1명 지연 2), `BP_FirstVRGameMode` `Wave Spawner` `Wave Data` — 일반 Play에서 웨이브 1 → `Enemy.Kill` → 5초 쉼 → 웨이브 2(묶음 지연·간격대로) → `Enemy.Kill` → `All waves cleared` → `Encounter Victory`, 웨이브 2 도중 `Player.Damage 100` → `Encounter Failed` → `Waves stopped at wave 2/2` → `Halted 3 enemies` → 실패 화면 확인
+  - `Spawn Point Name`은 아웃라이너 이름(액터 라벨)과 다르다. 라벨은 에디터 전용 값이라 게임에서 쓰지 않는다. 비워 두면 `Spawn point 'X' not found`
+  - 실패 시험은 웨이브 2의 적이 다 나온 뒤였다. 스폰 도중 실패해 남은 스폰이 취소되는 것은 직접 보지 않음(`ClearAllTimersForObject` 경로)
+
 ### 현재 위치
-- **Step 6-6** 다음 (웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리)
+- **Step 6-6b** 다음 (승리 화면: `VictoryScreenClass` + BP·WBP, 부모 위젯 공유)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -431,4 +437,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-04: 피격 피드백 `UPlayerHitFeedback`은 `OnHealthChanged`(피해 > 0)를 구독해 카메라 포스트 프로세스 비네트(가장자리만 붉게, 세기 파라미터를 `FlashDuration` 동안 0으로, 쉴 때 가중치 0), 양손 같은 햅틱, 2D 피격음을 낸다. 피격음은 임시로 `Fire_Cue` 낮은 피치, 나중에 교체. (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 체력 표시는 C++ 위젯 부모 `UPlayerHealthWidget`(`UI/`, `BindWidget` `HealthBar` 필수·`BindWidgetOptional` `HealthText`, 소유 폰의 `UPlayerHealth` 구독, 연출용 `OnHealthDisplayUpdated`)이 로직, WBP가 배치. 손목 위젯은 `BP_XRPawn` 왼손 컨트롤러 아래 Widget Component로 항상 보임. `Build.cs`에 `UMG`(공개)·`Slate`/`SlateCore`(비공개). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 실패 화면은 템플릿 `BP_Menu`를 복제한 `BP_FailScreen`(배치·레이저·포인터 입력은 템플릿 그대로) 안에 C++ 부모 `UFailScreenWidget`(`BindWidget` `RestartButton` → `RestartEncounter`)의 WBP를 넣는다. 게임 모드는 실패 시 `FailScreenClass`를 머리 앞에 스폰하고, `AEnemyAIController::HaltLogic`으로 레벨의 적 판단을 멈춘다(게임 모드가 적을 알고 적은 게임 모드를 모름). (`Docs/PLAN.md` 6.9 플레이어 체력)
+- 2026-11-05: 웨이브는 레벨의 스폰 지점 `AEnemySpawnPoint`를 데이터 `UWaveDataAsset`이 이름(`SpawnPointName`)으로 고른다. 진행은 게임 모드 컴포넌트 `UWaveSpawner`(스폰 타이머·생존 수·다음 웨이브, 이벤트 발행만), 게임 모드는 시작 시 `StartWaves`, 모두 막으면 `Victory`, 실패 시 `StopWaves`. 첫 웨이브는 `StartDelay` 뒤 자동. 승리 화면은 따로(`VictoryScreenClass`), 부모 위젯 공유. 6-6a/b로 나눔. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
