@@ -308,6 +308,15 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 
 ---
 
+### 4.13 결정: 탄창 교체 ✅
+
+- **탄의 원본은 집는 탄창 액터 `AMagazine`이다.** 탄 종류(`AmmoType`)·장탄수(`Capacity`)는 탄창 설정값, 처음 든 탄 수(`InitialRounds`)는 배치별 값, 남은 탄(`Rounds`)은 상태다. `UMagazineStep`은 "지금 끼워진 탄창"을 가리키고 발사 때 거기서 한 발을 꺼낸다(없으면 `No magazine`, 비면 `Empty`로 Failed). 빼낸 탄창은 남은 탄을 그대로 갖는다. "탄을 따라가는 값은 탄에" 규칙의 연장이고, 2-2의 `UMagazineStep::Capacity`·`AllowedAmmo`·`InitialAmmo`·`AddAmmo`는 탄창으로 옮기거나 없앤다.
+- **맞는 탄창은 탄창 종류 목록으로 정한다.** `UMagazineStep::AllowedMagazines`(탄창 클래스 목록, `IsA`로 검사)에 든 탄창만 들어간다. 권총 탄창은 권총에만 맞는다. 탄 종류는 탄창이 정한다.
+- **끼우기는 `MagazineWell` 근처에서 탄창을 놓을 때다.** 탄창 BP가 잡기 컴포넌트의 `OnDropped`를 구독해 `TryInsertNearby`를 부르면, 근처 무기의 `UMagazineStep`이 자기 `MagazineWell`까지 거리(`InsertRadius`)와 호환을 확인하고 받아들인다. 방향은 보지 않는다(시뮬레이터에서 각도 맞추기가 어렵다). 끼워진 탄창은 물리·충돌을 끄고, 탄창의 윗면 표시 `MagazineTop`(Scene Component)이 `MagazineWell`에 오도록 붙는다. 루트 충돌체는 물리로 움직여야 해서 원점을 윗면으로 옮길 수 없기 때문에 이름 있는 기준점을 둔다(규칙 8).
+- **빼기는 무기를 잡은 손의 B/Y 버튼이다.** 입력 컴포넌트 `UMagazineReleaseInputComponent`(`UWeaponInputComponent` 자식)가 `UMagazineStep::EjectMagazine`을 부르고, 탄창은 떼어져 물리로 떨어진다. 떨어지는 동안 잠깐 무기 몸체(`PhysicsBody`)와 충돌을 무시해 튕기지 않게 한다.
+- **레벨에 놓인 무기는 탄창이 끼워진 채 시작한다.** `UMagazineStep`의 배치별 값 `InitialMagazine`(탄창 클래스)을 `BeginPlay`에서 스폰해 끼운다. 비워 두면 빈 무기다.
+- 스텝: 6-7a 탄창 액터와 탄의 원본 이동(초기 탄창, 발사 회귀) → 6-7b 놓아서 끼우기 → 6-7c 버튼으로 빼기.
+
 ## 5. 데이터 구조
 
 ### 5.1 결정: 데이터 위치 ✅

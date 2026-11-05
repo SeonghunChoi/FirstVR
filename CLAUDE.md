@@ -238,7 +238,10 @@ Content/Portfolio/
 - 6-6. 웨이브: 웨이브 데이터 에셋 + 스폰 지점, 전멸 시 다음 웨이브, 마지막이면 승리
   - 6-6a. 웨이브 진행: `UWaveDataAsset` + `AEnemySpawnPoint`(이름으로 고름) + 게임 모드 컴포넌트 `UWaveSpawner`, 모두 막으면 `Victory` → 로그와 `Enemy.Kill`로 확인
   - 6-6b. 승리 화면: `VictoryScreenClass` + BP·WBP (부모 위젯은 실패 화면과 공유)
-- 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (세부 설계 판단은 이 스텝에서)
+- 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (설계 판단 완료, `Docs/PLAN.md` 4.13)
+  - 6-7a. `AMagazine`(탄의 원본) + `UMagazineStep` 개편(끼워진 탄창에서 꺼냄, `AllowedMagazines`, 배치별 `InitialMagazine`) → 기존 무기 회귀
+  - 6-7b. 놓아서 끼우기: 탄창 BP `OnDropped` → `TryInsertNearby`, `InsertRadius`·호환 검사 → VR Preview
+  - 6-7c. 버튼으로 빼기: `UMagazineReleaseInputComponent`(잡은 손 B/Y) → `EjectMagazine`, 물리로 떨어짐 → VR Preview
 - 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
 - 6-9. 플레이 테스트와 데이터 튜닝
 - 6-10. 실기기 검증 (헤드셋 확보 시, 시뮬레이터 런타임 토글 해제)
@@ -405,8 +408,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 이름 변경 뒤 실패 화면 회귀도 확인: 웨이브 1 도중 `Player died` → `Waves stopped at wave 1/2` → `Halted 1 enemies` → `Result screen BP_FailScreen_C_0 spawned` → `Restart clicked` → 다시 시작
 - [x] ✅ **Step 6-6**: 웨이브 진행과 승리·실패 결과 화면
 
+- [x] Step 6-7a: `AMagazine`(`Weapon/`, 추상, 루트 박스 `Body`(`PhysicsActor`, 물리), `AmmoType`·`Capacity`·`TopComponentName`(`MagazineTop`)·`EjectClearTime` 설정, 배치별 `InitialRounds`(음수면 가득), 상태 `Rounds`, `TakeRound`, `AttachToWell`(물리·충돌 끄고 스냅 후 `MagazineTop` 상대 트랜스폼의 역으로 몸통을 옮겨 윗면을 `MagazineWell`에 맞춤)/`DetachFromWell`(떨어뜨릴 때 `EjectClearTime` 동안 `PhysicsBody` 무시), `OnInsertedChanged`), `UMagazineStep` 개편(`Capacity`·`AllowedAmmo`·`InitialAmmo`·`AddAmmo` 삭제, `AllowedMagazines`(`IsA`)·`MagazineWellName`·`InsertRadius`·배치별 `InitialMagazine`, 상태 `InsertedMagazine`, `InsertMagazine`/`EjectMagazine`/`CanAcceptMagazine`/`FindMagazineWell`, `OnMagazineChanged`, 없으면 `No magazine`·비면 `Empty`로 Failed) — 빌드, 레벨 블루프린트 `R` → `AddAmmo` 삭제, `Portfolio/Weapons/Magazines/BP_Magazine_Pistol`(9mm 15)·`BP_Magazine_Rifle`(5.56 30)(큐브 메시, `MagazineTop` Z 6, `BP_GrabComponent` Free), 무기 BP마다 `Allowed Magazines`, `BP_AssembledRifle`·`BP_TestWeapon`에 `MagazineWell`, 레벨 무기마다 `Initial Magazine` — 시작 시 다섯 무기 `Inserted into ... (30/30, 15/15)`, VR Preview에서 소총 30발 소모 → `Empty` Failed, 권총 `14/15 left`, 탄창이 무기를 따라다님 확인
+  - BP에서 루트 컴포넌트는 위치·회전을 바꿀 수 없다(액터 위치). 물리 루트의 원점을 옮길 수 없으니 이름 있는 기준점(`MagazineTop`)을 둔다
+  - `Initial Magazine`을 비운 무기의 `No magazine`은 직접 보지 않음
+
 ### 현재 위치
-- **Step 6-7** 다음 (탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전, 세부 설계 판단부터)
+- **Step 6-7b** 다음 (놓아서 끼우기: 탄창 BP `OnDropped` → `TryInsertNearby`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -444,4 +451,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-05: 실패 화면은 템플릿 `BP_Menu`를 복제한 `BP_FailScreen`(배치·레이저·포인터 입력은 템플릿 그대로) 안에 C++ 부모 `UFailScreenWidget`(`BindWidget` `RestartButton` → `RestartEncounter`)의 WBP를 넣는다. 게임 모드는 실패 시 `FailScreenClass`를 머리 앞에 스폰하고, `AEnemyAIController::HaltLogic`으로 레벨의 적 판단을 멈춘다(게임 모드가 적을 알고 적은 게임 모드를 모름). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 웨이브는 레벨의 스폰 지점 `AEnemySpawnPoint`를 데이터 `UWaveDataAsset`이 이름(`SpawnPointName`)으로 고른다. 진행은 게임 모드 컴포넌트 `UWaveSpawner`(스폰 타이머·생존 수·다음 웨이브, 이벤트 발행만), 게임 모드는 시작 시 `StartWaves`, 모두 막으면 `Victory`, 실패 시 `StopWaves`. 첫 웨이브는 `StartDelay` 뒤 자동. 승리 화면은 따로(`VictoryScreenClass`), 부모 위젯 공유. 6-6a/b로 나눔. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-05: 결과 화면 위젯 부모를 실패·승리가 함께 쓰도록 `UFailScreenWidget` → `UEncounterResultWidget`, 게임 모드 `FailScreenDistance` → `ResultScreenDistance`로 바꾸고 `DefaultEngine.ini` `[CoreRedirects]`로 잇는다. 게임 모드는 `SpawnResultScreen(Class)` 하나로 실패·승리 화면을 띄운다. (`Docs/PLAN.md` 6.9 웨이브)
+- 2026-11-05: 탄창 교체 — 탄의 원본은 집는 탄창 액터 `AMagazine`(`AmmoType`·`Capacity` 설정, `InitialRounds` 배치별, `Rounds` 상태), `UMagazineStep`은 끼워진 탄창에서 한 발씩 꺼낸다. 호환은 `AllowedMagazines`(탄창 클래스 목록). 끼우기는 `MagazineWell` 근처에서 놓을 때(방향 무시), 빼기는 잡은 손 B/Y(`UMagazineReleaseInputComponent`) → 물리로 떨어짐. 배치 무기는 `InitialMagazine`이 끼워진 채 시작. 6-7a/b/c. (`Docs/PLAN.md` 4.13)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
