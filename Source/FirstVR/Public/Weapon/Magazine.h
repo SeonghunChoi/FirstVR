@@ -39,6 +39,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Weapon|Magazine")
 	bool IsInserted() const { return InsertedInto.IsValid(); }
 
+	/**
+	 * 손에서 놓였을 때 블루프린트가 잡기 컴포넌트의 OnDropped에서 부른다.
+	 * 다음 틱에(템플릿 잡기가 놓기 처리를 끝낸 뒤) 가장 가까운 MagazineWell이 InsertRadius 안이면 끼우고, 아니면 물리로 떨어뜨린다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Magazine")
+	void HandleDropped();
+
+	/** 손에 잡혔을 때 블루프린트가 OnGrabbed에서 부른다. 끼워진 채 잡혔으면 무기에서 빠진 것으로 처리한다. */
+	UFUNCTION(BlueprintCallable, Category = "Weapon|Magazine")
+	void HandleGrabbed();
+
 	/** UMagazineStep이 받아들였을 때 부른다. 물리·충돌을 끄고 Well에 스냅해 붙는다. */
 	void AttachToWell(UMagazineStep* Step, USceneComponent* Well);
 
@@ -78,6 +89,15 @@ protected:
 
 private:
 	void RestoreWeaponCollision();
+
+	/** 놓인 다음 틱에 끼울 곳을 찾는다. */
+	void FinishDrop();
+
+	/** 이 탄창이 맞고, 윗면에서 MagazineWell까지 InsertRadius 안인 무기 중 가장 가까운 것. */
+	UMagazineStep* FindNearbyStep() const;
+
+	/** MagazineWell에 맞출 자리(MagazineTop, 없으면 몸통 중심)의 월드 위치. */
+	FVector GetTopLocation() const;
 
 	/** 남은 탄 수. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Weapon|Magazine|State", meta = (AllowPrivateAccess = "true"))
