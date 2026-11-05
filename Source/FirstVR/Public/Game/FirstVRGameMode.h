@@ -21,9 +21,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEncounterStateChanged, EEncounter
 /**
  * 전투 구간의 규칙을 맡는 게임 모드. 유니티의 GameManager 자리다.
  * 플레이어 폰을 준비할 때 체력 컴포넌트의 OnDied를 구독해 실패 상태로 바꾼다. 플레이어 쪽은 게임 모드를 모른다.
- * 실패하면 적의 판단을 멈추고 실패 화면을 띄운다. 실패 화면의 '다시 시작'이 RestartEncounter를 부른다.
+ * 실패하면 적의 판단을 멈추고 실패 화면을, 모두 막으면 승리 화면을 띄운다. 결과 화면의 '다시 시작'이 RestartEncounter를 부른다.
  * 웨이브 진행은 컴포넌트 UWaveSpawner가 하고, 게임 모드는 시작할 때 웨이브를 시작하고 모두 막으면 승리로 바꾼다.
- * 어떤 폰·실패 화면·웨이브 데이터를 쓸지는 블루프린트 자식에서 정한다.
+ * 어떤 폰·결과 화면·웨이브 데이터를 쓸지는 블루프린트 자식에서 정한다.
  */
 UCLASS()
 class FIRSTVR_API AFirstVRGameMode : public AGameModeBase
@@ -60,9 +60,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter")
 	TSubclassOf<AActor> FailScreenClass;
 
-	/** 실패 화면을 머리에서 얼마나 앞(cm)에 스폰할지. 화면 액터가 스스로 자리를 다시 잡아도 된다. */
+	/** 마지막 웨이브까지 막으면 스폰할 승리 화면 액터. 비워 두면 띄우지 않는다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter")
+	TSubclassOf<AActor> VictoryScreenClass;
+
+	/** 결과 화면을 머리에서 얼마나 앞(cm)에 스폰할지. 화면 액터가 스스로 자리를 다시 잡아도 된다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter", meta = (ClampMin = "0.0"))
-	float FailScreenDistance = 100.f;
+	float ResultScreenDistance = 100.f;
 
 private:
 	UFUNCTION()
@@ -76,11 +80,12 @@ private:
 	/** 레벨의 모든 적 판단을 멈춘다. */
 	void HaltEnemies(const FString& Reason) const;
 
-	void SpawnFailScreen();
+	/** 결과 화면을 머리 앞에 한 번만 스폰한다. */
+	void SpawnResultScreen(TSubclassOf<AActor> ScreenClass);
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Encounter|State", meta = (AllowPrivateAccess = "true"))
 	EEncounterState EncounterState = EEncounterState::Playing;
 
 	UPROPERTY(VisibleInstanceOnly, Transient, Category = "Encounter|State")
-	TObjectPtr<AActor> FailScreen;
+	TObjectPtr<AActor> ResultScreen;
 };

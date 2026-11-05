@@ -52,7 +52,7 @@ void AFirstVRGameMode::HandlePlayerDied()
 	SetEncounterState(EEncounterState::Failed);
 	WaveSpawner->StopWaves();
 	HaltEnemies(TEXT("Encounter failed"));
-	SpawnFailScreen();
+	SpawnResultScreen(FailScreenClass);
 }
 
 void AFirstVRGameMode::HandleAllWavesCleared()
@@ -63,6 +63,7 @@ void AFirstVRGameMode::HandleAllWavesCleared()
 	}
 
 	SetEncounterState(EEncounterState::Victory);
+	SpawnResultScreen(VictoryScreenClass);
 }
 
 void AFirstVRGameMode::HaltEnemies(const FString& Reason) const
@@ -76,9 +77,9 @@ void AFirstVRGameMode::HaltEnemies(const FString& Reason) const
 	UE_LOG(LogEncounter, Log, TEXT("Halted %d enemies"), Count);
 }
 
-void AFirstVRGameMode::SpawnFailScreen()
+void AFirstVRGameMode::SpawnResultScreen(TSubclassOf<AActor> ScreenClass)
 {
-	if (!FailScreenClass || FailScreen)
+	if (!ScreenClass || ResultScreen)
 	{
 		return;
 	}
@@ -89,16 +90,16 @@ void AFirstVRGameMode::SpawnFailScreen()
 		return;
 	}
 
-	// 머리 앞, 수평 방향으로 FailScreenDistance만큼. 화면 앞면이 머리를 보도록 돌려 둔다.
+	// 머리 앞, 수평 방향으로 ResultScreenDistance만큼. 화면 앞면이 머리를 보도록 돌려 둔다.
 	const FVector Head = PlayerController->PlayerCameraManager->GetCameraLocation();
 	const FRotator Facing(0.f, PlayerController->PlayerCameraManager->GetCameraRotation().Yaw, 0.f);
-	const FVector Location = Head + Facing.Vector() * FailScreenDistance;
+	const FVector Location = Head + Facing.Vector() * ResultScreenDistance;
 	const FRotator Rotation(0.f, Facing.Yaw + 180.f, 0.f);
 
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	FailScreen = GetWorld()->SpawnActor<AActor>(FailScreenClass, Location, Rotation, Params);
-	UE_LOG(LogEncounter, Log, TEXT("Fail screen %s spawned"), *GetNameSafe(FailScreen));
+	ResultScreen = GetWorld()->SpawnActor<AActor>(ScreenClass, Location, Rotation, Params);
+	UE_LOG(LogEncounter, Log, TEXT("Result screen %s spawned"), *GetNameSafe(ResultScreen));
 }
 
 void AFirstVRGameMode::SetEncounterState(EEncounterState NewState)

@@ -400,8 +400,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `Spawn Point Name`은 아웃라이너 이름(액터 라벨)과 다르다. 라벨은 에디터 전용 값이라 게임에서 쓰지 않는다. 비워 두면 `Spawn point 'X' not found`
   - 실패 시험은 웨이브 2의 적이 다 나온 뒤였다. 스폰 도중 실패해 남은 스폰이 취소되는 것은 직접 보지 않음(`ClearAllTimersForObject` 경로)
 
+- [x] Step 6-6b: 결과 화면 위젯 부모 `UFailScreenWidget` → `UEncounterResultWidget`(파일 이름도 변경), 게임 모드 `VictoryScreenClass` 추가, `FailScreenDistance` → `ResultScreenDistance`, `SpawnFailScreen` → `SpawnResultScreen(Class)`(한 번만), 승리 시 승리 화면 스폰, `DefaultEngine.ini` `[CoreRedirects]`에 클래스·속성 리다이렉트 — 빌드, `WBP_FailScreen` 부모가 새 이름으로 이어짐, `Portfolio/UI/WBP_VictoryScreen`·`BP_VictoryScreen`(실패 화면 복제, 문구 `VICTORY`), `BP_FirstVRGameMode` `Victory Screen Class` — VR Preview에서 `All waves cleared` → `Encounter Victory` → `Result screen BP_VictoryScreen_C_0 spawned` → `Restart` 클릭 → `Restarting L_WeaponTest` → 다시 `Watching`·`2 waves`·`Health 100/100` 확인
+  - 위젯 BP를 편집·컴파일한 직후 에디터를 다시 켜지 않고 레벨 다시 열기를 하면 `Fatal World Leaks`(실행 취소 기록 `TransBuffer`가 미리보기 월드의 `REINST_` 위젯을 붙잡음)로 크래시가 날 수 있다. 에디터를 새로 켜면 사라진다
+  - 이름 변경 뒤 실패 화면 회귀도 확인: 웨이브 1 도중 `Player died` → `Waves stopped at wave 1/2` → `Halted 1 enemies` → `Result screen BP_FailScreen_C_0 spawned` → `Restart clicked` → 다시 시작
+- [x] ✅ **Step 6-6**: 웨이브 진행과 승리·실패 결과 화면
+
 ### 현재 위치
-- **Step 6-6b** 다음 (승리 화면: `VictoryScreenClass` + BP·WBP, 부모 위젯 공유)
+- **Step 6-7** 다음 (탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전, 세부 설계 판단부터)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
@@ -438,4 +443,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-05: 체력 표시는 C++ 위젯 부모 `UPlayerHealthWidget`(`UI/`, `BindWidget` `HealthBar` 필수·`BindWidgetOptional` `HealthText`, 소유 폰의 `UPlayerHealth` 구독, 연출용 `OnHealthDisplayUpdated`)이 로직, WBP가 배치. 손목 위젯은 `BP_XRPawn` 왼손 컨트롤러 아래 Widget Component로 항상 보임. `Build.cs`에 `UMG`(공개)·`Slate`/`SlateCore`(비공개). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 실패 화면은 템플릿 `BP_Menu`를 복제한 `BP_FailScreen`(배치·레이저·포인터 입력은 템플릿 그대로) 안에 C++ 부모 `UFailScreenWidget`(`BindWidget` `RestartButton` → `RestartEncounter`)의 WBP를 넣는다. 게임 모드는 실패 시 `FailScreenClass`를 머리 앞에 스폰하고, `AEnemyAIController::HaltLogic`으로 레벨의 적 판단을 멈춘다(게임 모드가 적을 알고 적은 게임 모드를 모름). (`Docs/PLAN.md` 6.9 플레이어 체력)
 - 2026-11-05: 웨이브는 레벨의 스폰 지점 `AEnemySpawnPoint`를 데이터 `UWaveDataAsset`이 이름(`SpawnPointName`)으로 고른다. 진행은 게임 모드 컴포넌트 `UWaveSpawner`(스폰 타이머·생존 수·다음 웨이브, 이벤트 발행만), 게임 모드는 시작 시 `StartWaves`, 모두 막으면 `Victory`, 실패 시 `StopWaves`. 첫 웨이브는 `StartDelay` 뒤 자동. 승리 화면은 따로(`VictoryScreenClass`), 부모 위젯 공유. 6-6a/b로 나눔. (`Docs/PLAN.md` 6.9 웨이브)
+- 2026-11-05: 결과 화면 위젯 부모를 실패·승리가 함께 쓰도록 `UFailScreenWidget` → `UEncounterResultWidget`, 게임 모드 `FailScreenDistance` → `ResultScreenDistance`로 바꾸고 `DefaultEngine.ini` `[CoreRedirects]`로 잇는다. 게임 모드는 `SpawnResultScreen(Class)` 하나로 실패·승리 화면을 띄운다. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
