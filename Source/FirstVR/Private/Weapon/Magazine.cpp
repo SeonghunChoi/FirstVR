@@ -66,6 +66,13 @@ void AMagazine::FinishDrop()
 
 void AMagazine::HandleGrabbed()
 {
+	// 버려져 사라지는 중에 다시 잡았으면 남긴다. GetLifeSpan은 남은 시간이고 0이면 사라질 예정이 없다.
+	if (GetLifeSpan() > 0.f)
+	{
+		SetLifeSpan(0.f);
+		UE_LOG(LogWeapon, Log, TEXT("[%s] Picked up, kept (%d/%d left)"), *GetName(), Rounds, Capacity);
+	}
+
 	UMagazineStep* Step = InsertedInto.Get();
 	if (!Step)
 	{
@@ -168,9 +175,15 @@ void AMagazine::DetachFromWell(bool bDrop)
 		Body->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Ignore);
 		Body->SetSimulatePhysics(true);
 		GetWorldTimerManager().SetTimer(ClearTimer, this, &AMagazine::RestoreWeaponCollision, FMath::Max(EjectClearTime, 0.01f), false);
+
+		// 버린 탄창이 보급대에서 계속 나오는 탄창과 함께 쌓이지 않게 한다. 적 시체의 CorpseLifeSpan과 같은 방식.
+		if (DiscardLifeSpan > 0.f)
+		{
+			SetLifeSpan(DiscardLifeSpan);
+		}
 	}
 
-	UE_LOG(LogWeapon, Log, TEXT("[%s] Ejected (%d/%d left)"), *GetName(), Rounds, Capacity);
+	UE_LOG(LogWeapon, Log, TEXT("[%s] Ejected (%d/%d left, gone in %.0fs)"), *GetName(), Rounds, Capacity, GetLifeSpan());
 	OnInsertedChanged(false);
 }
 
