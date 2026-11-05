@@ -240,7 +240,7 @@ Content/Portfolio/
   - 6-6b. 승리 화면: `VictoryScreenClass` + BP·WBP (부모 위젯은 실패 화면과 공유)
 - 6-7. 탄창 교체: 집는 탄창 액터, `MagazineWell`에 끼워 장전 (설계 판단 완료, `Docs/PLAN.md` 4.13)
   - 6-7a. `AMagazine`(탄의 원본) + `UMagazineStep` 개편(끼워진 탄창에서 꺼냄, `AllowedMagazines`, 배치별 `InitialMagazine`) → 기존 무기 회귀
-  - 6-7b. 놓아서 끼우기: 탄창 BP `OnDropped` → `TryInsertNearby`, `InsertRadius`·호환 검사 → VR Preview
+  - 6-7b. 놓아서 끼우기: 탄창 BP `OnDropped` → `HandleDropped`(다음 틱, `InsertRadius`·호환 검사), `OnGrabbed` → `HandleGrabbed` → VR Preview
   - 6-7c. 버튼으로 빼기: `UMagazineReleaseInputComponent`(잡은 손 B/Y) → `EjectMagazine`, 물리로 떨어짐 → VR Preview
 - 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝
 - 6-9. 플레이 테스트와 데이터 튜닝
@@ -410,10 +410,14 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 6-7a: `AMagazine`(`Weapon/`, 추상, 루트 박스 `Body`(`PhysicsActor`, 물리), `AmmoType`·`Capacity`·`TopComponentName`(`MagazineTop`)·`EjectClearTime` 설정, 배치별 `InitialRounds`(음수면 가득), 상태 `Rounds`, `TakeRound`, `AttachToWell`(물리·충돌 끄고 스냅 후 `MagazineTop` 상대 트랜스폼의 역으로 몸통을 옮겨 윗면을 `MagazineWell`에 맞춤)/`DetachFromWell`(떨어뜨릴 때 `EjectClearTime` 동안 `PhysicsBody` 무시), `OnInsertedChanged`), `UMagazineStep` 개편(`Capacity`·`AllowedAmmo`·`InitialAmmo`·`AddAmmo` 삭제, `AllowedMagazines`(`IsA`)·`MagazineWellName`·`InsertRadius`·배치별 `InitialMagazine`, 상태 `InsertedMagazine`, `InsertMagazine`/`EjectMagazine`/`CanAcceptMagazine`/`FindMagazineWell`, `OnMagazineChanged`, 없으면 `No magazine`·비면 `Empty`로 Failed) — 빌드, 레벨 블루프린트 `R` → `AddAmmo` 삭제, `Portfolio/Weapons/Magazines/BP_Magazine_Pistol`(9mm 15)·`BP_Magazine_Rifle`(5.56 30)(큐브 메시, `MagazineTop` Z 6, `BP_GrabComponent` Free), 무기 BP마다 `Allowed Magazines`, `BP_AssembledRifle`·`BP_TestWeapon`에 `MagazineWell`, 레벨 무기마다 `Initial Magazine` — 시작 시 다섯 무기 `Inserted into ... (30/30, 15/15)`, VR Preview에서 소총 30발 소모 → `Empty` Failed, 권총 `14/15 left`, 탄창이 무기를 따라다님 확인
   - BP에서 루트 컴포넌트는 위치·회전을 바꿀 수 없다(액터 위치). 물리 루트의 원점을 옮길 수 없으니 이름 있는 기준점(`MagazineTop`)을 둔다
-  - `Initial Magazine`을 비운 무기의 `No magazine`은 직접 보지 않음
+  - `Initial Magazine`을 비운 무기의 `No magazine`은 직접 보지 않음 → 6-7b에서 확인
+
+- [x] Step 6-7b: `AMagazine::HandleDropped`(다음 틱 `FinishDrop`: `TObjectIterator<UMagazineStep>`로 비어 있고 맞는 무기 중 `MagazineTop` ↔ `MagazineWell`이 가장 가까운 것, `InsertRadius` 안이면 `InsertMagazine`, 아니면 물리로 떨어짐·거리 로그)·`HandleGrabbed`(끼워진 채 손에 잡히면 `UMagazineStep::ReleaseMagazine`으로 상태만 비움, `Pulled out by hand`) — 빌드, 탄창 BP 두 개에서 잡기 컴포넌트 `On Grabbed`/`On Dropped` → `Handle Grabbed`/`Handle Dropped`, 시험 맵 `Portfolio/Maps/L_WeaponTest_Empty`(빈 권총·빈 연발 소총·낱개 탄창, 스폰 지점 없음) — VR Preview에서 멀리 놓으면 `nearest well ... 53/21 cm away (radius 15)`로 떨어짐, 가까이 놓으면 `Inserted into BP_PistolWeapon_C_1 (15/15)` → `14/15`·`13/15` 발사, 빈 연발 소총은 `No magazine` → `Click! (empty)` → 연발도 `fire aborted`로 멈춤 확인
+  - `L_WeaponTest_Empty`에는 스폰 지점이 없어 `Spawn point 'Front' not found` 경고 뒤 바로 `Victory`가 된다(무기 시험용이라 그대로 둠)
+  - 미확인: 소총 탄창을 권총 근처에서 놓을 때의 거절(`no empty weapon that fits`), 끼워진 탄창을 손으로 잡은 `Pulled out by hand`
 
 ### 현재 위치
-- **Step 6-7b** 다음 (놓아서 끼우기: 탄창 BP `OnDropped` → `TryInsertNearby`)
+- **Step 6-7c** 다음 (버튼으로 빼기: `UMagazineReleaseInputComponent`, 잡은 손 B/Y → `EjectMagazine`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 

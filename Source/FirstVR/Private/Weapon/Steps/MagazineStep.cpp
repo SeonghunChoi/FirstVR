@@ -115,6 +115,17 @@ AMagazine* UMagazineStep::EjectMagazine()
 	return Magazine;
 }
 
+void UMagazineStep::ReleaseMagazine(AMagazine* Magazine)
+{
+	if (!Magazine || Magazine != InsertedMagazine)
+	{
+		return;
+	}
+
+	InsertedMagazine = nullptr;
+	OnMagazineChanged(nullptr);
+}
+
 USceneComponent* UMagazineStep::FindMagazineWell() const
 {
 	return FindSceneComponentByName(GetOwner(), MagazineWellName);

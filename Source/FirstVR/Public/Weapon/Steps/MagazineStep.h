@@ -31,6 +31,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon|Magazine")
 	AMagazine* EjectMagazine();
 
+	/** 탄창이 손에 잡혀 이미 빠져나갔을 때 탄창이 부른다. 떨어뜨리지 않고 상태만 비운다. */
+	void ReleaseMagazine(AMagazine* Magazine);
+
 	UFUNCTION(BlueprintPure, Category = "Weapon|Magazine")
 	AMagazine* GetInsertedMagazine() const { return InsertedMagazine; }
 
