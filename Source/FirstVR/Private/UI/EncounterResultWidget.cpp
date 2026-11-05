@@ -1,17 +1,17 @@
-﻿#include "UI/FailScreenWidget.h"
+﻿#include "UI/EncounterResultWidget.h"
 
 #include "Components/Button.h"
 #include "Engine/World.h"
 #include "Game/FirstVRGameMode.h"
 #include "Player/PlayerHealth.h"
 
-void UFailScreenWidget::NativeConstruct()
+void UEncounterResultWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	RestartButton->OnClicked.AddUniqueDynamic(this, &UFailScreenWidget::HandleRestartClicked);
+	RestartButton->OnClicked.AddUniqueDynamic(this, &UEncounterResultWidget::HandleRestartClicked);
 }
 
-void UFailScreenWidget::HandleRestartClicked()
+void UEncounterResultWidget::HandleRestartClicked()
 {
 	// 레벨이 다시 열릴 때까지 한 번만 누르게 한다.
 	RestartButton->SetIsEnabled(false);

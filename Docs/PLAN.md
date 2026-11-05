@@ -454,7 +454,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **웨이브 데이터 `UWaveDataAsset`**: 첫 웨이브까지 `StartDelay`, 웨이브 목록. 웨이브는 적 묶음 목록(`EnemyClass`·`Count`·`SpawnPointName`·`StartDelay`·`SpawnInterval`)과 다 막은 뒤 쉬는 `RestAfterClear`.
 - **진행은 게임 모드의 컴포넌트 `UWaveSpawner`가 맡는다.** 스폰 타이머, 살아 있는 적 세기(스폰한 적의 `OnDied` 구독), 다음 웨이브 예약을 하고 `OnWaveStarted`/`OnWaveCleared`/`OnAllWavesCleared`를 발행만 한다. 게임 모드는 시작할 때 웨이브를 시작하고, 모두 막으면 `Victory`, 실패하면 웨이브를 멈춘다. 무기·적처럼 "코어 + 컴포넌트" 모양이고 게임 모드가 커지지 않는다.
 - **첫 웨이브는 게임 시작 후 `StartDelay` 뒤 자동으로 시작한다.** 시작 버튼은 두지 않는다.
-- **승리 화면은 실패 화면과 따로 둔다.** 게임 모드에 `VictoryScreenClass`를 더하고 BP·WBP를 하나씩 만든다. 부모 위젯은 실패 화면과 같이 쓴다.
+- **승리 화면은 실패 화면과 따로 둔다.** 게임 모드에 `VictoryScreenClass`를 더하고 BP·WBP를 하나씩 만든다(실패 화면 복제, 문구만 다름). 부모 위젯은 실패 화면과 같이 쓰도록 `UFailScreenWidget`을 `UEncounterResultWidget`으로, 게임 모드의 `FailScreenDistance`를 `ResultScreenDistance`로 이름을 바꾸고 `[CoreRedirects]`로 기존 에셋을 잇는다.
 - 스텝: 6-6a 웨이브 진행(데이터·스폰 지점·`UWaveSpawner`·승리 상태, 로그) → 6-6b 승리 화면.
 
 ---
