@@ -419,7 +419,9 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 6-7c: `UMagazineReleaseInputComponent`(`Weapon/`, `UWeaponInputComponent` 자식, 버튼 → 같은 액터 `UMagazineStep::EjectMagazine`, 없으면 `No magazine to eject`) — 빌드, `Portfolio/Input/IA_MagRelease_*`·`IMC_MagRelease_*`(B/Y, `Default Mapping Contexts` 등록), `Portfolio/Weapons/Steps/BP_MagazineReleaseInput`(`BP_SafetyInput` 복제 후 부모 변경), 권총·소총 세 종·재조립 소총에 부착, 시험용 게임 모드 `Portfolio/Game/BP_FirstVRTestMode`(`BP_FirstVRGameMode` 자식, `Wave Data` 비움, `L_WeaponTest_Empty` 오버라이드) — VR Preview에서 `N` → `Ejected (21/30 left)`, `Ejected (30/30 left)`, 탄창이 떨어짐 확인
   - 빼낸 소총 탄창이 느리게 "떨어진" 원인: `BP_Magazine_Rifle`의 `Body`에서 `Enable Gravity`가 꺼져 있었다(떠 있다가 0.5초 뒤 무기 몸체 충돌이 돌아오며 밀려남). 켜서 해결. 진단은 임시 로그로 했고 지움
   - 승리 화면이 떠 있을 때 시뮬레이터 마우스 왼쪽 클릭(트리거)은 위젯 포인터 클릭도 되어 `Restart`가 눌릴 수 있다 → 무기 시험 맵은 `BP_FirstVRTestMode`로 웨이브·승리를 끈다
-  - 미확인: 뺀 뒤 `No magazine`, 빈 무기에서 `No magazine to eject`, 뺀 탄창을 다시 끼울 때 남은 탄 유지, 6-7b의 `no empty weapon that fits`·`Pulled out by hand`
+  - 추가 확인: 권총에서 `Ejected (15/15 left)` → `No magazine`·`Click! (empty)` → 다시 끼워 `Inserted (15/15)` → `14/15`~`12/15` 발사, 무기가 모두 차 있을 때 놓은 권총 탄창은 `Dropped, no empty weapon that fits`
+  - 덜 쓴 탄창 빼기: 연발 소총 `Ejected (19/30 left)`, 왼손으로 잡은 권총 `Ejected (12/15 left)`(왼손 Y 동작), 중력을 켠 뒤 0.3초 낙하 속도 약 -330 cm/s(정상)
+  - 미확인: `No magazine to eject`(빈 무기에서 다시 누름), 덜 쓴 탄창을 다시 끼운 결과(남은 탄은 탄창 객체에 있어 같은 값일 것), 빈 권총 옆 소총 탄창 거절, `Pulled out by hand`
 - [x] ✅ **Step 6-7**: 탄창 액터, 놓아서 끼우기, 버튼으로 빼기
 
 ### 현재 위치
