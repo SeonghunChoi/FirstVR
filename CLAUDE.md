@@ -109,7 +109,7 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - 시뮬레이터 `Viewport`(눈 선택)와 언리얼 프리뷰 창의 관전자 화면(왼쪽 눈)은 별개다.
   - 종료 시 `xrDestroySwapchain ... XR_ERROR_HANDLE_INVALID` ensure 로그는 무해하다.
   - **새 VR 입력 매핑(IMC)은 `프로젝트 세팅 > Enhanced Input > Default Mapping Contexts`에 등록해야** OpenXR 런타임이 그 버튼을 보내 준다(세션 시작 시 이 목록으로 액션을 만든다). 코드가 잡을 때 켜는 매핑이면 `Add Immediately`는 끈다.
-  - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼
+  - 시뮬레이터 `B` 키 = 조작 중인 손의 A/X 버튼, `N` 키 = B/Y 버튼
   - 템플릿 메뉴·실패 화면 버튼은 레이저로 가리키고 시뮬레이터 마우스 왼쪽 클릭으로 누른다
   - 잡기 토글: `BP_XRPawn`의 `bToggleGrab`(기본값)을 켜면 `U`를 한 번 눌러 잡고 한 번 더 눌러 놓는다. 실기기에서는 끈다
   - 시험용 콘솔 명령(프리뷰 창에서 `~`): `Enemy.Limp [Left|Right]` 절뚝임, `Enemy.Kill` 사망
@@ -416,8 +416,14 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `L_WeaponTest_Empty`에는 스폰 지점이 없어 `Spawn point 'Front' not found` 경고 뒤 바로 `Victory`가 된다(무기 시험용이라 그대로 둠)
   - 미확인: 소총 탄창을 권총 근처에서 놓을 때의 거절(`no empty weapon that fits`), 끼워진 탄창을 손으로 잡은 `Pulled out by hand`
 
+- [x] Step 6-7c: `UMagazineReleaseInputComponent`(`Weapon/`, `UWeaponInputComponent` 자식, 버튼 → 같은 액터 `UMagazineStep::EjectMagazine`, 없으면 `No magazine to eject`) — 빌드, `Portfolio/Input/IA_MagRelease_*`·`IMC_MagRelease_*`(B/Y, `Default Mapping Contexts` 등록), `Portfolio/Weapons/Steps/BP_MagazineReleaseInput`(`BP_SafetyInput` 복제 후 부모 변경), 권총·소총 세 종·재조립 소총에 부착, 시험용 게임 모드 `Portfolio/Game/BP_FirstVRTestMode`(`BP_FirstVRGameMode` 자식, `Wave Data` 비움, `L_WeaponTest_Empty` 오버라이드) — VR Preview에서 `N` → `Ejected (21/30 left)`, `Ejected (30/30 left)`, 탄창이 떨어짐 확인
+  - 빼낸 소총 탄창이 느리게 "떨어진" 원인: `BP_Magazine_Rifle`의 `Body`에서 `Enable Gravity`가 꺼져 있었다(떠 있다가 0.5초 뒤 무기 몸체 충돌이 돌아오며 밀려남). 켜서 해결. 진단은 임시 로그로 했고 지움
+  - 승리 화면이 떠 있을 때 시뮬레이터 마우스 왼쪽 클릭(트리거)은 위젯 포인터 클릭도 되어 `Restart`가 눌릴 수 있다 → 무기 시험 맵은 `BP_FirstVRTestMode`로 웨이브·승리를 끈다
+  - 미확인: 뺀 뒤 `No magazine`, 빈 무기에서 `No magazine to eject`, 뺀 탄창을 다시 끼울 때 남은 탄 유지, 6-7b의 `no empty weapon that fits`·`Pulled out by hand`
+- [x] ✅ **Step 6-7**: 탄창 액터, 놓아서 끼우기, 버튼으로 빼기
+
 ### 현재 위치
-- **Step 6-7c** 다음 (버튼으로 빼기: `UMagazineReleaseInputComponent`, 잡은 손 B/Y → `EjectMagazine`)
+- **Step 6-8** 다음 (전투 레벨 구성: 무기·탄창 배치, 시작과 끝)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
