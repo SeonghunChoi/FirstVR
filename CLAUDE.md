@@ -428,7 +428,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 6-8a: `AMagazineDispenser`(`Weapon/`, 추상, 배치별 `MagazineClass`, `RespawnDelay` 3·`TakeDistance` 20·`SpawnHeight` 10, 0.25초 타이머로 가져갔는지(붙음·끼워짐·멀어짐·사라짐) 보고 `RespawnDelay` 뒤 새 탄창, `OnMagazineDispensed`, 에디터 전용 화살표), `AMagazine::DiscardLifeSpan`(5초, 버튼으로 뺄 때 `SetLifeSpan`, `HandleGrabbed`에서 취소 `Picked up, kept`) — 빌드, `Portfolio/Weapons/Magazines/BP_MagazineDispenser`(받침 큐브), `L_WeaponTest_Empty`에 권총·소총 탄창 보급대 — VR Preview에서 시작 시 `Dispensed` 두 개, 잡으면 `Magazine taken, next in 3.0s` → 3초 뒤 `Dispensed`, 받은 탄창을 빈 권총에 끼워 `Inserted (15/15)`, `N`으로 `Ejected (15/15 left, gone in 5s)` 세 번 반복 확인
   - `MagazineClass`를 비운 보급대는 `MagazineClass is not set` 경고만 내고 아무것도 놓지 않는다
-  - 미확인: 사라지기 전에 다시 잡은 `Picked up, kept`
+  - 빼낸 탄창이 "다시 집히지 않던" 원인은 5초 안에 시뮬레이터 손을 바닥까지 내리지 못해서였다(잡기 이벤트 자체가 없었음). `BP_Magazine_Pistol`의 `DiscardLifeSpan`을 50으로 늘려 `Ejected (gone in 50s)` → 5초 뒤 `Picked up, kept (15/15 left)` → 다시 `Inserted (15/15)` 확인. 50초가 지난 탄창은 사라져 `No magazine`·`Click! (empty)`. 시험 뒤 기본값 5초로 되돌림(실기기에서는 손을 바로 내릴 수 있다)
 
 ### 현재 위치
 - **Step 6-8b** 다음 (`L_Combat`: 벽으로 둘러싼 방, 입구 스폰 지점, 무기 테이블·보급대, 전투 웨이브 데이터)
