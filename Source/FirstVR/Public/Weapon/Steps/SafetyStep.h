@@ -4,6 +4,8 @@
 #include "Weapon/Steps/WeaponStepComponent.h"
 #include "SafetyStep.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSafetyLockChanged, bool, bLocked);
+
 /**
  * 안전장치 단계. 잠겨 있으면 Failed, 풀려 있으면 Success.
  * 잠금 상태는 SetLocked/ToggleSafety로만 바꾼다. 버튼 입력은 입력 컴포넌트가 받아 이 함수들을 부른다.
@@ -26,6 +28,13 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Weapon|Safety")
 	bool IsLocked() const { return bLocked; }
+
+	/**
+	 * 잠금 상태가 바뀌었을 때. 같은 액터의 다른 컴포넌트나 무기 BP(레버 움직임 같은 외형 연출)가 구독한다.
+	 * 단계 자신의 피드백은 OnSafetyChanged, 바깥에서 듣는 것은 이 델리게이트다. 시작 상태는 IsLocked로 읽는다.
+	 */
+	UPROPERTY(BlueprintAssignable, Category = "Weapon|Safety")
+	FOnSafetyLockChanged OnSafetyLockChanged;
 
 protected:
 	virtual void BeginPlay() override;

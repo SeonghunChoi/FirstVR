@@ -1,4 +1,4 @@
-# CLAUDE.md — FirstVR (젠틀몬스터 VR 포트폴리오)
+﻿# CLAUDE.md — FirstVR (젠틀몬스터 VR 포트폴리오)
 
 이 파일은 Claude Code가 이 프로젝트에서 작업할 때 따르는 안내서다.
 프로젝트 전체 계획과 설계 결정의 근거는 `Docs/PLAN.md`(기존 계획 문서)를 참고한다.
@@ -252,8 +252,16 @@ Content/Portfolio/
 ### Step 7. 포트폴리오 공개 자료 (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
 - 7-1. `README.md`(클래스 관계도, 핵심 알고리즘, 사용 패턴과 적용 이유) + GitHub 공개 저장소 `SeonghunChoi/FirstVR`에 푸시
 
-### Step 8. 배포 빌드 (유료 에셋)
-- Fab 에셋으로 무기·적·공간을 교체한 패키지 빌드. 시작할 때 설계 판단(에셋 범위, 저장소와의 분리 방식, 패키징 대상)
+### Step 8. 배포 빌드 (유료 에셋, 설계 판단 완료, `Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
+- 유료 에셋 콘텐츠는 `Content/Showcase/`(git 제외). 꾸민 무기·탄창은 그레이박스 BP의 자식
+- 8-1. 꾸민 권총 (Makarov, `Content/TF_Russian_Pistols/`)
+  - 8-1a. `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트(외형 연출용 구독 지점)
+  - 8-1b. `Showcase/Weapons/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM`) + `BP_Magazine_PM`(`BP_Magazine_Pistol` 자식) → VR Preview
+  - 8-1c. 부품 움직임: 발사 슬라이드, 안전장치 레버, 빈 탄창 슬라이드 멈춤 → VR Preview
+- 8-2. 소총 두 종 (`FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
+- 8-3. 꾸민 `L_Combat` (`Showcase/Maps/`)
+- 8-4. 패키지 빌드
+- 8-5. 두 번째 레벨 (범위는 그때 정함)
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
 
 ---
@@ -271,7 +279,8 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 ### 환경 정보
 - UE 버전: 5.7
-- UE 설치 경로: `C:\Program Files\Epic Games\UE_5.7`
+- UE 설치 경로: `F:\Epic Games\Games\UE_5.7` (레지스트리에는 옛 경로 `C:\Program Files\Epic Games\UE_5.7`가 남아 있음)
+- 컴파일러: Visual Studio 2026 MSVC 14.51 (빌드 때 "preferred version 14.44" 권고가 나오지만 빌드는 된다)
 - 프로젝트 경로: `D:\Projects\Unreal\FirstVR`
 - IDE: JetBrains Rider (`.uproject`를 바로 연다)
 - git-lfs 3.5.1 (저장소에 `git lfs install`로 훅 설치됨)
@@ -442,14 +451,17 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 7-1: `README.md`(시스템 개요, Mermaid 클래스 관계도(무기 / 적·전투 구간·플레이어)와 발사 시퀀스, 핵심 알고리즘 9개, 패턴 10개와 적용 이유, 확장성 증명, 디버깅 도구, 에셋·라이선스), GitHub 공개 저장소 `SeonghunChoi/FirstVR`
 
+- [x] Step 8 설계 판단: 두 레벨(꾸민 `L_Combat` + 게임다운 다음 레벨), 유료 콘텐츠는 `Content/Showcase/`(git 제외), 꾸민 무기·탄창은 그레이박스 BP 자식, 권총은 Makarov(`TF_Russian_Pistols`) + 안전장치, 부품 움직임은 무기 BP. 거쳐 간 후보: `FPS Weapon Bundle`(5.7 미지원), `Pistol_001`(시네마틱 FBX)
+- [x] Step 8-1a: `USafetyStep::OnSafetyLockChanged(bool)`·`UMagazineStep::OnInsertedMagazineChanged(AMagazine*)`(`BlueprintAssignable`, 기존 BP 이벤트 옆에서 함께 발행, 시작 상태는 `IsLocked`·`GetInsertedMagazine`으로 읽는다) — Rider 빌드(에디터를 닫아야 함, Live Coding이 켜져 있으면 `Unable to build while Live Coding is active`), `BP_RifleWeapon` 단계 컴포넌트 디테일 패널에 두 이벤트 노출 확인
+
 ### 현재 위치
-- **Step 8** 다음 (유료 에셋 배포 빌드, 시작 시 설계 판단)
+- **Step 8-1b** 다음 (`Showcase/Weapons/BP_PistolWeapon_PM`·`BP_Magazine_PM`, 안전장치 추가, `DA_Pistol_PM`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
 ### 결정 기록
 - 2026-10-29: 바이너리 에셋(`.uasset`, `.umap`, 원본 아트/미디어)은 Git LFS로 관리한다.
-- 2026-10-29: Fab 에셋 폴더는 `Content/FPS_Assault_Pack/`, `Content/Nimikko_WesternTown/`. 저장소에서 제외하고, 새 Fab 에셋을 받으면 `.gitignore`에 폴더를 추가한다.
+- 2026-10-29: Fab 에셋 폴더는 `Content/FPS_Assault_Pack/`, `Content/Nimikko_WesternTown/`(이후 `Sci-Fi_Shots_Pack2_Game_Of_Weapons/`, `TF_Russian_Pistols/`, `Fab/`, 꾸민 콘텐츠 `Showcase/` 추가). 저장소에서 제외하고, 새 Fab 에셋을 받으면 `.gitignore`에 폴더를 추가한다.
 - 2026-10-29: `OnFailedFeedback`은 부모 `Report`(비가상)가 `Failed`일 때 자동 호출한다. 자식은 `Report(Failed)`만 부른다. 이유별 피드백이 필요해지면 이유 파라미터로 확장. (`Docs/PLAN.md` 4.4)
 - 2026-10-29: 소스 주석(에디터 툴팁 포함)은 한글로 쓴다. 한글이 든 소스 파일은 UTF-8(BOM)으로 저장한다. 로그 문자열(`TEXT("...")`)은 영어.
 - 2026-10-30: 탄창에는 한 종류의 탄만 들어간다(`LoadedAmmo` + `CurrentAmmo`). 배치 시 초기 탄 종류는 `AllowedAmmo`의 첫 항목. (`Docs/PLAN.md` 5.2)
@@ -484,4 +496,6 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-05: 탄창 교체 — 탄의 원본은 집는 탄창 액터 `AMagazine`(`AmmoType`·`Capacity` 설정, `InitialRounds` 배치별, `Rounds` 상태), `UMagazineStep`은 끼워진 탄창에서 한 발씩 꺼낸다. 호환은 `AllowedMagazines`(탄창 클래스 목록). 끼우기는 `MagazineWell` 근처에서 놓을 때(방향 무시), 빼기는 잡은 손 B/Y(`UMagazineReleaseInputComponent`) → 물리로 떨어짐. 배치 무기는 `InitialMagazine`이 끼워진 채 시작. 6-7a/b/c. (`Docs/PLAN.md` 4.13)
 - 2026-11-05: 전투 레벨 — 새 레벨 `L_Combat`, 벽으로 둘러싼 방에 입구 여러 개(스폰 지점), 가운데 무기 테이블. 탄 보급은 탄창 보급대 `AMagazineDispenser`(가져가면 `RespawnDelay` 뒤 같은 자리에 새 탄창, 줄 탄창은 배치별 `MagazineClass`). 버튼으로 뺀 탄창은 남은 탄과 상관없이 `DiscardLifeSpan`(기본 5초) 뒤 사라지고, 그 전에 잡으면 취소. 시작·끝은 기존 웨이브·결과 화면 규칙. 6-8a/b. (`Docs/PLAN.md` 6.9 전투 레벨)
 - 2026-11-06: 기술 시연 포트폴리오라 세밀한 밸런스(6-9)는 생략한다. 결과물은 깃허브 공개 저장소(`SeonghunChoi/FirstVR`, 공개, Fab 제외, `README.md`에 클래스 관계도·핵심 알고리즘·패턴과 이유)와 유료 에셋으로 꾸민 배포 빌드 둘이고, PDF는 그 뒤. (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
+- 2026-11-06: 배포 빌드는 두 레벨이다. ① `L_Combat`을 유료 에셋으로 꾸민 버전(총도 교체) ② 더 게임답게 꾸민 다음 레벨(범위는 ①을 끝낸 뒤 정함). 유료 에셋을 쓴 콘텐츠는 같은 프로젝트의 `Content/Showcase/`에 두고 `.gitignore`로 뺀다(공개 저장소는 그레이박스 그대로, 꾸민 콘텐츠는 버전 관리 없이 따로 백업). (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
+- 2026-11-06: 꾸민 무기·탄창은 그레이박스 BP의 자식(`Content/Showcase/`, 같은 조합·다른 모양). 권총은 Fab `Makarov Pistol (PM)`(`Content/TF_Russian_Pistols/`, 부품별 스태틱 메시, 5.7 지원)이고 꾸민 권총에만 안전장치를 더한다(`DA_Pistol_PM`). 부품 움직임(발사 슬라이드·안전장치 레버·빈 탄창 슬라이드 멈춤)은 꾸민 무기 BP가 맡고, 구독 지점으로 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트를 더한다. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
