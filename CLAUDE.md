@@ -381,7 +381,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] 레이저 사이트(Step 6-4 뒤 추가, 시뮬레이터 조준 보조): `ULaserSightComponent`(추상, 잡았을 때만 `SetLaserEnabled`, `Muzzle` 아래 런타임 `UNiagaraComponent`, 매 틱 `WorldStatic`·`WorldDynamic`·`PhysicsBody` 트레이스(무기 자신·날아가는 탄 무시), `SetVariablePosition`으로 `BeamStart`/`BeamEnd`, 최대 3000cm), `Build.cs`에 `Niagara` — 빌드, `Portfolio/Weapons/FX/NS_LaserBeam`(`DynamicBeam` 템플릿, User Parameter `BeamStart`/`BeamEnd`(Position) → `Beam Emitter Setup`(Absolute), `Scale Curve` 0.5, `Emitter State` `Once` + `Infinite`, 수명 끝나도 파티클 유지), `Portfolio/Weapons/Steps/BP_LaserSight`(잡기 컴포넌트 `OnGrabbed`/`OnDropped` 구독), `BP_PistolWeapon`에 부착 — VR Preview에서 잡으면 `Laser on`·놓으면 `Laser off`, 빔이 맞은 곳에서 끊기고 끊김 없이 유지 확인
   - 나이아가라 템플릿 `DynamicBeam`은 루프마다 빔을 새로 만들어 주기적으로 꺼진다. 계속 켜 둘 빔은 한 번만 생성하고 파티클이 죽지 않게 한다
-  - 놓으면 `Laser off`로 꺼짐 확인. 소총들에는 아직 붙이지 않음
+  - 놓으면 `Laser off`로 꺼짐 확인. 소총 세 종에는 6-8b 무렵 사용자가 부착
 
 - [x] Step 6-5a: `UPlayerHealth`(`Player/`, 폰 `OnTakeAnyDamage` 구독, `MaxHealth` 100, `TakeHealthDamage`, 시작할 때 한 번·바뀔 때마다 `OnHealthChanged(Current, Max, Damage)`, 0이면 `OnDied`, 죽은 뒤 피해 무시, `LogPlayer`를 여기로 옮김), `AFirstVRGameMode`(`Game/`, `SetPlayerDefaults`에서 `OnDied` 구독 → `EEncounterState::Failed`, `OnEncounterStateChanged`, `RestartEncounter`는 현재 레벨 다시 열기, `LogEncounter`), 콘솔 명령 `Player.Damage [Amount]`·`Encounter.Restart`, `UPlayerBody`는 스폰 중 충돌을 끄고 BeginPlay에서 켬 — 빌드, `Portfolio/Game/BP_FirstVRGameMode`(`L_WeaponTest` 월드 세팅 게임 모드 오버라이드), `BP_XRPawn`에 `Player Health` 부착 — VR Preview에서 `Watching ... health` → `Health 100/100`, 적 공격 20 ×5 → `Player died` → `Encounter Failed`, `Encounter.Restart` → `Restarting L_WeaponTest` → 다시 `Watching`·`Health 100/100` 확인
   - 일반 Play는 헤드셋이 없어 카메라가 폰 원점(바닥, `PlayerStart` Z 0)에 있고 몸 캡슐이 50cm라 적 공격 시험은 VR Preview에서 한다
@@ -430,8 +430,14 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `MagazineClass`를 비운 보급대는 `MagazineClass is not set` 경고만 내고 아무것도 놓지 않는다
   - 빼낸 탄창이 "다시 집히지 않던" 원인은 5초 안에 시뮬레이터 손을 바닥까지 내리지 못해서였다(잡기 이벤트 자체가 없었음). `BP_Magazine_Pistol`의 `DiscardLifeSpan`을 50으로 늘려 `Ejected (gone in 50s)` → 5초 뒤 `Picked up, kept (15/15 left)` → 다시 `Inserted (15/15)` 확인. 50초가 지난 탄창은 사라져 `No magazine`·`Click! (empty)`. 시험 뒤 기본값 5초로 되돌림(실기기에서는 손을 바로 내릴 수 있다)
 
+- [x] Step 6-8b: `Portfolio/Maps/L_Combat`(`Basic` 레벨, 큐브 바닥·벽으로 16m 방, 앞·왼쪽·오른쪽 2m 입구, `PlayerStart` Z 0, 무기 테이블에 권총·단발 소총·연발 소총(`Initial Magazine`), 소총·권총 탄창 보급대, 입구 밖 스폰 지점 `Front`·`Left`·`Right`, 내비 메시), `Portfolio/Data/DA_Waves_Combat`(`StartDelay` 10, 웨이브 3개 2·4·7명, 쉼 8초), `Portfolio/Game/BP_FirstVRCombatMode`(`BP_FirstVRGameMode` 자식, `Wave Data`만 교체, `L_Combat` 오버라이드) — C++ 없음. VR Preview 두 판에서 세 입구 스폰·걸어 들어와 공격·웨이브 1~3 진행·전투 중 보급대 순환·웨이브 3 실패 → 실패 화면 → `Restarting L_Combat` 확인
+  - 두 판 모두 웨이브 3에서 실패: 체력이 웨이브 사이에 회복되지 않아(100, 한 대 20) 웨이브 3을 20~40으로 시작했고, 시뮬레이터로는 옆 입구로 몸을 돌리기 느리다. 사격은 16발 중 11발 명중(대부분 머리 한 발). 튜닝은 6-9
+  - 미확인: `L_Combat`의 승리 화면 (같은 경로를 6-6b에서 확인해 생략)
+  - 같은 기간 사용자 변경: 시험 맵 `L_WeaponTest_Empty` → `L_WeaponTest_Etc` 이름 변경, 소총 세 종(`BP_RifleWeapon`·`BP_AutoRifleWeapon`·`BP_AssembledRifle`)에 `BP_LaserSight` 부착, `.gitignore`에 `*.slnx`
+- [x] ✅ **Step 6-8**: 탄창 보급대·버린 탄창 정리, 전투 레벨 `L_Combat`
+
 ### 현재 위치
-- **Step 6-8b** 다음 (`L_Combat`: 벽으로 둘러싼 방, 입구 스폰 지점, 무기 테이블·보급대, 전투 웨이브 데이터)
+- **Step 6-9** 다음 (플레이 테스트와 데이터 튜닝: 웨이브 사이 체력, 웨이브 3 구성, 적 피해·플레이어 체력)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소 없음
 
