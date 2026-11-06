@@ -34,4 +34,5 @@ void USafetyStep::SetLocked(bool bInLocked)
 	bLocked = bInLocked;
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Safety %s"), *GetName(), bLocked ? TEXT("locked") : TEXT("released"));
 	OnSafetyChanged(bLocked);
+	OnSafetyLockChanged.Broadcast(bLocked);
 }

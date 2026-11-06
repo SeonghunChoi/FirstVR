@@ -91,3 +91,8 @@ Desktop.ini
 # Fab marketplace assets (license forbids redistributing the source files)
 Content/FPS_Assault_Pack/
 Content/Nimikko_WesternTown/
+Content/Sci-Fi_Shots_Pack2_Game_Of_Weapons/
+Content/Fab/
+Content/TF_Russian_Pistols/
+# Showcase build content made with Fab assets (Docs/PLAN.md, distribution build)
+Content/Showcase/

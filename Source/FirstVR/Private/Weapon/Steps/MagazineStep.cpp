@@ -98,6 +98,7 @@ bool UMagazineStep::InsertMagazine(AMagazine* Magazine)
 	InsertedMagazine = Magazine;
 	Magazine->AttachToWell(this, Well);
 	OnMagazineChanged(Magazine);
+	OnInsertedMagazineChanged.Broadcast(Magazine);
 	return true;
 }
 
@@ -112,6 +113,7 @@ AMagazine* UMagazineStep::EjectMagazine()
 	InsertedMagazine = nullptr;
 	Magazine->DetachFromWell(true);
 	OnMagazineChanged(nullptr);
+	OnInsertedMagazineChanged.Broadcast(nullptr);
 	return Magazine;
 }
 
@@ -124,6 +126,7 @@ void UMagazineStep::ReleaseMagazine(AMagazine* Magazine)
 
 	InsertedMagazine = nullptr;
 	OnMagazineChanged(nullptr);
+	OnInsertedMagazineChanged.Broadcast(nullptr);
 }
 
 USceneComponent* UMagazineStep::FindMagazineWell() const

@@ -6,6 +6,8 @@
 
 class AMagazine;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInsertedMagazineChanged, AMagazine*, Magazine);
+
 /**
  * 탄창 단계. 무기의 MagazineWell에 끼워진 탄창(AMagazine)에서 한 발을 꺼내 Context.Ammo에 기록한다.
  * 탄창이 없거나 비어 있으면 Failed. 탄의 원본은 탄창이고, 이 단계는 지금 끼워진 탄창만 가리킨다.
@@ -42,6 +44,14 @@ public:
 	USceneComponent* FindMagazineWell() const;
 
 	float GetInsertRadius() const { return InsertRadius; }
+
+	/**
+	 * 끼워진 탄창이 바뀌었을 때(빠지면 None). 무기 BP(빈 탄창 슬라이드 멈춤 같은 외형 연출)가 구독한다.
+	 * 단계 자신의 피드백은 OnMagazineChanged, 바깥에서 듣는 것은 이 델리게이트다.
+	 * 배치별 시작 탄창은 단계의 BeginPlay에서 끼워지므로, 무기 BP는 시작 상태를 GetInsertedMagazine으로 읽는다.
+	 */
+	UPROPERTY(BlueprintAssignable, Category = "Weapon|Magazine")
+	FOnInsertedMagazineChanged OnInsertedMagazineChanged;
 
 protected:
 	virtual void BeginPlay() override;
