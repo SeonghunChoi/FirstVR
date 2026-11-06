@@ -245,12 +245,16 @@ Content/Portfolio/
 - 6-8. 전투 레벨 구성: 무기·탄창 배치, 시작과 끝 (설계 판단 완료, `Docs/PLAN.md` 6.9 전투 레벨)
   - 6-8a. 탄창 보급대 `AMagazineDispenser`(가져가면 `RespawnDelay` 뒤 새 탄창) + 버튼으로 뺀 탄창 `DiscardLifeSpan` 뒤 사라짐 → `L_WeaponTest_Empty`에서 VR Preview
   - 6-8b. `L_Combat`: 벽으로 둘러싼 방, 입구 여러 개(스폰 지점), 무기 테이블·보급대, 전투 웨이브 데이터
-- 6-9. 플레이 테스트와 데이터 튜닝
+- ~~6-9. 플레이 테스트와 데이터 튜닝~~ → 생략 (기술 시연이라 세밀한 밸런스 불필요, 2026-11-06)
 - 6-10. 실기기 검증 (헤드셋 확보 시, 시뮬레이터 런타임 토글 해제)
 - ✅ 마일스톤: VR Preview에서 무기를 집어 웨이브를 막아 내거나 맞아서 실패하는 한 구간
 
-### Step 7 이후
-- `Docs/PLAN.md` Phase 5(PDF 제작)
+### Step 7. 포트폴리오 공개 자료 (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
+- 7-1. `README.md`(클래스 관계도, 핵심 알고리즘, 사용 패턴과 적용 이유) + GitHub 공개 저장소 `SeonghunChoi/FirstVR`에 푸시
+
+### Step 8. 배포 빌드 (유료 에셋)
+- Fab 에셋으로 무기·적·공간을 교체한 패키지 빌드. 시작할 때 설계 판단(에셋 범위, 저장소와의 분리 방식, 패키징 대상)
+- 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
 
 ---
 
@@ -436,10 +440,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 같은 기간 사용자 변경: 시험 맵 `L_WeaponTest_Empty` → `L_WeaponTest_Etc` 이름 변경, 소총 세 종(`BP_RifleWeapon`·`BP_AutoRifleWeapon`·`BP_AssembledRifle`)에 `BP_LaserSight` 부착, `.gitignore`에 `*.slnx`
 - [x] ✅ **Step 6-8**: 탄창 보급대·버린 탄창 정리, 전투 레벨 `L_Combat`
 
+- [x] Step 7-1: `README.md`(시스템 개요, Mermaid 클래스 관계도(무기 / 적·전투 구간·플레이어)와 발사 시퀀스, 핵심 알고리즘 9개, 패턴 10개와 적용 이유, 확장성 증명, 디버깅 도구, 에셋·라이선스), GitHub 공개 저장소 `SeonghunChoi/FirstVR`
+
 ### 현재 위치
-- **Step 6-9** 다음 (플레이 테스트와 데이터 튜닝: 웨이브 사이 체력, 웨이브 3 구성, 적 피해·플레이어 체력)
+- **Step 8** 다음 (유료 에셋 배포 빌드, 시작 시 설계 판단)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
-- 원격 저장소 없음
+- 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
 ### 결정 기록
 - 2026-10-29: 바이너리 에셋(`.uasset`, `.umap`, 원본 아트/미디어)은 Git LFS로 관리한다.
@@ -477,4 +483,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-05: 결과 화면 위젯 부모를 실패·승리가 함께 쓰도록 `UFailScreenWidget` → `UEncounterResultWidget`, 게임 모드 `FailScreenDistance` → `ResultScreenDistance`로 바꾸고 `DefaultEngine.ini` `[CoreRedirects]`로 잇는다. 게임 모드는 `SpawnResultScreen(Class)` 하나로 실패·승리 화면을 띄운다. (`Docs/PLAN.md` 6.9 웨이브)
 - 2026-11-05: 탄창 교체 — 탄의 원본은 집는 탄창 액터 `AMagazine`(`AmmoType`·`Capacity` 설정, `InitialRounds` 배치별, `Rounds` 상태), `UMagazineStep`은 끼워진 탄창에서 한 발씩 꺼낸다. 호환은 `AllowedMagazines`(탄창 클래스 목록). 끼우기는 `MagazineWell` 근처에서 놓을 때(방향 무시), 빼기는 잡은 손 B/Y(`UMagazineReleaseInputComponent`) → 물리로 떨어짐. 배치 무기는 `InitialMagazine`이 끼워진 채 시작. 6-7a/b/c. (`Docs/PLAN.md` 4.13)
 - 2026-11-05: 전투 레벨 — 새 레벨 `L_Combat`, 벽으로 둘러싼 방에 입구 여러 개(스폰 지점), 가운데 무기 테이블. 탄 보급은 탄창 보급대 `AMagazineDispenser`(가져가면 `RespawnDelay` 뒤 같은 자리에 새 탄창, 줄 탄창은 배치별 `MagazineClass`). 버튼으로 뺀 탄창은 남은 탄과 상관없이 `DiscardLifeSpan`(기본 5초) 뒤 사라지고, 그 전에 잡으면 취소. 시작·끝은 기존 웨이브·결과 화면 규칙. 6-8a/b. (`Docs/PLAN.md` 6.9 전투 레벨)
+- 2026-11-06: 기술 시연 포트폴리오라 세밀한 밸런스(6-9)는 생략한다. 결과물은 깃허브 공개 저장소(`SeonghunChoi/FirstVR`, 공개, Fab 제외, `README.md`에 클래스 관계도·핵심 알고리즘·패턴과 이유)와 유료 에셋으로 꾸민 배포 빌드 둘이고, PDF는 그 뒤. (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
