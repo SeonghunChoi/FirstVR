@@ -257,7 +257,7 @@ Content/Portfolio/
 - 8-1. 꾸민 권총 (Makarov, `Content/TF_Russian_Pistols/`)
   - 8-1a. `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트(외형 연출용 구독 지점)
   - 8-1b. `Showcase/Weapon/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM`) + `BP_Magazine_PM`(`BP_Magazine_Pistol` 자식) → VR Preview
-  - 8-1c. 부품 움직임: 발사 슬라이드, 안전장치 레버, 빈 탄창 슬라이드 멈춤 → VR Preview
+  - 8-1c. 부품 움직임: 안전장치 레버(`OnSafetyLockChanged` → 타임라인으로 회전, 시작 상태는 `IsLocked`) → VR Preview. 슬라이드 움직임은 뺐다(2026-11-06)
 - 8-2. 소총 두 종 (`FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
 - 8-3. 꾸민 `L_Combat` (`Showcase/Map/`)
 - 8-4. 패키지 빌드
@@ -458,8 +458,16 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - Play 중 BP를 컴파일하면 배치된 인스턴스가 다시 만들어져 `BeginPlay`가 또 돈다(`Insert rejected: ... already inserted` 뒤 `3 steps ready`). 시험은 Play를 새로 시작해서 한다
   - 미확인: 잠긴 채 당겨 `Safety on`·`Fire aborted at step 2/3`, 다시 잠금, 놓아서 끼우기(`BP_Magazine_PM`을 탄창 결합부 근처에 놓기)
 
+- [x] Step 8-1c: 안전장치 레버 움직임 — C++ 없음. `BP_PistolWeapon_PM`에 `SafetyPivot`(Scene, `SM_PM_Slide` 아래, 레버 핀 자리, 그 아래 `SM_PM_Safety`), 변수 `SafetyFireRotation`/`SafetySafeRotation`(Rotator), 타임라인 `SafetyLeverTimeLine`(`Alpha` 0 → 1, 0.08초), `BP_SafetyStep`의 컴포넌트 이벤트 `On Safety Lock Changed` → `Play`/`Reverse`, `Update` → `Lerp (Rotator)` → `SafetyPivot` `Set Relative Rotation`, `BeginPlay`에서 `Is Locked`로 시작 자세와 `Set New Time` — VR Preview에서 `B`마다 레버가 안전/발사 자세로 돌아감, 잠긴 채 당기면 `Safety on` → `Fire aborted at step 2/3` 확인
+  - 슬라이드 움직임은 뺐다(결정 기록 2026-11-06)
+  - 이 BP의 컴포넌트가 가진 델리게이트는 `Bind Event to ...` 없이 컴포넌트 이벤트(디테일 패널 `+` 또는 그래프의 `On ... (컴포넌트 이름)`)로 받는다. 해제도 자동
+  - 타임라인 노드의 `Set New Time`은 위치만 옮기고 `Update`를 부르지 않으며, 그 뒤로 실행선이 이어지지 않는다. 시작 자세는 먼저 `Set Relative Rotation`으로 맞춘다
+  - 처음엔 레버가 돌지 않았다: 새 변수 `SafetyFireRotation`/`SafetySafeRotation`의 기본값이 둘 다 0이었다. **새 변수는 컴파일한 뒤에 디테일 패널에서 기본값을 넣는다**
+  - 미확인(8-1b부터): `BP_Magazine_PM`을 놓아서 끼우기. 레벨에 다시 놓은 꾸민 권총 인스턴스는 `Initial Magazine`이 비어 있을 수 있다
+- [x] ✅ **Step 8-1**: 꾸민 Makarov 권총(그레이박스 BP 자식, 안전장치 추가, 레버 움직임)
+
 ### 현재 위치
-- **Step 8-1c** 다음 (부품 움직임: 발사 슬라이드, 안전장치 레버, 빈 탄창 슬라이드 멈춤)
+- **Step 8-2** 다음 (소총 두 종 `FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -502,4 +510,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-06: 기술 시연 포트폴리오라 세밀한 밸런스(6-9)는 생략한다. 결과물은 깃허브 공개 저장소(`SeonghunChoi/FirstVR`, 공개, Fab 제외, `README.md`에 클래스 관계도·핵심 알고리즘·패턴과 이유)와 유료 에셋으로 꾸민 배포 빌드 둘이고, PDF는 그 뒤. (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
 - 2026-11-06: 배포 빌드는 두 레벨이다. ① `L_Combat`을 유료 에셋으로 꾸민 버전(총도 교체) ② 더 게임답게 꾸민 다음 레벨(범위는 ①을 끝낸 뒤 정함). 유료 에셋을 쓴 콘텐츠는 같은 프로젝트의 `Content/Showcase/`에 두고 `.gitignore`로 뺀다(공개 저장소는 그레이박스 그대로, 꾸민 콘텐츠는 버전 관리 없이 따로 백업). (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
 - 2026-11-06: 꾸민 무기·탄창은 그레이박스 BP의 자식(`Content/Showcase/`, 같은 조합·다른 모양). 권총은 Fab `Makarov Pistol (PM)`(`Content/TF_Russian_Pistols/`, 부품별 스태틱 메시, 5.7 지원)이고 꾸민 권총에만 안전장치를 더한다(`DA_Pistol_PM`). 부품 움직임(발사 슬라이드·안전장치 레버·빈 탄창 슬라이드 멈춤)은 꾸민 무기 BP가 맡고, 구독 지점으로 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트를 더한다. (`Docs/PLAN.md` 10장)
+- 2026-11-06: 슬라이드 움직임(발사 후퇴·복귀, 빈 탄창 멈춤)은 뺀다. 약실 개념이 없어 멈춘 슬라이드를 언제 돌려보낼지가 게임 규칙과 맞지 않았다. 8-1c 부품 움직임은 안전장치 레버만. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)

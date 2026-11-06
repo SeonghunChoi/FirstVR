@@ -596,7 +596,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - PDF(Phase 5)는 위 두 결과물을 재료로 그 뒤에 만든다.
 - **꾸민 무기는 그레이박스 BP의 자식 BP다**(`Content/Showcase/Weapon/`). 단계·입력·데이터는 물려받고, 자식은 큐브를 숨기고 Fab 메시를 달고 기준점(`Grip`·`Muzzle`·`MagazineWell`) 위치와 `Body` 크기만 고친다. "같은 조합, 다른 모양"이 상속 구조로 드러난다(소총을 권총에서 복제한 것은 "다른 조합"이라서였다). 탄창도 같은 규칙으로 그레이박스 탄창 BP의 자식이라 `AllowedMagazines`(`IsA`) 호환이 그대로 유지된다.
 - **꾸민 권총(Makarov)에는 안전장치를 더한다.** 실제 총에 안전장치 레버가 있으므로 자식 BP에 안전장치 단계·입력을 붙이고 새 데이터 `DA_Pistol_PM`(파지 → 안전장치 → 탄창)을 쓴다. 그레이박스 권총은 그대로 둔다.
-- **부품 움직임**(발사 때 슬라이드 후퇴·복귀, 안전장치 레버, 마지막 탄을 쏘면 슬라이드가 뒤로 멈추고 탄이 있는 탄창을 끼우면 복귀)은 꾸민 무기 BP가 맡는다. 단계의 BP 이벤트(`OnSafetyChanged`, `OnMagazineChanged`)는 그 단계 BP 안에서만 받을 수 있어서, 바깥에서 구독할 델리게이트 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged`를 더한다(코어 `OnFired`와 같은 방식). 단계는 누가 듣는지 모른다.
+- **부품 움직임**(안전장치 레버)은 꾸민 무기 BP가 맡는다. 슬라이드 움직임(발사 때 후퇴·복귀, 마지막 탄 뒤 멈춤)은 처음 계획에 있었으나 뺐다(2026-11-06): 무기에 약실 개념이 없어 탄이 든 탄창만 끼우면 바로 쏠 수 있으므로, 멈춘 슬라이드를 언제 돌려보낼지 정하면 모양과 규칙 중 하나가 어긋난다. 단계의 BP 이벤트(`OnSafetyChanged`, `OnMagazineChanged`)는 그 단계 BP 안에서만 받을 수 있어서, 바깥에서 구독할 델리게이트 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged`를 더한다(코어 `OnFired`와 같은 방식). 단계는 누가 듣는지 모른다.
 - 스텝: 8-1a 델리게이트 → 8-1b 꾸민 권총·탄창 BP → 8-1c 부품 움직임 → 8-2 소총 두 종 → 8-3 꾸민 `L_Combat` → 8-4 패키지 빌드 → 8-5 두 번째 레벨(범위는 그때 정함).
 - **배포 빌드는 레벨 두 개다.** ① 지금의 `L_Combat`을 유료 에셋으로 꾸민 버전(총도 교체) ② 더 게임답게 꾸민 다음 레벨. ②의 범위는 ①을 끝낸 뒤 정한다.
 - **유료 에셋을 쓴 콘텐츠는 `Content/Showcase/`에 두고 git에서 뺀다.** 공개 저장소는 그레이박스 그대로 동작해야 하고, Fab 원본·참조가 깨진 에셋이 올라가지 않게 한다. 꾸민 콘텐츠는 버전 관리 대신 따로 백업한다.
