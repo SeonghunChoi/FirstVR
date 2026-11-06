@@ -594,7 +594,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   1. **깃허브 공개 저장소** (`SeonghunChoi/FirstVR`, 공개): 직접 만든 코드·BP·데이터와 그레이박스. `README.md`에 클래스 관계도, 핵심 알고리즘, 사용 패턴과 적용 이유를 적는다. Fab 에셋은 계속 제외한다.
   2. **배포 빌드**: 유료(Fab) 에셋으로 무기·적·공간을 그럴듯하게 바꾼 실행 파일. 이름 기반 기준점(4장, 메시 의존 금지)과 BP 자식/데이터 에셋 구조 덕분에 코드 변경 없이 모양만 바꾸는 것을 목표로 한다. 세부는 시작할 때 설계 판단으로 정한다.
 - PDF(Phase 5)는 위 두 결과물을 재료로 그 뒤에 만든다.
-- **꾸민 무기는 그레이박스 BP의 자식 BP다**(`Content/Showcase/Weapons/`). 단계·입력·데이터는 물려받고, 자식은 큐브를 숨기고 Fab 메시를 달고 기준점(`Grip`·`Muzzle`·`MagazineWell`) 위치와 `Body` 크기만 고친다. "같은 조합, 다른 모양"이 상속 구조로 드러난다(소총을 권총에서 복제한 것은 "다른 조합"이라서였다). 탄창도 같은 규칙으로 그레이박스 탄창 BP의 자식이라 `AllowedMagazines`(`IsA`) 호환이 그대로 유지된다.
+- **꾸민 무기는 그레이박스 BP의 자식 BP다**(`Content/Showcase/Weapon/`). 단계·입력·데이터는 물려받고, 자식은 큐브를 숨기고 Fab 메시를 달고 기준점(`Grip`·`Muzzle`·`MagazineWell`) 위치와 `Body` 크기만 고친다. "같은 조합, 다른 모양"이 상속 구조로 드러난다(소총을 권총에서 복제한 것은 "다른 조합"이라서였다). 탄창도 같은 규칙으로 그레이박스 탄창 BP의 자식이라 `AllowedMagazines`(`IsA`) 호환이 그대로 유지된다.
 - **꾸민 권총(Makarov)에는 안전장치를 더한다.** 실제 총에 안전장치 레버가 있으므로 자식 BP에 안전장치 단계·입력을 붙이고 새 데이터 `DA_Pistol_PM`(파지 → 안전장치 → 탄창)을 쓴다. 그레이박스 권총은 그대로 둔다.
 - **부품 움직임**(발사 때 슬라이드 후퇴·복귀, 안전장치 레버, 마지막 탄을 쏘면 슬라이드가 뒤로 멈추고 탄이 있는 탄창을 끼우면 복귀)은 꾸민 무기 BP가 맡는다. 단계의 BP 이벤트(`OnSafetyChanged`, `OnMagazineChanged`)는 그 단계 BP 안에서만 받을 수 있어서, 바깥에서 구독할 델리게이트 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged`를 더한다(코어 `OnFired`와 같은 방식). 단계는 누가 듣는지 모른다.
 - 스텝: 8-1a 델리게이트 → 8-1b 꾸민 권총·탄창 BP → 8-1c 부품 움직임 → 8-2 소총 두 종 → 8-3 꾸민 `L_Combat` → 8-4 패키지 빌드 → 8-5 두 번째 레벨(범위는 그때 정함).

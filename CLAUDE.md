@@ -256,10 +256,10 @@ Content/Portfolio/
 - 유료 에셋 콘텐츠는 `Content/Showcase/`(git 제외). 꾸민 무기·탄창은 그레이박스 BP의 자식
 - 8-1. 꾸민 권총 (Makarov, `Content/TF_Russian_Pistols/`)
   - 8-1a. `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트(외형 연출용 구독 지점)
-  - 8-1b. `Showcase/Weapons/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM`) + `BP_Magazine_PM`(`BP_Magazine_Pistol` 자식) → VR Preview
+  - 8-1b. `Showcase/Weapon/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM`) + `BP_Magazine_PM`(`BP_Magazine_Pistol` 자식) → VR Preview
   - 8-1c. 부품 움직임: 발사 슬라이드, 안전장치 레버, 빈 탄창 슬라이드 멈춤 → VR Preview
 - 8-2. 소총 두 종 (`FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
-- 8-3. 꾸민 `L_Combat` (`Showcase/Maps/`)
+- 8-3. 꾸민 `L_Combat` (`Showcase/Map/`)
 - 8-4. 패키지 빌드
 - 8-5. 두 번째 레벨 (범위는 그때 정함)
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
@@ -453,9 +453,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 8 설계 판단: 두 레벨(꾸민 `L_Combat` + 게임다운 다음 레벨), 유료 콘텐츠는 `Content/Showcase/`(git 제외), 꾸민 무기·탄창은 그레이박스 BP 자식, 권총은 Makarov(`TF_Russian_Pistols`) + 안전장치, 부품 움직임은 무기 BP. 거쳐 간 후보: `FPS Weapon Bundle`(5.7 미지원), `Pistol_001`(시네마틱 FBX)
 - [x] Step 8-1a: `USafetyStep::OnSafetyLockChanged(bool)`·`UMagazineStep::OnInsertedMagazineChanged(AMagazine*)`(`BlueprintAssignable`, 기존 BP 이벤트 옆에서 함께 발행, 시작 상태는 `IsLocked`·`GetInsertedMagazine`으로 읽는다) — Rider 빌드(에디터를 닫아야 함, Live Coding이 켜져 있으면 `Unable to build while Live Coding is active`), `BP_RifleWeapon` 단계 컴포넌트 디테일 패널에 두 이벤트 노출 확인
+- [x] Step 8-1b: 꾸민 Makarov 권총 — C++ 없음. `Showcase/Weapon/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김·`NoCollision`, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM` = [`BP_GripStep`, `BP_SafetyStep`, `BP_MagazineStep`]), `Showcase/Weapon/BP_Magazine_PM`(`BP_Magazine_Pistol` 자식, 팩 `BP_PM_Mag_Full_A`의 껍데기·누름판·스프링 메시, 8발), 시험 맵 `Showcase/Map/L_ShowcaseTest`(`BP_FirstVRTestMode`) — VR Preview에서 시작 시 `Inserted into BP_PistolWeapon_PM_C_3 (DA_Ammo_9mm 8/8)`·`3 steps ready`, 잡기 → `Safety released` → `7/8`~`0/8` 발사·햅틱 → `N`으로 `Ejected (0/8 left, gone in 5s)`, 탄창 없이 `No magazine` → `Fire aborted at step 3/3` 확인
+  - 팩 탄창의 탄알은 Child Actor라 옮기지 않는다(따로 된 액터는 잡기·붙이기·물리를 따라오지 않음)
+  - Play 중 BP를 컴파일하면 배치된 인스턴스가 다시 만들어져 `BeginPlay`가 또 돈다(`Insert rejected: ... already inserted` 뒤 `3 steps ready`). 시험은 Play를 새로 시작해서 한다
+  - 미확인: 잠긴 채 당겨 `Safety on`·`Fire aborted at step 2/3`, 다시 잠금, 놓아서 끼우기(`BP_Magazine_PM`을 탄창 결합부 근처에 놓기)
 
 ### 현재 위치
-- **Step 8-1b** 다음 (`Showcase/Weapons/BP_PistolWeapon_PM`·`BP_Magazine_PM`, 안전장치 추가, `DA_Pistol_PM`)
+- **Step 8-1c** 다음 (부품 움직임: 발사 슬라이드, 안전장치 레버, 빈 탄창 슬라이드 멈춤)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
