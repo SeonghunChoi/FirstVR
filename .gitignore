@@ -96,3 +96,7 @@ Content/Fab/
 Content/TF_Russian_Pistols/
 # Showcase build content made with Fab assets (Docs/PLAN.md, distribution build)
 Content/Showcase/
+
+# Python 캐시
+__pycache__/
+*.pyc
