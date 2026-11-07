@@ -606,6 +606,7 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   - 짝: `SK_Rifle`은 단발 소총 `BP_RifleWeapon`의 자식 `BP_RifleWeapon_AR`, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon`의 자식 `BP_AutoRifleWeapon_RU74`. 그레이박스의 두 조합(안전장치 / 조정간)을 각각 꾸민 모양으로 보여 준다.
   - 탄창: 두 총 모두 탄창이 따로 된 메시가 아니라 총 메시의 `b_Mag` 본에 붙은 일부다. 우리 탄창은 손에 들고 떨어뜨리는 액터이므로 **에디터의 모델링 모드로 탄창 부분만 떼어 새 스태틱 메시**를 만들고(외부 도구 없이), 총에서는 `b_Mag` 본을 숨긴다(`Hide Bone by Name`). 떼어 낸 메시는 총 메시 기준 위치를 유지해 `MagazineWell`·`MagazineTop` 정렬에 원래 자리를 그대로 쓴다. 꾸민 탄창은 `BP_Magazine_Rifle`의 자식(5.56 30발)이라 두 소총이 서로의 탄창을 받는다.
   - 레버: 권총처럼 소총도 레버를 움직인다. 부품이 본(`b_Safety`, `b_SafetyLever`)이라 총마다 작은 애님 블루프린트(`Transform (Modify) Bone`)에 레버 값을 두고, 무기 BP가 `OnSafetyLockChanged`(단발 소총)·`UTriggerInputComponent::OnFireModeChanged`(연발 소총 조정간)를 받아 값을 바꾼다. C++ 없음.
+  - RU74 조정간 순서(2026-11-07): 실제 AK 레버처럼 안전 → 연발 → 단발. 꾸민 RU74 자식 BP에서만 트리거 `FireModes`를 [`Auto`, `Single`]로 덮어쓴다(레버가 한 방향으로 내려가고, 안전을 풀면 연발부터). 그레이박스 연발 소총은 [`Single`, `Auto`] 그대로. 레버 각도는 애님 BP `ABP_Rifle_RU74`의 `SafeAngle`·`AutoAngle`·`SingleAngle`.
   - 볼트·장전 손잡이 움직임은 권총 슬라이드와 같은 이유로 하지 않는다.
   - 스텝: 8-2a 탄창 메시 떼어 내기 → 8-2b 단발 소총(`SK_Rifle`) → 8-2c 연발 소총(`SK_RU74`) → 8-2d 레버 움직임.
 

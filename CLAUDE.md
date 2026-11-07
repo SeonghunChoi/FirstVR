@@ -130,6 +130,7 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
 - 시뮬레이트로 로직 확인: `pie.py start [맵]` → 확인 스크립트(액터를 찾아 함수 호출·값 읽기, 프레임이 지나야 하는 값은 다음 실행에서 읽음) → `pie.py stop`. 맵을 바꿀 때 저장 안 된 맵이 있으면 멈춘다
 - 망친 BP는 디스크 상태로 되돌린다: `EditorLoadingAndSavingUtils.reload_packages([pkg], ReloadPackagesInteractionMode.ASSUME_POSITIVE)` (기본 INTERACTIVE는 무인 모드에서 대화 상자를 '아니요'로 닫는다)
 - 함수 그래프를 지우고 같은 이름으로 다시 만들면 `_0`이 붙는다. 스크립트는 이미 있으면 멈추고, 다시 할 때는 위처럼 되돌린 뒤 실행한다
+- Git Bash에서 `/Game/...` 인수를 넘길 때는 `MSYS_NO_PATHCONV=1`을 붙인다(안 붙이면 `C:/Program Files/Git/Game/...`으로 바뀐다)
 - 아직 안 되는 것: Python으로 PIE 월드에 액터·컴포넌트 추가(씬 캡처 사진), BP 컴파일 오류 상태 읽기. 필요해지면 `FirstVREditor`에 C++로 더한다
 
 ---
@@ -508,8 +509,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `b_Safety` 회전축은 본 로컬 X(메시 옆 방향, 모든 본이 X 0인 평면에 있음). VR Preview에서 `B`마다 `Safety released`/`Safety locked`와 레버 방향·각도(`FireAngle` 90)를 사용자가 눈으로 확인
   - 같은 VR Preview에서 RU74 `Selector EFireMode::Auto` → `Selector Safe` → `Single` 순환도 확인(8-2c 미확인 항목 하나 해소)
 
+- [x] Step 8-2d 뒷부분(RU74 레버, Claude가 에디터 작업): `Showcase/Weapon/ABP_Rifle_RU74`(`SK_RU74_Skeleton`, `bSafetyLocked`·`bAutoMode`, 각도 `SafeAngle` -20·`AutoAngle` -7.5·`SingleAngle` 0(레퍼런스 포즈가 단발 위치, 음수가 위쪽. 사용자가 `SK_RU74` 에디터에서 `b_SafetyLever` 회전 X를 돌려 잼. 처음 짐작한 0/20/40, 사진으로 잰 0/10/18은 틀렸음), 목표 = 잠김이면 안전, 아니면 `bAutoMode`로 연발/단발, 나머지는 `ABP_Rifle_AR`과 같음, 본 `b_SafetyLever` 축 본 로컬 X), `BP_AutoRifleWeapon_RU74`(`RifleMesh` 애님 클래스, `UpdateSafetyLever`가 `bSafetyLocked` ← `IsLocked`·`bAutoMode` ← `GetFireMode == Auto`, `BeginPlay`·`On Safety Lock Changed (BP_SafetyStep)`·`On Fire Mode Changed (BP_TriggerInput)`에서 호출) — 스크립트 `make_abp_rifle_ru74.py`·`wire_rifle_ru74_lever.py`, 시뮬레이트에서 안전 -20 → 연발 -7.5 → 단발 0 → 안전 -20 확인. 결정에 따라 RU74만 물려받은 `BP_TriggerInput`의 `FireModes`를 [`Auto`, `Single`]로 덮어씀(`set_ru74_fire_modes.py`, 시뮬레이트에서 시작 모드 `Auto` 확인, 그레이박스 `BP_AutoRifleWeapon`은 그대로). VR Preview에서 `B`마다 `Selector EFireMode::Auto` → `Single` → `Safe` 순환과 레버 세 위치를 사용자가 눈으로 확인
+- [x] ✅ **Step 8-2**: 꾸민 소총 두 종(단발 `SK_Rifle`, 연발 `SK_RU74`)과 떼어 낸 탄창, 레버 움직임
+
 ### 현재 위치
-- **Step 8-2d** 진행 중: RU74 레버(`b_SafetyLever`, 안전·단발·연발 세 위치) (레버 애님 BP: 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged`)
+- **Step 8-3** 다음 (꾸민 `L_Combat`, `Showcase/Map/`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -555,4 +559,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-06: 슬라이드 움직임(발사 후퇴·복귀, 빈 탄창 멈춤)은 뺀다. 약실 개념이 없어 멈춘 슬라이드를 언제 돌려보낼지가 게임 규칙과 맞지 않았다. 8-1c 부품 움직임은 안전장치 레버만. (`Docs/PLAN.md` 10장)
 - 2026-11-07: 소총 두 종 — `SK_Rifle`은 단발 소총 `BP_RifleWeapon` 자식, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon` 자식. 탄창은 총 메시의 `b_Mag` 부분을 에디터 모델링 모드로 떼어 낸 스태틱 메시(총에서는 `b_Mag` 숨김, 꾸민 탄창은 `BP_Magazine_Rifle` 자식). 레버는 총마다 애님 BP로 움직이고 무기 BP가 `OnSafetyLockChanged`·`OnFireModeChanged`를 받는다. 볼트 움직임은 하지 않는다. 8-2a~d. (`Docs/PLAN.md` 10장)
 - 2026-11-07: 에디터 작업도 Claude가 한다. 열린 에디터에 Python 원격 실행으로 스크립트를 보내고, 엔진 Python에 없는 그래프 노드 작성은 편집기 전용 C++ 모듈 `FirstVREditor`의 `UGraphAuthoringLibrary`로 한다(외부 MCP 플러그인은 쓰지 않음). VR Preview 조작은 계속 사용자. (3.7)
+- 2026-11-07: RU74 조정간은 실제 AK 레버 순서(안전 → 연발 → 단발)를 따른다. 꾸민 RU74 자식 BP에서만 트리거 `FireModes`를 [`Auto`, `Single`]로 덮어써 레버가 한 방향으로 내려가게 하고(안전을 풀면 연발부터), 그레이박스 연발 소총은 [`Single`, `Auto`] 그대로 둔다. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
