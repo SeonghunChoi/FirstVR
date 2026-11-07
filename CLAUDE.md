@@ -290,7 +290,10 @@ Content/Portfolio/
   - 8-3a. Fab `Abandoned Factory Buildings` 받기, 폴더 `.gitignore`, 팩 낮 맵을 `Showcase/Map/`으로 복제, VR Preview 프레임 확인
   - 8-3b. 전투 자리 고르기·입구 여러 개로 막기, `L_Combat` 게임 배치(스폰 지점·무기 테이블·보급대·`PlayerStart`·내비 메시) 옮기기, `BP_FirstVRCombatMode`
   - 8-3c. 꾸민 무기·탄창 배치, VR Preview로 웨이브 한 판
-- 8-4. 패키지 빌드
+- 8-4. 패키지 빌드 (설계 판단 완료, `Docs/PLAN.md` 10장 "패키지 빌드")
+  - 8-4a. 패키징 설정(`GameDefaultMap` = `L_Combat_Factory`, 쿠킹할 맵 = `L_Combat_Factory`), Development 빌드(출력 `Packaged/`, git 제외)
+  - 8-4b. 실행 파일로 VR 한 판, FPS 차트 측정
+  - 8-4c. Shipping 빌드
 - 8-5. 두 번째 레벨 (범위는 그때 정함)
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
 
@@ -537,8 +540,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 측정법: VR Preview가 켜진 동안 `console.py StartFPSChart` → 30초 뒤 `StopFPSChart`(Claude가 시간을 잰다) → 로그 `LogChartCreation` 평균. `stat unit`은 화면에만 나오고 로그에 남지 않는다. 프리뷰가 먼저 꺼지면 에디터 프레임이 섞인다
 - [x] ✅ **Step 8-3**: 꾸민 전투 레벨 `L_Combat_Factory`(공장 환경 + 우리 조명, A 마당 전투 배치, 꾸민 무기·탄창, VR 웨이브 플레이)
 
+- [x] Step 8-4a(Claude가 빌드): `Tools/package_showcase.ps1 [-Config Development|Shipping]` — 패키징하는 동안에만 `DefaultEngine.ini`의 `GameDefaultMap`을 `L_Combat_Factory`로 바꿨다가 끝나면(실패해도) 되돌림, `RunUAT BuildCookRun -target=FirstVR -map=/Game/Showcase/Map/L_Combat_Factory -iterate`, 결과 `Packaged/<구성>/Windows/FirstVR.exe`(`.gitignore`). Development 빌드 성공(1.5GB, 쿠킹 991개, 오류 0)
+  - 첫 쿠킹은 셰이더 때문에 1시간 넘게 걸렸다. 이후는 `-iterate`로 1분 안팎
+  - 에디터가 켜져 있으면 `Unable to build while Live Coding is active`로 실패한다(BuildCookRun이 에디터 타깃도 빌드). 저장 확인 후 에디터를 닫고 패키징한다
+  - 거쳐 간 것: 타깃별 `CustomConfig`(배포판 전용 설정 디렉터리)는 고유 빌드 환경이 필요해 런처판 엔진에서 못 씀. `-skipcookingeditorcontent`는 VR 템플릿 `BP_XRPawn`·`WBP_Menu`가 엔진 에디터 콘텐츠(`GenericHMD`, `S_NavLink`)를 참조해 쿠킹 오류. PowerShell 5.1은 `-`로 시작하는 인수 안의 변수를 펼치지 않아 `"-clientconfig=$Config"`처럼 따옴표로 감싼다. `.bat`에 UTF-8 한글 주석을 쓰면 `cmd`가 일부를 명령으로 읽는다
+
 ### 현재 위치
-- **Step 8-4** 다음: 패키지 빌드
+- **Step 8-4b** 다음: `Packaged/Development/Windows/FirstVR.exe`를 시뮬레이터 런타임으로 실행해 VR 한 판·FPS 측정
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -587,4 +595,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-07: RU74 조정간은 실제 AK 레버 순서(안전 → 연발 → 단발)를 따른다. 꾸민 RU74 자식 BP에서만 트리거 `FireModes`를 [`Auto`, `Single`]로 덮어써 레버가 한 방향으로 내려가게 하고(안전을 풀면 연발부터), 그레이박스 연발 소총은 [`Single`, `Auto`] 그대로 둔다. (`Docs/PLAN.md` 10장)
 - 2026-11-07: 꾸민 전투 레벨(8-3)은 버려진 공장 분위기, Fab `Abandoned Factory Buildings - Day/Night Scene`의 완성 맵을 `Showcase/Map/`으로 복제해 그 안에 전투 자리를 만들고 `L_Combat`의 게임 배치를 옮긴다. 게임 규칙은 `BP_FirstVRCombatMode`·`DA_Waves_Combat` 그대로. 8-3a 팩·맵·VR 성능 → 8-3b 전투 자리·게임 배치 → 8-3c 꾸민 무기·웨이브 한 판. (`Docs/PLAN.md` 10장)
 - 2026-11-07: (8-3a에서 바꿈) 팩 맵은 UE4 방식 조명이라 UE5에서 검게 나와 통째로 복제하지 않는다. 새 레벨 `L_Combat_Factory`에 우리 UE5 기본 조명을 두고 팩의 환경 서브레벨(`Street_01_Environment`)만 스트리밍으로 붙인다.
+- 2026-11-08: 패키지는 꾸민 전투 레벨 `L_Combat_Factory`에서 바로 시작하고(시작 화면 없음), 쿠킹할 맵은 그 하나(서브레벨은 참조로 따라감), Development로 먼저 만들어 확인한 뒤 Shipping. 8-4a 설정·Development → 8-4b 실행 파일 VR·측정 → 8-4c Shipping. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)

@@ -615,6 +615,11 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   - 바뀜(8-3a): 팩 맵은 UE4 방식(조명 시나리오 서브레벨 + UE5에서 없어진 `AtmosphericFog`)이라 UE5에서 라이팅 화면이 검게 나온다. 맵을 통째로 복제하지 않고, 새 레벨 `L_Combat_Factory`에 엔진 기본 조명(해·하늘빛·스카이 애트머스피어·안개·구름)을 두고 팩의 환경 서브레벨 `Street_01_Environment`(공장 사이 옛 거리)만 스트리밍으로 붙인다.
   - 팩 맵은 무겁기 때문에 VR 프레임을 먼저 본다(두 눈 렌더링). 필요하면 전투 자리에서 안 보이는 부분을 지우거나 스트리밍을 끈다.
   - 스텝: 8-3a 팩 받기·git 제외·맵 복제·VR 성능 확인 → 8-3b 전투 자리 고르기·막기·게임 배치 옮기기 → 8-3c 꾸민 무기·적 배치와 VR Preview로 웨이브 한 판.
+- **패키지 빌드 (2026-11-08)**
+  - 실행하면 꾸민 전투 레벨 `L_Combat_Factory`에서 바로 시작한다(`GameDefaultMap`). 시작 화면 레벨은 두지 않는다. 다시 하기는 실패·승리 화면의 '다시 시작'.
+  - 넣는 맵은 `L_Combat_Factory` 하나(서브레벨 `L_Combat_Factory_Env`·`_Floor`는 스트리밍 참조로 함께 쿠킹). 지정하지 않으면 프로젝트의 모든 맵(팩 데모 맵 포함)을 쿠킹한다.
+  - 구성은 Development 먼저(로그·콘솔이 살아 있어 실행 파일에서도 확인·측정). 확인이 끝나면 배포용 Shipping을 한 번 더.
+  - 스텝: 8-4a 패키징 설정과 Development 빌드 → 8-4b 실행 파일로 VR 한 판·성능 측정 → 8-4c Shipping 빌드.
 
 ### Phase 5. PDF 제작
 

@@ -101,3 +101,6 @@ Content/Showcase/
 # Python 캐시
 __pycache__/
 *.pyc
+
+# 패키지 빌드 결과
+Packaged/
