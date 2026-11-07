@@ -609,6 +609,12 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
   - RU74 조정간 순서(2026-11-07): 실제 AK 레버처럼 안전 → 연발 → 단발. 꾸민 RU74 자식 BP에서만 트리거 `FireModes`를 [`Auto`, `Single`]로 덮어쓴다(레버가 한 방향으로 내려가고, 안전을 풀면 연발부터). 그레이박스 연발 소총은 [`Single`, `Auto`] 그대로. 레버 각도는 애님 BP `ABP_Rifle_RU74`의 `SafeAngle`·`AutoAngle`·`SingleAngle`.
   - 볼트·장전 손잡이 움직임은 권총 슬라이드와 같은 이유로 하지 않는다.
   - 스텝: 8-2a 탄창 메시 떼어 내기 → 8-2b 단발 소총(`SK_Rifle`) → 8-2c 연발 소총(`SK_RU74`) → 8-2d 레버 움직임.
+- **꾸민 전투 레벨 (2026-11-07)**
+  - 분위기는 버려진 공장·산업 시설(군용 소총과 어울림). 주 에셋은 Fab `Abandoned Factory Buildings - Day/Night Scene`(모듈식 공장 건물 430여 개, 완성된 낮/밤 맵, 성능 최적화를 내세움).
+  - 레벨은 팩의 완성 맵을 `Content/Showcase/Map/`으로 복제하고, 그 안에서 전투 자리를 골라 입구 여러 개짜리 공간으로 막은 뒤 `L_Combat`의 게임 배치(스폰 지점 `Front`·`Left`·`Right`, 무기 테이블·꾸민 무기, 탄창 보급대, `PlayerStart`, 내비 메시)를 옮겨 놓는다. 게임 규칙은 `BP_FirstVRCombatMode`·`DA_Waves_Combat` 그대로.
+  - 바뀜(8-3a): 팩 맵은 UE4 방식(조명 시나리오 서브레벨 + UE5에서 없어진 `AtmosphericFog`)이라 UE5에서 라이팅 화면이 검게 나온다. 맵을 통째로 복제하지 않고, 새 레벨 `L_Combat_Factory`에 엔진 기본 조명(해·하늘빛·스카이 애트머스피어·안개·구름)을 두고 팩의 환경 서브레벨 `Street_01_Environment`(공장 사이 옛 거리)만 스트리밍으로 붙인다.
+  - 팩 맵은 무겁기 때문에 VR 프레임을 먼저 본다(두 눈 렌더링). 필요하면 전투 자리에서 안 보이는 부분을 지우거나 스트리밍을 끈다.
+  - 스텝: 8-3a 팩 받기·git 제외·맵 복제·VR 성능 확인 → 8-3b 전투 자리 고르기·막기·게임 배치 옮기기 → 8-3c 꾸민 무기·적 배치와 VR Preview로 웨이브 한 판.
 
 ### Phase 5. PDF 제작
 
