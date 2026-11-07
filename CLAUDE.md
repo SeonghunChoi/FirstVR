@@ -434,6 +434,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 6-7b: `AMagazine::HandleDropped`(다음 틱 `FinishDrop`: `TObjectIterator<UMagazineStep>`로 비어 있고 맞는 무기 중 `MagazineTop` ↔ `MagazineWell`이 가장 가까운 것, `InsertRadius` 안이면 `InsertMagazine`, 아니면 물리로 떨어짐·거리 로그)·`HandleGrabbed`(끼워진 채 손에 잡히면 `UMagazineStep::ReleaseMagazine`으로 상태만 비움, `Pulled out by hand`) — 빌드, 탄창 BP 두 개에서 잡기 컴포넌트 `On Grabbed`/`On Dropped` → `Handle Grabbed`/`Handle Dropped`, 시험 맵 `Portfolio/Maps/L_WeaponTest_Empty`(빈 권총·빈 연발 소총·낱개 탄창, 스폰 지점 없음) — VR Preview에서 멀리 놓으면 `nearest well ... 53/21 cm away (radius 15)`로 떨어짐, 가까이 놓으면 `Inserted into BP_PistolWeapon_C_1 (15/15)` → `14/15`·`13/15` 발사, 빈 연발 소총은 `No magazine` → `Click! (empty)` → 연발도 `fire aborted`로 멈춤 확인
   - `L_WeaponTest_Empty`에는 스폰 지점이 없어 `Spawn point 'Front' not found` 경고 뒤 바로 `Victory`가 된다(무기 시험용이라 그대로 둠)
   - 미확인: 소총 탄창을 권총 근처에서 놓을 때의 거절(`no empty weapon that fits`), 끼워진 탄창을 손으로 잡은 `Pulled out by hand`
+  - 바로잡음(2026-11-07, 8-2b): 실제로는 `BP_Magazine_Pistol`에만 연결됐고 `BP_Magazine_Rifle`은 6-7b 커밋부터 연결이 없었다(시험은 권총 탄창으로만 함). 8-2b에서 연결
 
 - [x] Step 6-7c: `UMagazineReleaseInputComponent`(`Weapon/`, `UWeaponInputComponent` 자식, 버튼 → 같은 액터 `UMagazineStep::EjectMagazine`, 없으면 `No magazine to eject`) — 빌드, `Portfolio/Input/IA_MagRelease_*`·`IMC_MagRelease_*`(B/Y, `Default Mapping Contexts` 등록), `Portfolio/Weapons/Steps/BP_MagazineReleaseInput`(`BP_SafetyInput` 복제 후 부모 변경), 권총·소총 세 종·재조립 소총에 부착, 시험용 게임 모드 `Portfolio/Game/BP_FirstVRTestMode`(`BP_FirstVRGameMode` 자식, `Wave Data` 비움, `L_WeaponTest_Empty` 오버라이드) — VR Preview에서 `N` → `Ejected (21/30 left)`, `Ejected (30/30 left)`, 탄창이 떨어짐 확인
   - 빼낸 소총 탄창이 느리게 "떨어진" 원인: `BP_Magazine_Rifle`의 `Body`에서 `Enable Gravity`가 꺼져 있었다(떠 있다가 0.5초 뒤 무기 몸체 충돌이 돌아오며 밀려남). 켜서 해결. 진단은 임시 로그로 했고 지움
@@ -475,8 +476,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 레버 메시(`SM_Safety_Rifle`·`SM_Safety_RU74`)도 떼어 냈지만, 레버는 원래 계획대로 애님 BP로 본을 돌린다(쓰지 않음)
   - 스태틱 메시는 `SM_` 접두사(`SK_`는 스켈레탈 메시)
 
+- [x] Step 8-2b: 꾸민 단발 소총 — C++ 없음. `Showcase/Weapon/BP_RifleWeapon_AR`(`BP_RifleWeapon` 자식, 큐브 외형 숨김·`NoCollision`, `Body` 아래 스켈레탈 메시 `RifleMesh`(`SK_Rifle`, `NoCollision`), 기준점·`Body` 조정, `BeginPlay`에서 `Hide Bone by Name`(`b_Mag`)), `Showcase/Weapon/BP_Magazine_AR`(`BP_Magazine_Rifle` 자식, 큐브 숨김, `SM_Mag_AR`(회전은 `RifleMesh`와 같게), `MagazineTop`·`Body` 조정), 부모 `BP_Magazine_Rifle`에 빠져 있던 `On Grabbed`/`On Dropped` → `Handle Grabbed`/`Handle Dropped` 연결 — VR Preview에서 `Inserted into BP_RifleWeapon_AR_C_1 (DA_Ammo_556 30/30)`·`4 steps ready`, `Safety released` → `29/30`~ 발사·햅틱 1.00, 보조 손 `Two-hand aim on` → `Recoil 0.60`, `N`으로 `Ejected`, 따로 놓은 `BP_Magazine_AR`을 잡아 탄창 입구 근처에 놓아 `Inserted (30/30)` → `29/30`~`25/30` 발사 확인
+  - 놓아도 아무 로그가 없던 원인: `BP_Magazine_Rifle`에 잡기 이벤트 연결이 없었다(6-7b 바로잡음 참고). 놓으면 반드시 `Inserted` 또는 `Dropped, ...`가 찍히므로, 둘 다 없으면 이벤트 연결부터 본다. 맵에 놓인 탄창을 잡을 때는 원래 로그가 없다(`Picked up`은 버린 탄창, `Pulled out`은 끼워진 탄창일 때만)
+  - 얇은 탄창(`Body` 두께 약 2.4cm)은 바닥에 눕으면 시뮬레이터 손으로 잡기 어렵다. 시험용 인스턴스는 `피직스 시뮬레이트`를 꺼서 가슴 높이에 띄워 둔다(놓으면 코드가 물리를 켠다)
+  - 미확인: 끼워진 탄창 액터와 원래 `b_Mag`의 겹침(정렬은 눈으로만 맞춤), `Picked up, kept`
+
 ### 현재 위치
-- **Step 8-2b** 다음 (`BP_RifleWeapon_AR` + `BP_Magazine_AR`, `b_Mag` 숨김, 기준점 맞추기)
+- **Step 8-2c** 다음 (`BP_AutoRifleWeapon_RU74` + `BP_Magazine_RU74`, `SK_RU74`, `b_Mag` 숨김)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
