@@ -564,8 +564,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 에디터 월드의 스켈레탈 메시가 애니메이션을 평가하려면 `set_update_animation_in_editor(True)`. `spawn_actor_from_class(..., transient=True)`로 만든 임시 액터는 `EditorActorSubsystem.get_all_level_actors`에 나오지 않는다(지울 때는 `GameplayStatics.get_all_actors_with_tag`)
   - 강제 종료는 Claude 권한으로 막혀 있어 사용자가 작업 관리자에서 끈다
 
+- [x] Step 8-5b(Claude가 에디터 작업): `Showcase/Enemy/ABP_Enemy_UE4`(뼈대 `WastelandWarrior/meshes/UE4_Mannequin_Skeleton`, 부모 `UEnemyAnimInstance`, 이벤트 그래프 비움) — `make_abp_enemy_ue4.py`로 `ABP_EnemyMannequin`과 같은 애님 그래프: `BS_Idle_Walk_Run_UE4`(Speed ← `GroundSpeed`) → `Slot DefaultSlot` → `Local To Component` → `Transform (Modify) Bone` ×3(`pelvis`·`ik_foot_l`·`ik_foot_r`, `Add to Existing`, Component Space, ← `PelvisOffset`·`Left/RightFootOffset`) → `Leg IK`(`ik_foot_l/r` ↔ `foot_l/r`, Alpha ← `LegIKAlpha`) → `Component To Local` → `Output Pose`. 컴파일 오류 없음, `abp_compare.py`로 두 애님 BP를 나란히 세워 대기 자세와 공격 몽타주 1·3의 슬롯 재생 자세가 같음 확인
+  - 절뚝임 보정·`Leg IK`는 폰이 있어야 값이 들어오므로 8-5c 일반 Play에서 `Enemy.Limp`로 확인
+
 ### 현재 위치
-- **Step 8-5b** 다음: UE4 뼈대용 적 애님 BP(`ABP_EnemyMannequin`과 같은 그래프)
+- **Step 8-5c** 다음: `DA_Enemy_Wasteland`(UE4 본 이름)·`BP_EnemyWasteland`(`BP_EnemyManny` 자식), 공장 전용 웨이브 데이터·게임 모드 → 일반 Play
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
