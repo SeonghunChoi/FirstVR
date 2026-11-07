@@ -602,6 +602,12 @@ UEnemyAnimInstance ..> UDamageReceiver : OnLimpStarted 구독
 - **유료 에셋을 쓴 콘텐츠는 `Content/Showcase/`에 두고 git에서 뺀다.** 공개 저장소는 그레이박스 그대로 동작해야 하고, Fab 원본·참조가 깨진 에셋이 올라가지 않게 한다. 꾸민 콘텐츠는 버전 관리 대신 따로 백업한다.
 - 가진 에셋: `FPS_Assault_Pack`(소총 `SK_Rifle`·`SK_RU74`, 권총 없음, 탄창은 별도 메시가 아니라 `b_Mag` 본), `Nimikko_WesternTown`(서부 마을 환경), `Sci-Fi_Shots_Pack2_Game_Of_Weapons`(총소리)
 - **권총은 Fab `Makarov Pistol (PM)`(무료, `Content/TF_Russian_Pistols/`)로 바꾼다.** 처음엔 `FPS Weapon Bundle`의 기관단총(5.7 미지원)과 `Pistol_001`(시네마틱용 하이폴리 FBX)을 봤으나, Makarov는 5.7 지원에 부품이 따로 된 스태틱 메시(`SM_PM_Frame`·`Slide`·`Trigger`·`Hammer`·`Safety`·`Magazine`)와 탄창 BP를 갖고 있어 우리 탄창 액터·안전장치 구조에 그대로 맞는다. 탄은 9×18mm. 소총 두 종(`SK_Rifle`, `SK_RU74`)과 함께 세 무기 구성을 유지한다. Fab 에셋은 무료여도 git에서 뺀다(`Content/Fab/`, `Content/Showcase/` 포함).
+- **소총 두 종 (2026-11-07)**
+  - 짝: `SK_Rifle`은 단발 소총 `BP_RifleWeapon`의 자식 `BP_RifleWeapon_AR`, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon`의 자식 `BP_AutoRifleWeapon_RU74`. 그레이박스의 두 조합(안전장치 / 조정간)을 각각 꾸민 모양으로 보여 준다.
+  - 탄창: 두 총 모두 탄창이 따로 된 메시가 아니라 총 메시의 `b_Mag` 본에 붙은 일부다. 우리 탄창은 손에 들고 떨어뜨리는 액터이므로 **에디터의 모델링 모드로 탄창 부분만 떼어 새 스태틱 메시**를 만들고(외부 도구 없이), 총에서는 `b_Mag` 본을 숨긴다(`Hide Bone by Name`). 떼어 낸 메시는 총 메시 기준 위치를 유지해 `MagazineWell`·`MagazineTop` 정렬에 원래 자리를 그대로 쓴다. 꾸민 탄창은 `BP_Magazine_Rifle`의 자식(5.56 30발)이라 두 소총이 서로의 탄창을 받는다.
+  - 레버: 권총처럼 소총도 레버를 움직인다. 부품이 본(`b_Safety`, `b_SafetyLever`)이라 총마다 작은 애님 블루프린트(`Transform (Modify) Bone`)에 레버 값을 두고, 무기 BP가 `OnSafetyLockChanged`(단발 소총)·`UTriggerInputComponent::OnFireModeChanged`(연발 소총 조정간)를 받아 값을 바꾼다. C++ 없음.
+  - 볼트·장전 손잡이 움직임은 권총 슬라이드와 같은 이유로 하지 않는다.
+  - 스텝: 8-2a 탄창 메시 떼어 내기 → 8-2b 단발 소총(`SK_Rifle`) → 8-2c 연발 소총(`SK_RU74`) → 8-2d 레버 움직임.
 
 ### Phase 5. PDF 제작
 

@@ -258,7 +258,11 @@ Content/Portfolio/
   - 8-1a. `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트(외형 연출용 구독 지점)
   - 8-1b. `Showcase/Weapon/BP_PistolWeapon_PM`(`BP_PistolWeapon` 자식, 큐브 숨김, Makarov 부품 메시, 기준점·`Body` 조정, 안전장치 단계·입력 추가, `DA_Pistol_PM`) + `BP_Magazine_PM`(`BP_Magazine_Pistol` 자식) → VR Preview
   - 8-1c. 부품 움직임: 안전장치 레버(`OnSafetyLockChanged` → 타임라인으로 회전, 시작 상태는 `IsLocked`) → VR Preview. 슬라이드 움직임은 뺐다(2026-11-06)
-- 8-2. 소총 두 종 (`FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
+- 8-2. 소총 두 종 (`FPS_Assault_Pack`, 설계 판단 완료, `Docs/PLAN.md` 10장)
+  - 8-2a. 탄창 메시 떼어 내기: 모델링 모드로 `SK_Rifle`·`SK_RU74`의 탄창 부분만 `Showcase/Weapon/Meshes/SM_Mag_AR`·`SM_Mag_RU74` (총 메시 기준 위치 유지)
+  - 8-2b. `Showcase/Weapon/BP_RifleWeapon_AR`(`BP_RifleWeapon` 자식, `SK_Rifle`, `b_Mag` 숨김, 기준점·`Body` 조정) + `BP_Magazine_AR`(`BP_Magazine_Rifle` 자식) → VR Preview
+  - 8-2c. `Showcase/Weapon/BP_AutoRifleWeapon_RU74`(`BP_AutoRifleWeapon` 자식, `SK_RU74`) + `BP_Magazine_RU74` → VR Preview
+  - 8-2d. 레버: 총마다 애님 BP(`Transform (Modify) Bone`), 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged` → VR Preview
 - 8-3. 꾸민 `L_Combat` (`Showcase/Map/`)
 - 8-4. 패키지 빌드
 - 8-5. 두 번째 레벨 (범위는 그때 정함)
@@ -466,8 +470,13 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 미확인(8-1b부터): `BP_Magazine_PM`을 놓아서 끼우기. 레벨에 다시 놓은 꾸민 권총 인스턴스는 `Initial Magazine`이 비어 있을 수 있다
 - [x] ✅ **Step 8-1**: 꾸민 Makarov 권총(그레이박스 BP 자식, 안전장치 추가, 레버 움직임)
 
+- [x] Step 8-2a: 소총 탄창 메시 떼어 내기 — 스켈레탈 메시 에디터 `스태틱 메시 만들기`로 `SM_Rifle_Full`·`SM_RU74_Full`, 모델링 모드 `선택` 팔레트의 `트라이앵글 선택`(영어판 `TriModel > TriSel`)으로 탄창만 복제해 `Showcase/Weapon/Meshes/SM_Mag_AR`·`SM_Mag_RU74`(총 메시 좌표 유지) — 겹쳐 놓아 원래 자리 확인
+  - 5.7 모델링 모드는 한글 UI에서 팔레트가 `생성`·`선택`·`XForm`·`디폼`·`모델`·`메시`·`특성`·`베이크`·`UV`… 로 나뉜다. 새 에셋 위치는 `모델링 모드 빠른 세팅 > 새 에셋 위치`
+  - 레버 메시(`SM_Safety_Rifle`·`SM_Safety_RU74`)도 떼어 냈지만, 레버는 원래 계획대로 애님 BP로 본을 돌린다(쓰지 않음)
+  - 스태틱 메시는 `SM_` 접두사(`SK_`는 스켈레탈 메시)
+
 ### 현재 위치
-- **Step 8-2** 다음 (소총 두 종 `FPS_Assault_Pack` `SK_Rifle`·`SK_RU74`, 탄창이 `b_Mag` 본이라 처리 방식 판단 필요)
+- **Step 8-2b** 다음 (`BP_RifleWeapon_AR` + `BP_Magazine_AR`, `b_Mag` 숨김, 기준점 맞추기)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -511,4 +520,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-06: 배포 빌드는 두 레벨이다. ① `L_Combat`을 유료 에셋으로 꾸민 버전(총도 교체) ② 더 게임답게 꾸민 다음 레벨(범위는 ①을 끝낸 뒤 정함). 유료 에셋을 쓴 콘텐츠는 같은 프로젝트의 `Content/Showcase/`에 두고 `.gitignore`로 뺀다(공개 저장소는 그레이박스 그대로, 꾸민 콘텐츠는 버전 관리 없이 따로 백업). (`Docs/PLAN.md` 10장 "공개 자료와 배포 빌드")
 - 2026-11-06: 꾸민 무기·탄창은 그레이박스 BP의 자식(`Content/Showcase/`, 같은 조합·다른 모양). 권총은 Fab `Makarov Pistol (PM)`(`Content/TF_Russian_Pistols/`, 부품별 스태틱 메시, 5.7 지원)이고 꾸민 권총에만 안전장치를 더한다(`DA_Pistol_PM`). 부품 움직임(발사 슬라이드·안전장치 레버·빈 탄창 슬라이드 멈춤)은 꾸민 무기 BP가 맡고, 구독 지점으로 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트를 더한다. (`Docs/PLAN.md` 10장)
 - 2026-11-06: 슬라이드 움직임(발사 후퇴·복귀, 빈 탄창 멈춤)은 뺀다. 약실 개념이 없어 멈춘 슬라이드를 언제 돌려보낼지가 게임 규칙과 맞지 않았다. 8-1c 부품 움직임은 안전장치 레버만. (`Docs/PLAN.md` 10장)
+- 2026-11-07: 소총 두 종 — `SK_Rifle`은 단발 소총 `BP_RifleWeapon` 자식, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon` 자식. 탄창은 총 메시의 `b_Mag` 부분을 에디터 모델링 모드로 떼어 낸 스태틱 메시(총에서는 `b_Mag` 숨김, 꾸민 탄창은 `BP_Magazine_Rifle` 자식). 레버는 총마다 애님 BP로 움직이고 무기 BP가 `OnSafetyLockChanged`·`OnFireModeChanged`를 받는다. 볼트 움직임은 하지 않는다. 8-2a~d. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
