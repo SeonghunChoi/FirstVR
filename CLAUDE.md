@@ -131,6 +131,9 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
 - 망친 BP는 디스크 상태로 되돌린다: `EditorLoadingAndSavingUtils.reload_packages([pkg], ReloadPackagesInteractionMode.ASSUME_POSITIVE)` (기본 INTERACTIVE는 무인 모드에서 대화 상자를 '아니요'로 닫는다)
 - 함수 그래프를 지우고 같은 이름으로 다시 만들면 `_0`이 붙는다. 스크립트는 이미 있으면 멈추고, 다시 할 때는 위처럼 되돌린 뒤 실행한다
 - Git Bash에서 `/Game/...` 인수를 넘길 때는 `MSYS_NO_PATHCONV=1`을 붙인다(안 붙이면 `C:/Program Files/Git/Game/...`으로 바뀐다)
+- 화면 보기: `python Tools/ue_remote.py`로 뷰포트 카메라(`UnrealEditorSubsystem.set_level_viewport_camera_info`)·보기 모드(`AutomationLibrary.set_editor_active_viewport_view_mode`)를 맞추고 몇 번 틱을 넘긴 뒤 `powershell -ExecutionPolicy Bypass -File Tools/window_shot.ps1 -Out Saved/Captures/<이름>.png`(에디터 창 PrintWindow, 가려져 있어도 됨) → Read로 본다. 씬 캡처(SceneCapture2D)는 검게 나와서 쓰지 않는다. 에디터 `백그라운드에서 CPU 덜 사용`이 켜져 있으면 초당 3프레임으로 떨어져 로딩·화면 갱신이 멈춘 것처럼 보인다(엔진 공용 `%LOCALAPPDATA%/UnrealEngine/5.7/Saved/Config/WindowsEditor/EditorSettings.ini` `bThrottleCPUWhenNotForeground=False`)
+- **열려 있는 월드의 맵·서브레벨 패키지를 `reload_packages`로 다시 불러오지 않는다**(그 뒤 맵을 열다 에디터가 크래시 리포트 없이 꺼졌다). 열린 맵의 시험 변경을 버리려면 다른 맵을 열 때 저장하지 않는다
+- 팩 맵을 조사할 때는 `inspect_level.py`(서브레벨·액터 종류·조명), 바닥 높이는 맞은 액터를 무시 목록에 넣어 가며 `line_trace_single`을 반복한다
 - 아직 안 되는 것: Python으로 PIE 월드에 액터·컴포넌트 추가(씬 캡처 사진), BP 컴파일 오류 상태 읽기. 필요해지면 `FirstVREditor`에 C++로 더한다
 
 ---
@@ -283,7 +286,10 @@ Content/Portfolio/
   - 8-2b. `Showcase/Weapon/BP_RifleWeapon_AR`(`BP_RifleWeapon` 자식, `SK_Rifle`, `b_Mag` 숨김, 기준점·`Body` 조정) + `BP_Magazine_AR`(`BP_Magazine_Rifle` 자식) → VR Preview
   - 8-2c. `Showcase/Weapon/BP_AutoRifleWeapon_RU74`(`BP_AutoRifleWeapon` 자식, `SK_RU74`) + `BP_Magazine_RU74` → VR Preview
   - 8-2d. 레버: 총마다 애님 BP(`Transform (Modify) Bone`), 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged` → VR Preview
-- 8-3. 꾸민 `L_Combat` (`Showcase/Map/`)
+- 8-3. 꾸민 `L_Combat` (설계 판단 완료, `Docs/PLAN.md` 10장 "꾸민 전투 레벨")
+  - 8-3a. Fab `Abandoned Factory Buildings` 받기, 폴더 `.gitignore`, 팩 낮 맵을 `Showcase/Map/`으로 복제, VR Preview 프레임 확인
+  - 8-3b. 전투 자리 고르기·입구 여러 개로 막기, `L_Combat` 게임 배치(스폰 지점·무기 테이블·보급대·`PlayerStart`·내비 메시) 옮기기, `BP_FirstVRCombatMode`
+  - 8-3c. 꾸민 무기·탄창 배치, VR Preview로 웨이브 한 판
 - 8-4. 패키지 빌드
 - 8-5. 두 번째 레벨 (범위는 그때 정함)
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
@@ -512,8 +518,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 8-2d 뒷부분(RU74 레버, Claude가 에디터 작업): `Showcase/Weapon/ABP_Rifle_RU74`(`SK_RU74_Skeleton`, `bSafetyLocked`·`bAutoMode`, 각도 `SafeAngle` -20·`AutoAngle` -7.5·`SingleAngle` 0(레퍼런스 포즈가 단발 위치, 음수가 위쪽. 사용자가 `SK_RU74` 에디터에서 `b_SafetyLever` 회전 X를 돌려 잼. 처음 짐작한 0/20/40, 사진으로 잰 0/10/18은 틀렸음), 목표 = 잠김이면 안전, 아니면 `bAutoMode`로 연발/단발, 나머지는 `ABP_Rifle_AR`과 같음, 본 `b_SafetyLever` 축 본 로컬 X), `BP_AutoRifleWeapon_RU74`(`RifleMesh` 애님 클래스, `UpdateSafetyLever`가 `bSafetyLocked` ← `IsLocked`·`bAutoMode` ← `GetFireMode == Auto`, `BeginPlay`·`On Safety Lock Changed (BP_SafetyStep)`·`On Fire Mode Changed (BP_TriggerInput)`에서 호출) — 스크립트 `make_abp_rifle_ru74.py`·`wire_rifle_ru74_lever.py`, 시뮬레이트에서 안전 -20 → 연발 -7.5 → 단발 0 → 안전 -20 확인. 결정에 따라 RU74만 물려받은 `BP_TriggerInput`의 `FireModes`를 [`Auto`, `Single`]로 덮어씀(`set_ru74_fire_modes.py`, 시뮬레이트에서 시작 모드 `Auto` 확인, 그레이박스 `BP_AutoRifleWeapon`은 그대로). VR Preview에서 `B`마다 `Selector EFireMode::Auto` → `Single` → `Safe` 순환과 레버 세 위치를 사용자가 눈으로 확인
 - [x] ✅ **Step 8-2**: 꾸민 소총 두 종(단발 `SK_Rifle`, 연발 `SK_RU74`)과 떼어 낸 탄창, 레버 움직임
 
+- [x] Step 8-3a(Claude가 에디터 작업): Fab 팩 `Content/AbandonedFactory`(4.1GB, `.gitignore`), 맵 조사(`Warehouse_01`·`Street_01`·`Overview`, 모두 UE4 방식: 조명 시나리오 서브레벨 + 사라진 `AtmosphericFog`) — 팩 맵은 UE5에서 라이팅 화면이 검게 나온다(언릿은 정상, 노출·안개·해 세기와 무관). 그래서 `Showcase/Map/L_Combat_Factory`를 엔진 기본 템플릿(해·하늘빛·스카이 애트머스피어·안개·구름)으로 만들고 바닥 메시를 지운 뒤 팩의 `Street_01_Environment`만 항상 로드 스트리밍 레벨로 붙임(`make_combat_factory.py`) → 정상으로 보임. `PlayerStart` (594, -3493, 68.6)(팩 시작 자리, 바닥 슬래브 위), 게임 모드 `BP_FirstVRTestMode`. VR Preview(시뮬레이터)에서 평균 50~60, 최저 30fps — 결정에 따라 성능은 8-3b에서 전투 자리를 정한 뒤 안 보이는 부분을 지워 줄이고, 정확한 측정은 8-4 패키지 빌드에서
+  - 블록 밖 일부는 바닥이 없어 아래로 하늘이 보인다(배경 카드 사이). 전투 자리는 바닥이 있는 곳에서 고른다
+  - 팩 환경 서브레벨은 복사하지 않고 참조한다. 전투 자리를 막거나 지울 것이 생기면 그때 `Showcase`로 복제한다
+
 ### 현재 위치
-- **Step 8-3** 다음 (꾸민 `L_Combat`, `Showcase/Map/`)
+- **Step 8-3b** 다음: 전투 자리 고르기·막기, 게임 배치 옮기기, 안 보이는 부분 지워 성능 줄이기
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -560,4 +570,6 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-07: 소총 두 종 — `SK_Rifle`은 단발 소총 `BP_RifleWeapon` 자식, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon` 자식. 탄창은 총 메시의 `b_Mag` 부분을 에디터 모델링 모드로 떼어 낸 스태틱 메시(총에서는 `b_Mag` 숨김, 꾸민 탄창은 `BP_Magazine_Rifle` 자식). 레버는 총마다 애님 BP로 움직이고 무기 BP가 `OnSafetyLockChanged`·`OnFireModeChanged`를 받는다. 볼트 움직임은 하지 않는다. 8-2a~d. (`Docs/PLAN.md` 10장)
 - 2026-11-07: 에디터 작업도 Claude가 한다. 열린 에디터에 Python 원격 실행으로 스크립트를 보내고, 엔진 Python에 없는 그래프 노드 작성은 편집기 전용 C++ 모듈 `FirstVREditor`의 `UGraphAuthoringLibrary`로 한다(외부 MCP 플러그인은 쓰지 않음). VR Preview 조작은 계속 사용자. (3.7)
 - 2026-11-07: RU74 조정간은 실제 AK 레버 순서(안전 → 연발 → 단발)를 따른다. 꾸민 RU74 자식 BP에서만 트리거 `FireModes`를 [`Auto`, `Single`]로 덮어써 레버가 한 방향으로 내려가게 하고(안전을 풀면 연발부터), 그레이박스 연발 소총은 [`Single`, `Auto`] 그대로 둔다. (`Docs/PLAN.md` 10장)
+- 2026-11-07: 꾸민 전투 레벨(8-3)은 버려진 공장 분위기, Fab `Abandoned Factory Buildings - Day/Night Scene`의 완성 맵을 `Showcase/Map/`으로 복제해 그 안에 전투 자리를 만들고 `L_Combat`의 게임 배치를 옮긴다. 게임 규칙은 `BP_FirstVRCombatMode`·`DA_Waves_Combat` 그대로. 8-3a 팩·맵·VR 성능 → 8-3b 전투 자리·게임 배치 → 8-3c 꾸민 무기·웨이브 한 판. (`Docs/PLAN.md` 10장)
+- 2026-11-07: (8-3a에서 바꿈) 팩 맵은 UE4 방식 조명이라 UE5에서 검게 나와 통째로 복제하지 않는다. 새 레벨 `L_Combat_Factory`에 우리 UE5 기본 조명을 두고 팩의 환경 서브레벨(`Street_01_Environment`)만 스트리밍으로 붙인다.
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
