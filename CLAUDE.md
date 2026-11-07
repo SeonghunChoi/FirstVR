@@ -522,14 +522,19 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 블록 밖 일부는 바닥이 없어 아래로 하늘이 보인다(배경 카드 사이). 전투 자리는 바닥이 있는 곳에서 고른다
   - 팩 환경 서브레벨은 복사하지 않고 참조한다. 전투 자리를 막거나 지울 것이 생기면 그때 `Showcase`로 복제한다
 
-- [x] Step 8-3b(Claude가 에디터 작업): 후보 4곳을 위·눈높이로 찍어 사용자가 **A 마당**(공장 건물 사이, 남북 약 12m·동서로 긴 마당) 선택. 팩 퍼시스턴트 레벨을 `Showcase/Map/L_Combat_Factory_Ground`로 복제해 `PlayerStart`를 지우고 월드 세팅 게임 모드(팩 데모 `bp_ThirdPersonGameMode_SF`, 오류 있는 `ThirdPerson_AnimBP`를 끌고 와 Play 때 "블루프린트 컴파일 오류" 대화 상자를 띄웠음)를 비워 스트리밍으로 붙임(바닥 지형). `place_combat_factory.py`: 폴더 `Gameplay`에 `PlayerStart` (1300, −2400, 100) 동쪽(Yaw 90), 팔레트 테이블(`sm_WoodPallet_01_01` 두 줄 6단, 높이 90), 보급대 둘(소총·권총 그레이박스 탄창), 스폰 지점 `Front` (1280, −500)·`Left` (2200, −600)·`Right` (200, −2860), 내비 메시 범위 30×36m, 게임 모드 `BP_FirstVRCombatMode` — 내비 경로 Front 20m·Left 22m·Right 12m, 시뮬레이트에서 웨이브 1(`Front`) → `Enemy.Kill` → 웨이브 2(`Left`·`Right` 번갈아) 스폰, 적이 걸어서 플레이어 자리까지 옴 확인
+- [x] Step 8-3b(Claude가 에디터 작업): 후보 4곳을 위·눈높이로 찍어 사용자가 **A 마당**(공장 건물 사이, 남북 약 12m·동서로 긴 마당) 선택. 팩 퍼시스턴트 레벨을 `Showcase/Map/L_Combat_Factory_Floor`로 다른 이름으로 저장해(처음엔 `L_Combat_Factory_Ground`로 파일 복제) `PlayerStart`를 지우고 월드 세팅 게임 모드(팩 데모 `bp_ThirdPersonGameMode_SF`, 오류 있는 `ThirdPerson_AnimBP`를 끌고 와 Play 때 "블루프린트 컴파일 오류" 대화 상자를 띄웠음)를 비워 스트리밍으로 붙임(바닥 지형). `place_combat_factory.py`: 폴더 `Gameplay`에 `PlayerStart` (1300, −2400, 100) 동쪽(Yaw 90), 팔레트 테이블(`sm_WoodPallet_01_01` 두 줄 6단, 높이 90), 보급대 둘(소총·권총 그레이박스 탄창), 스폰 지점 `Front` (1280, −500)·`Left` (2200, −600)·`Right` (200, −2860), 내비 메시 범위 30×36m, 게임 모드 `BP_FirstVRCombatMode` — 내비 경로 Front 20m·Left 22m·Right 12m, 시뮬레이트에서 웨이브 1(`Front`) → `Enemy.Kill` → 웨이브 2(`Left`·`Right` 번갈아) 스폰, 적이 걸어서 플레이어 자리까지 옴 확인
   - VR Preview(13:56): 데모 위젯·조명 시나리오 로드 없음, 웨이브 1이 `Front`에서 2명 스폰 → 약 14초 걸어와 `Target in range` → 공격 두 번 명중(20 피해씩). `Left`·`Right`는 시뮬레이트로만 확인
   - 바로잡음: 복제한 바닥 레벨의 **레벨 블루프린트**도 팩 데모 것이었다(VR Preview에서 "OLD FACTORY STREET / PRESS [G] TO START" 2D 메뉴가 시야에 들러붙음, BeginPlay에서 팩 조명 시나리오 서브레벨을 스트리밍, 숫자 키로 콘솔 명령). 노드 115개와 남은 위젯 변수 3개를 지움. 팩 맵을 복제하면 월드 세팅과 레벨 블루프린트부터 비운다
   - 내비 메시를 다시 놓은 뒤에는 `RebuildNavigation`을 보내고 경로가 잡힌 다음 레벨을 저장한다(정적 내비 데이터는 레벨에 저장됨)
   - 다시 실행하는 배치 스크립트가 자기 결과를 지울 때 `PlayerStart`까지 지우지 않게 한다(한 번 그렇게 멈췄음)
 
+- [x] Step 8-3c(Claude가 에디터 작업): 테이블에 꾸민 무기 `BP_RifleWeapon_AR`·`BP_AutoRifleWeapon_RU74`·`BP_PistolWeapon_PM`(총구 앞, 옆으로 눕힘, 바닥면을 테이블 윗면에 맞춤, `Initial Magazine` = 자기 꾸민 탄창), 보급대 셋(`BP_Magazine_AR`·`_RU74`·`_PM`) — 시뮬레이트에서 `Dispensed` 셋, `Inserted ... (30/30)`·`(30/30)`·`(8/8)`, `4/4/3 steps ready` 확인. VR Preview 두 판(14:21·14:22): 첫 판 RU74(조정간 안전 → 연발 → 단발)·AR로 웨이브 1 정리, 웨이브 2(`Left`·`Right`)에서 사망 → 실패 화면 → `Restart clicked` → `Restarting L_Combat_Factory`. 둘째 판 RU74 두 손(`Recoil 0.60`)으로 웨이브 1·2 정리, 웨이브 3(7명, 세 입구)에서 4명 처치 뒤 `Empty` → 사망 → 실패 화면 → 다시 시작. 남은 것: 성능 줄이기
+  - 미확인: 전투 중 탄창 교체(빼기·보급대·끼우기), 꾸민 권총 사용, 승리 화면
+  - 바닥 레벨 다시 만듦: `EditorAssetLibrary.duplicate_asset`으로 복사한 맵은 다시 열 때 지형 트랜스폼이 기본값(위치 0, 크기 128/256)으로 돌아가 바닥이 사라지고(충돌·내비 메시도 없음) 블로킹 볼륨 브러시가 빠졌다. **맵은 열어서 `EditorLoadingAndSavingUtils.save_map(world, 새 경로)`로 다른 이름으로 저장한다**(`add_factory_ground.py`, 결과 `L_Combat_Factory_Floor`, 망가진 `L_Combat_Factory_Ground`는 지움)
+  - 팩 원본 맵(`Street_01_P` 등)을 한 번이라도 열면 데모 게임 모드가 오류 있는 `ThirdPerson_AnimBP`를 메모리에 올려, 그 세션의 Play마다 "블루프린트 컴파일 오류" 대화 상자가 뜬다(원격 명령이 모두 멈춤). 대화 상자는 취소로 닫고 에디터를 깨끗이 다시 켠다
+
 ### 현재 위치
-- **Step 8-3c** 다음: 꾸민 무기 세 종·탄창을 테이블에, 보급대 탄창을 꾸민 탄창으로, VR Preview로 웨이브 한 판. 성능 줄이기(안 보이는 부분 지우기)도 함께
+- **Step 8-3** 마무리: 성능 줄이기(전투 자리에서 안 보이는 부분 지우기, 결정 2026-11-07)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
