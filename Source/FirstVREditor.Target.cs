@@ -10,6 +10,6 @@ public class FirstVREditorTarget : TargetRules
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V6;
 
-		ExtraModuleNames.AddRange( new string[] { "FirstVR" } );
+		ExtraModuleNames.AddRange( new string[] { "FirstVR", "FirstVREditor" } );
 	}
 }

@@ -23,12 +23,13 @@
 - 각 스텝은 아래 순서로 안내한다.
   1. **목표**: 이번 스텝에서 만드는 것 (한두 줄)
   2. **왜**: 설계 결정과의 연결 (`Docs/PLAN.md`의 해당 절)
-  3. **에디터에서 할 일**: 메뉴 경로를 정확히 (`Tools > New C++ Class...`처럼)
+  3. **에디터 작업**: Claude가 원격 실행으로 한 일(만든 에셋·컴포넌트·노드 연결)을 사용자가 에디터에서 찾아볼 수 있게 경로와 함께 적는다
   4. **코드**: 파일 경로와 전체 내용. 핵심 줄은 주석 대신 설명으로 짚는다.
   5. **빌드**: 이번 변경에 맞는 빌드 방법 (3.4 참고)
   6. **확인 방법**: 무엇이 보이면 성공인지 (로그 문구, 화면 상태)
 - 언리얼 개념은 **유니티 대응 개념과 비교**해서 설명한다. (예: `UActorComponent` ≈ `MonoBehaviour`, `UDataAsset` ≈ `ScriptableObject`, `BeginPlay` ≈ `Start`)
-- 코드는 Claude가 작성하고, 에디터 조작(데이터 에셋 생성, 블루프린트 설정, 레벨 배치)은 사용자가 직접 한다.
+- 코드와 에디터 작업(에셋 생성, 블루프린트 컴포넌트·그래프, 레벨 배치·저장)은 **Claude가 한다**(2026-11-07부터, 3.7의 Python 원격 실행). VR Preview 시험(시뮬레이터 조작)과 눈으로 보는 확인은 사용자가 하고, 로그 확인은 Claude가 한다.
+- 에디터 작업 전에 사용자가 열어 둔 에셋에 저장하지 않은 변경이 있으면 덮어쓸 수 있으므로, 같은 에셋을 손대는 중인지 먼저 묻는다.
 - 사용자가 "직접 해볼게"라고 하면 코드를 주지 말고 **목표, 필요한 API 이름, 힌트**만 준다.
 
 ### 2.2 설계 판단이 필요할 때
@@ -116,6 +117,16 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
   - 두 손으로 동시에 잡으려면 `]`/`[`로 두 손을 함께 선택해야 하고, 이때 `U`를 떼면 양손이 같이 풀린다 (한 손만 놓는 동작은 시뮬레이터로 시험할 수 없다)
 - **일반 테스트**: 플레이 버튼 (VR 없이 로직 검증용)
 
+### 3.7 Claude의 에디터 작업 (Python 원격 실행)
+
+- 플러그인 `PythonScriptPlugin`·`EditorScriptingUtilities`(`.uproject`), `DefaultEngine.ini` `[/Script/PythonScriptPlugin.PythonScriptPluginSettings] bRemoteExecution=True`. 에디터가 열려 있어야 한다.
+- 실행: `python Tools/ue_remote.py <스크립트.py>` 또는 `python Tools/ue_remote.py -c "<코드>"` (에디터 출력과 오류를 돌려받는다)
+- 에디터 안 스크립트는 `Tools/ue_scripts/`에 두고 공용 도우미 `fv.py`(`load`, `load_cls`, `graph`, `dump_graph`, `link`, `set_default`, `set_path`, `compile_save`)를 쓴다. 동작 확인은 `smoke_graph.py`
+- 엔진 Python에는 노드를 만드는 API가 없어서, 편집기 전용 C++ 모듈 `FirstVREditor`(`Source/FirstVREditor/`, 배포 빌드에 안 들어감)의 `UGraphAuthoringLibrary`가 노출한다: `AddNode`(노드 클래스), `AddCallFunctionNode`, `AddVariableNode`(자기/다른 클래스, Get/Set), `AddCastNode`, `AddEventNode`(재정의 이벤트, 회색 기본 이벤트는 켜서 재사용), `AddComponentEventNode`(물려받은 컴포넌트 포함), `LinkPins`, `BreakPinLinks`, `SetPinDefault`/`SetPinDefaultObject`, `DescribePins`/`DescribeNode`/`GetNodes`, `RemoveNode`, `SetPropertyByPath`/`GetPropertyByPath`(Python에 안 보이는 구조체 안쪽, 예: 애님 노드 `Node.BoneToModify.BoneName`)
+- 핀 이름은 내부 이름이나 표시 이름(대소문자 무시). 모르면 `describe_pins`로 본다. 실행 핀은 `execute`/`then`
+- C++을 바꾸면 에디터를 닫고 3.4대로 빌드한 뒤 Claude가 에디터를 다시 띄운다(`UnrealEditor.exe` + `.uproject`). 닫기 전에 사용자에게 저장 여부를 묻는다
+- 에디터 쪽 출력의 한글이 깨지지 않게 `ue_remote.py`는 표준 출력을 UTF-8로 쓴다
+
 ---
 
 ## 4. 설계 규칙 (반드시 지킬 것)
@@ -158,6 +169,9 @@ Source/FirstVR/
 │       ├── EnemyDataAsset.h
 │       └── HitReaction.h
 └── Private/   (Public과 같은 구조로 .cpp)
+
+Source/FirstVREditor/          // 편집기 전용 모듈 (Claude의 그래프 작성 도우미 UGraphAuthoringLibrary)
+Tools/ue_remote.py, Tools/ue_scripts/   // Python 원격 실행 클라이언트와 에디터 안 스크립트
 
 Content/Portfolio/
 ├── Weapons/     // 무기 블루프린트
@@ -288,6 +302,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 프로젝트 경로: `D:\Projects\Unreal\FirstVR`
 - IDE: JetBrains Rider (`.uproject`를 바로 연다)
 - git-lfs 3.5.1 (저장소에 `git lfs install`로 훅 설치됨)
+- Python 3.13(로컬, `Tools/ue_remote.py`용), 에디터 내장 Python 3.11.8, Python 원격 실행 켬 (3.7)
 
 ### 완료
 - [x] VR 템플릿으로 `FirstVR` 프로젝트 생성
@@ -530,4 +545,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-06: 꾸민 무기·탄창은 그레이박스 BP의 자식(`Content/Showcase/`, 같은 조합·다른 모양). 권총은 Fab `Makarov Pistol (PM)`(`Content/TF_Russian_Pistols/`, 부품별 스태틱 메시, 5.7 지원)이고 꾸민 권총에만 안전장치를 더한다(`DA_Pistol_PM`). 부품 움직임(발사 슬라이드·안전장치 레버·빈 탄창 슬라이드 멈춤)은 꾸민 무기 BP가 맡고, 구독 지점으로 `USafetyStep::OnSafetyLockChanged`·`UMagazineStep::OnInsertedMagazineChanged` 델리게이트를 더한다. (`Docs/PLAN.md` 10장)
 - 2026-11-06: 슬라이드 움직임(발사 후퇴·복귀, 빈 탄창 멈춤)은 뺀다. 약실 개념이 없어 멈춘 슬라이드를 언제 돌려보낼지가 게임 규칙과 맞지 않았다. 8-1c 부품 움직임은 안전장치 레버만. (`Docs/PLAN.md` 10장)
 - 2026-11-07: 소총 두 종 — `SK_Rifle`은 단발 소총 `BP_RifleWeapon` 자식, `SK_RU74`는 연발 소총 `BP_AutoRifleWeapon` 자식. 탄창은 총 메시의 `b_Mag` 부분을 에디터 모델링 모드로 떼어 낸 스태틱 메시(총에서는 `b_Mag` 숨김, 꾸민 탄창은 `BP_Magazine_Rifle` 자식). 레버는 총마다 애님 BP로 움직이고 무기 BP가 `OnSafetyLockChanged`·`OnFireModeChanged`를 받는다. 볼트 움직임은 하지 않는다. 8-2a~d. (`Docs/PLAN.md` 10장)
+- 2026-11-07: 에디터 작업도 Claude가 한다. 열린 에디터에 Python 원격 실행으로 스크립트를 보내고, 엔진 Python에 없는 그래프 노드 작성은 편집기 전용 C++ 모듈 `FirstVREditor`의 `UGraphAuthoringLibrary`로 한다(외부 MCP 플러그인은 쓰지 않음). VR Preview 조작은 계속 사용자. (3.7)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
