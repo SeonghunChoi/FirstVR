@@ -294,7 +294,13 @@ Content/Portfolio/
   - 8-4a. 패키징 설정(`GameDefaultMap` = `L_Combat_Factory`, 쿠킹할 맵 = `L_Combat_Factory`), Development 빌드(출력 `Packaged/`, git 제외)
   - 8-4b. 실행 파일로 VR 한 판, FPS 차트 측정
   - 8-4c. Shipping 빌드
-- 8-5. 두 번째 레벨 (범위는 그때 정함)
+- 8-5. 적 모델 교체 (설계 판단 완료, `Docs/PLAN.md` 10장 "적 모델 교체"): 공장 `Wasteland Warrior`, 연구소 `Sci-Fi Soldier 02`, 애니메이션을 UE4 뼈대로 리타깃해 새 애님 BP·물리 에셋·적 데이터. 첫 레벨에 먼저 적용
+  - 8-5a. IK 리그·리타기터, 걷기 블렌드 스페이스·공격 몽타주 리타깃
+  - 8-5b. UE4 뼈대용 애님 BP(블렌드 스페이스·슬롯·절뚝임 보정·`Leg IK`)
+  - 8-5c. `DA_Enemy_Wasteland`(UE4 본 이름)·`BP_EnemyWasteland`(`BP_EnemyManny` 자식), 공장 전용 웨이브 데이터·게임 모드 → 일반 Play
+  - 8-5d. VR Preview로 공장 웨이브 한 판
+  - 8-5e. Sci-Fi Soldier 자식 BP(같은 애님 BP·데이터, 호환 뼈대) — 8-6에서 사용
+- 8-6. 두 번째 레벨: 연구소 구간 돌파 (설계 판단 완료, `Docs/PLAN.md` 10장 "두 번째 레벨", 세부 스텝은 팩을 본 뒤 나눔)
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
 
 ---
@@ -552,8 +558,14 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 8-4c(Claude가 빌드): `package_showcase.ps1 -Config Shipping` 성공(2분 45초, `Packaged/Shipping/Windows/FirstVR.exe`, 1.2GB, 쿠킹 오류 0). 사용자가 시뮬레이터로 실행해 눈으로 확인(Shipping은 로그·콘솔이 없다)
 - [x] ✅ **Step 8-4**: 배포 빌드 패키징(Development·Shipping, 꾸민 전투 레벨에서 시작, 시뮬레이터 VR 72 FPS)
 
+- [x] Step 8-5a(Claude가 에디터 작업): 새 팩 `Content/SciFiWorld`(연구소, 8-6)·`WastelandWarrior`·`SciFiSoldier02`를 `.gitignore`. 조사(`inspect_characters.py`): 두 캐릭터 모두 UE4 마네킹 뼈대 68본(같은 구조, 본 이름은 모두 UE5 마네킹에도 있음, 척추는 `spine_01~03`·`neck_01`), 물리 몸체 19개(같은 본). `make_enemy_retarget.py`: `Showcase/Enemy/Retarget/IK_UE5Manny`·`IK_UE4Warrior`(자동 리타깃 정의, 체인 28/20) + `RTG_UE5Manny_UE4Warrior`(기본 작업, 체인 자동 매핑, 뼈 자동 정렬). `retarget_enemy_anims.py`로 `Showcase/Enemy/Anims/`에 `BS_Idle_Walk_Run_UE4`(시퀀스 17개)·`AM_Attack_01~03_UE4`(+ `MM_Attack_01~03_UE4`, 판정 노티파이 `EnemyStrikeWindow` 유지) — 원본 폴더에 남은 것·리다이렉터 없음, 원본과 나란히 세운 사진(`pose_compare.py`)에서 펀치·발차기 자세가 같음
+  - **여러 애니메이션을 한 번에 `IKRetargetBatchOperation.duplicate_and_retarget`하면 에디터가 공격 시퀀스 압축에서 교착 상태가 됐다**(응답 없음, CPU 정지, 강제 종료). 에셋 하나씩(몽타주는 참조 시퀀스와 함께) 돌리면 1~2초에 끝난다
+  - 결과는 원본 옆이나 `/Game` 루트에 생기므로 `_UE4`를 붙여 만든 뒤 옮긴다
+  - 에디터 월드의 스켈레탈 메시가 애니메이션을 평가하려면 `set_update_animation_in_editor(True)`. `spawn_actor_from_class(..., transient=True)`로 만든 임시 액터는 `EditorActorSubsystem.get_all_level_actors`에 나오지 않는다(지울 때는 `GameplayStatics.get_all_actors_with_tag`)
+  - 강제 종료는 Claude 권한으로 막혀 있어 사용자가 작업 관리자에서 끈다
+
 ### 현재 위치
-- **Step 8-5** 다음: 두 번째 레벨(범위는 시작할 때 설계 판단으로 정함)
+- **Step 8-5b** 다음: UE4 뼈대용 적 애님 BP(`ABP_EnemyMannequin`과 같은 그래프)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
@@ -603,4 +615,6 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-07: 꾸민 전투 레벨(8-3)은 버려진 공장 분위기, Fab `Abandoned Factory Buildings - Day/Night Scene`의 완성 맵을 `Showcase/Map/`으로 복제해 그 안에 전투 자리를 만들고 `L_Combat`의 게임 배치를 옮긴다. 게임 규칙은 `BP_FirstVRCombatMode`·`DA_Waves_Combat` 그대로. 8-3a 팩·맵·VR 성능 → 8-3b 전투 자리·게임 배치 → 8-3c 꾸민 무기·웨이브 한 판. (`Docs/PLAN.md` 10장)
 - 2026-11-07: (8-3a에서 바꿈) 팩 맵은 UE4 방식 조명이라 UE5에서 검게 나와 통째로 복제하지 않는다. 새 레벨 `L_Combat_Factory`에 우리 UE5 기본 조명을 두고 팩의 환경 서브레벨(`Street_01_Environment`)만 스트리밍으로 붙인다.
 - 2026-11-08: 패키지는 꾸민 전투 레벨 `L_Combat_Factory`에서 바로 시작하고(시작 화면 없음), 쿠킹할 맵은 그 하나(서브레벨은 참조로 따라감), Development로 먼저 만들어 확인한 뒤 Shipping. 8-4a 설정·Development → 8-4b 실행 파일 VR·측정 → 8-4c Shipping. (`Docs/PLAN.md` 10장)
+- 2026-11-08: 두 번째 레벨은 이동하며 구간 돌파(3구간 + 탈출), 공간은 Fab `Sci-Fi Creatures Research Lab`, 이동은 정해진 자리로만(표식에 템플릿 순간이동을 겨눔, 다른 곳 막힘), 구간은 레벨에 놓는 구간 액터(순서·설 자리·웨이브 데이터·스폰 지점, 한 구간은 기존 웨이브 시스템 재사용), 시작 자리에 무기 테이블·구간마다 탄창 보급대·구간 통과 시 체력 회복. 적 외형·패키지에서 가는 방법은 나중에. (`Docs/PLAN.md` 10장)
+- 2026-11-08: 꾸민 레벨의 적 모델을 바꾼다. 공장은 Fab `Wasteland Warrior`, 연구소는 `Sci-Fi Soldier 02`(둘 다 UE4 Epic 뼈대). 걷기·공격 애니메이션을 IK 리타기터로 새 뼈대에 옮기고 새 애님 BP·물리 에셋·적 데이터를 만든다(적 C++은 그대로, 새 적은 BP 자식 + 데이터). 적 모델 교체를 8-5로, 두 번째 레벨을 8-6으로. (`Docs/PLAN.md` 10장)
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)
