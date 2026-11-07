@@ -533,8 +533,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 바닥 레벨 다시 만듦: `EditorAssetLibrary.duplicate_asset`으로 복사한 맵은 다시 열 때 지형 트랜스폼이 기본값(위치 0, 크기 128/256)으로 돌아가 바닥이 사라지고(충돌·내비 메시도 없음) 블로킹 볼륨 브러시가 빠졌다. **맵은 열어서 `EditorLoadingAndSavingUtils.save_map(world, 새 경로)`로 다른 이름으로 저장한다**(`add_factory_ground.py`, 결과 `L_Combat_Factory_Floor`, 망가진 `L_Combat_Factory_Ground`는 지움)
   - 팩 원본 맵(`Street_01_P` 등)을 한 번이라도 열면 데모 게임 모드가 오류 있는 `ThirdPerson_AnimBP`를 메모리에 올려, 그 세션의 Play마다 "블루프린트 컴파일 오류" 대화 상자가 뜬다(원격 명령이 모두 멈춤). 대화 상자는 취소로 닫고 에디터를 깨끗이 다시 켠다
 
+- [x] Step 8-3 성능(Claude가 에디터 작업): 팩 환경 서브레벨을 `Showcase/Map/L_Combat_Factory_Env`로 다른 이름으로 저장해 스트리밍을 바꿈(`copy_factory_env.py`). 에디터 단일 화면 `ProfileGPU`(플레이어 자리) 5.8ms: 기본 패스 25%(그리기 1,061회)·후처리 17.7%(에디터 UI 포함)·그림자 10%·차폐 검사 5%·구름 4.8%. 환경 액터 약 1,500개가 전투 자리 40m 안이라 거리로는 많이 줄지 않음. `trim_combat_factory.py`: 40m 밖 환경 액터 144개 지움(배경 카드 `sm_en_Background_*`는 하늘선이라 남김), 해 그림자 거리 200m → 40m·캐스케이드 3 → 2, `VolumetricCloud` 지움 — 세 방향 화면에 빈 곳 없음, 내비 경로 그대로. VR Preview FPS 차트(37초, 시뮬레이터 72Hz): 평균 **66.4 FPS**, GPU 7.0ms, 게임 스레드 15.1ms(에디터·시뮬레이터 포함), 60 FPS 목표 놓친 동기화 0%, 히치 없음(줄이기 전 사용자가 본 값은 평균 50~60·최저 30). 정확한 값은 8-4 패키지 빌드에서
+  - 측정법: VR Preview가 켜진 동안 `console.py StartFPSChart` → 30초 뒤 `StopFPSChart`(Claude가 시간을 잰다) → 로그 `LogChartCreation` 평균. `stat unit`은 화면에만 나오고 로그에 남지 않는다. 프리뷰가 먼저 꺼지면 에디터 프레임이 섞인다
+- [x] ✅ **Step 8-3**: 꾸민 전투 레벨 `L_Combat_Factory`(공장 환경 + 우리 조명, A 마당 전투 배치, 꾸민 무기·탄창, VR 웨이브 플레이)
+
 ### 현재 위치
-- **Step 8-3** 마무리: 성능 줄이기(전투 자리에서 안 보이는 부분 지우기, 결정 2026-11-07)
+- **Step 8-4** 다음: 패키지 빌드
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
