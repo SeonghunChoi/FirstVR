@@ -20,6 +20,16 @@ sys.path.insert(0, ENGINE_PYTHON)
 
 import remote_execution  # noqa: E402
 
+SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ue_scripts")
+PURGE_SCRIPT_MODULES = (
+    "import sys, os\n"
+    f"_d = os.path.normcase({SCRIPTS_DIR!r})\n"
+    "for _n, _m in list(sys.modules.items()):\n"
+    "    _f = getattr(_m, '__file__', None)\n"
+    "    if _f and os.path.normcase(os.path.dirname(os.path.abspath(_f))) == _d:\n"
+    "        del sys.modules[_n]\n"
+)
+
 
 def find_node(remote, timeout):
     deadline = time.time() + timeout
@@ -46,11 +56,13 @@ def main():
     remote = remote_execution.RemoteExecution()
     remote.start()
     try:
-        node = find_node(remote, timeout=5.0)
+        node = find_node(remote, timeout=30.0)
         if not node:
             print("No editor found. Is the editor open with remote execution enabled?", file=sys.stderr)
             return 1
         remote.open_command_connection(node)
+        # 에디터 Python은 한 번 import한 모듈을 계속 쓴다. Tools/ue_scripts의 도우미를 고치면 바로 반영되게 매번 비운다.
+        remote.run_command(PURGE_SCRIPT_MODULES, unattended=True, exec_mode=remote_execution.MODE_EXEC_FILE)
         result = remote.run_command(command, unattended=True, exec_mode=remote_execution.MODE_EXEC_FILE)
     finally:
         remote.stop()

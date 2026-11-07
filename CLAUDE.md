@@ -126,6 +126,11 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
 - 핀 이름은 내부 이름이나 표시 이름(대소문자 무시). 모르면 `describe_pins`로 본다. 실행 핀은 `execute`/`then`
 - C++을 바꾸면 에디터를 닫고 3.4대로 빌드한 뒤 Claude가 에디터를 다시 띄운다(`UnrealEditor.exe` + `.uproject`). 닫기 전에 사용자에게 저장 여부를 묻는다
 - 에디터 쪽 출력의 한글이 깨지지 않게 `ue_remote.py`는 표준 출력을 UTF-8로 쓴다
+- `ue_remote.py`는 실행 전에 `Tools/ue_scripts`의 모듈 캐시를 비운다(도우미를 고치면 바로 반영)
+- 시뮬레이트로 로직 확인: `pie.py start [맵]` → 확인 스크립트(액터를 찾아 함수 호출·값 읽기, 프레임이 지나야 하는 값은 다음 실행에서 읽음) → `pie.py stop`. 맵을 바꿀 때 저장 안 된 맵이 있으면 멈춘다
+- 망친 BP는 디스크 상태로 되돌린다: `EditorLoadingAndSavingUtils.reload_packages([pkg], ReloadPackagesInteractionMode.ASSUME_POSITIVE)` (기본 INTERACTIVE는 무인 모드에서 대화 상자를 '아니요'로 닫는다)
+- 함수 그래프를 지우고 같은 이름으로 다시 만들면 `_0`이 붙는다. 스크립트는 이미 있으면 멈추고, 다시 할 때는 위처럼 되돌린 뒤 실행한다
+- 아직 안 되는 것: Python으로 PIE 월드에 액터·컴포넌트 추가(씬 캡처 사진), BP 컴파일 오류 상태 읽기. 필요해지면 `FirstVREditor`에 C++로 더한다
 
 ---
 
@@ -499,8 +504,12 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] Step 8-2c: 꾸민 연발 소총 — C++ 없음. `Showcase/Weapon/BP_AutoRifleWeapon_RU74`(`BP_AutoRifleWeapon` 자식, 그레이박스 외형 `Barrel`·`Receiver`·`Gunstock`·`Grab`·`MagazinePoint` 숨김·`NoCollision`, `Body` 아래 `RifleMesh`(`SK_RU74`, `NoCollision`), 기준점·`Body` 조정, `BeginPlay`에서 `Hide Bone by Name`(`b_Mag`)), `Showcase/Weapon/BP_Magazine_RU74`(`BP_Magazine_Rifle` 자식, `SM_Mag_RU74`(회전은 `RifleMesh`와 같게), `MagazineTop`·`Body` 조정, 잡기 이벤트는 부모에서 물려받음) — VR Preview에서 `4 steps ready`, 잡기 → `Laser on`, 놓아서 끼우기 `Inserted into BP_AutoRifleWeapon_RU74_C_1 (DA_Ammo_556 30/30)`, 안전 상태 `Fire aborted at step 3/4` → `B`로 `Selector EFireMode::Single`(한 발씩 30 → 24) → `Selector EFireMode::Auto`(`Auto fire started`, 약 0.19초 간격 9발, 떼면 `Auto fire stopped (trigger released)`), `N`으로 `Ejected (15/30 left)` 확인
   - 미확인: 시작할 때 끼워진 탄창(레벨 인스턴스 `Initial Magazine`이 비어 `Inserted` 없이 시작, 꾸민 권총 인스턴스도 같음), RU74의 두 손 조준(`SupportGrip` 위치는 새로 잡음, 경로는 8-2b에서 확인), 연발 → `Selector Safe` 순환, 끼워진 탄창과 원래 `b_Mag` 자리의 겹침
 
+- [x] Step 8-2d 앞부분(단발 소총 레버, Claude가 에디터 작업): `Showcase/Weapon/ABP_Rifle_AR`(`SK_Rifle_Skeleton`, 변수 `bSafetyLocked`·`SafeAngle` 0·`FireAngle` 90·`LeverSpeed` 900·`LeverAngle`·`bLeverReady`, 이벤트 그래프 `SelectFloat` → 첫 갱신은 바로 맞추고 이후 `FInterpTo_Constant`, 애님 그래프 `Mesh Space Ref Pose` → `Transform (Modify) Bone`(`b_Safety`, `Add to Existing`, `Bone Space`, Rotation ← `Make Rotator` Roll ← `LeverAngle`) → `Component To Local` → `Output Pose`), `BP_RifleWeapon_AR`(`RifleMesh` 애님 클래스, 함수 `UpdateSafetyLever`: `GetAnimInstance` → Cast → `Set bSafetyLocked` ← `BP_SafetyStep.IsLocked`, `BeginPlay`의 `Hide Bone by Name` 뒤와 `On Safety Lock Changed (BP_SafetyStep)`에서 호출) — 스크립트 `Tools/ue_scripts/make_abp_rifle_ar.py`·`wire_rifle_ar_lever.py`, `L_ShowcaseTest` 시뮬레이트에서 `ToggleSafety`마다 `LeverAngle` 0 ↔ 90, `b_Safety` 컴포넌트 Roll 90 ↔ 180 확인
+  - `b_Safety` 회전축은 본 로컬 X(메시 옆 방향, 모든 본이 X 0인 평면에 있음). VR Preview에서 `B`마다 `Safety released`/`Safety locked`와 레버 방향·각도(`FireAngle` 90)를 사용자가 눈으로 확인
+  - 같은 VR Preview에서 RU74 `Selector EFireMode::Auto` → `Selector Safe` → `Single` 순환도 확인(8-2c 미확인 항목 하나 해소)
+
 ### 현재 위치
-- **Step 8-2d** 다음 (레버 애님 BP: 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged`)
+- **Step 8-2d** 진행 중: RU74 레버(`b_SafetyLever`, 안전·단발·연발 세 위치) (레버 애님 BP: 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
