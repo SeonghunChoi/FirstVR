@@ -545,8 +545,15 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 에디터가 켜져 있으면 `Unable to build while Live Coding is active`로 실패한다(BuildCookRun이 에디터 타깃도 빌드). 저장 확인 후 에디터를 닫고 패키징한다
   - 거쳐 간 것: 타깃별 `CustomConfig`(배포판 전용 설정 디렉터리)는 고유 빌드 환경이 필요해 런처판 엔진에서 못 씀. `-skipcookingeditorcontent`는 VR 템플릿 `BP_XRPawn`·`WBP_Menu`가 엔진 에디터 콘텐츠(`GenericHMD`, `S_NavLink`)를 참조해 쿠킹 오류. PowerShell 5.1은 `-`로 시작하는 인수 안의 변수를 펼치지 않아 `"-clientconfig=$Config"`처럼 따옴표로 감싼다. `.bat`에 UTF-8 한글 주석을 쓰면 `cmd`가 일부를 명령으로 읽는다
 
+- [x] Step 8-4b(사용자가 실행): `Packaged/Development/Windows/FirstVR.exe`를 시뮬레이터 런타임으로 세 번 실행 — OpenXR(시뮬레이터 확장) 로드, `LoadMap: /Game/Showcase/Map/L_Combat_Factory`, 꾸민 무기 셋 `Inserted`, `3 waves`·웨이브 1 `Front` 스폰, 손목 체력 연결, 적 공격 명중 → `Player died` → `Encounter Failed` → 실패 화면. FPS 차트(35초): 평균 **71.9 FPS**(시뮬레이터 72Hz에 붙음), GPU 5.1ms·렌더 스레드 4.5ms·게임 스레드 13.9ms(프레임 대기 포함). 에디터 VR Preview(66.4)보다 높다. 종료 때 `xrDestroySwapchain` ensure는 알려진 무해 로그
+  - 실행 파일 로그: `Packaged/<구성>/Windows/FirstVR/Saved/Logs/FirstVR.log`. 패키지에서는 원격 실행이 안 되므로 FPS 차트는 게임 콘솔(`~`)에서 `StartFPSChart`/`StopFPSChart`
+  - Shipping 실행 파일에서 사용자가 무기 잡기·사격·탄창 빼기를 확인(2026-11-08). 미확인: 실행 파일에서 새 탄창 끼우기
+
+- [x] Step 8-4c(Claude가 빌드): `package_showcase.ps1 -Config Shipping` 성공(2분 45초, `Packaged/Shipping/Windows/FirstVR.exe`, 1.2GB, 쿠킹 오류 0). 사용자가 시뮬레이터로 실행해 눈으로 확인(Shipping은 로그·콘솔이 없다)
+- [x] ✅ **Step 8-4**: 배포 빌드 패키징(Development·Shipping, 꾸민 전투 레벨에서 시작, 시뮬레이터 VR 72 FPS)
+
 ### 현재 위치
-- **Step 8-4b** 다음: `Packaged/Development/Windows/FirstVR.exe`를 시뮬레이터 런타임으로 실행해 VR 한 판·FPS 측정
+- **Step 8-5** 다음: 두 번째 레벨(범위는 시작할 때 설계 판단으로 정함)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
