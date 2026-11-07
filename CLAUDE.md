@@ -481,8 +481,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 얇은 탄창(`Body` 두께 약 2.4cm)은 바닥에 눕으면 시뮬레이터 손으로 잡기 어렵다. 시험용 인스턴스는 `피직스 시뮬레이트`를 꺼서 가슴 높이에 띄워 둔다(놓으면 코드가 물리를 켠다)
   - 미확인: 끼워진 탄창 액터와 원래 `b_Mag`의 겹침(정렬은 눈으로만 맞춤), `Picked up, kept`
 
+- [x] Step 8-2c: 꾸민 연발 소총 — C++ 없음. `Showcase/Weapon/BP_AutoRifleWeapon_RU74`(`BP_AutoRifleWeapon` 자식, 그레이박스 외형 `Barrel`·`Receiver`·`Gunstock`·`Grab`·`MagazinePoint` 숨김·`NoCollision`, `Body` 아래 `RifleMesh`(`SK_RU74`, `NoCollision`), 기준점·`Body` 조정, `BeginPlay`에서 `Hide Bone by Name`(`b_Mag`)), `Showcase/Weapon/BP_Magazine_RU74`(`BP_Magazine_Rifle` 자식, `SM_Mag_RU74`(회전은 `RifleMesh`와 같게), `MagazineTop`·`Body` 조정, 잡기 이벤트는 부모에서 물려받음) — VR Preview에서 `4 steps ready`, 잡기 → `Laser on`, 놓아서 끼우기 `Inserted into BP_AutoRifleWeapon_RU74_C_1 (DA_Ammo_556 30/30)`, 안전 상태 `Fire aborted at step 3/4` → `B`로 `Selector EFireMode::Single`(한 발씩 30 → 24) → `Selector EFireMode::Auto`(`Auto fire started`, 약 0.19초 간격 9발, 떼면 `Auto fire stopped (trigger released)`), `N`으로 `Ejected (15/30 left)` 확인
+  - 미확인: 시작할 때 끼워진 탄창(레벨 인스턴스 `Initial Magazine`이 비어 `Inserted` 없이 시작, 꾸민 권총 인스턴스도 같음), RU74의 두 손 조준(`SupportGrip` 위치는 새로 잡음, 경로는 8-2b에서 확인), 연발 → `Selector Safe` 순환, 끼워진 탄창과 원래 `b_Mag` 자리의 겹침
+
 ### 현재 위치
-- **Step 8-2c** 다음 (`BP_AutoRifleWeapon_RU74` + `BP_Magazine_RU74`, `SK_RU74`, `b_Mag` 숨김)
+- **Step 8-2d** 다음 (레버 애님 BP: 단발 소총 `b_Safety` ← `OnSafetyLockChanged`, 연발 소총 `b_SafetyLever` ← `OnSafetyLockChanged`·`OnFireModeChanged`)
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
 
