@@ -1,6 +1,6 @@
 # 언리얼 에디터 메인 창을 PNG로 찍는다(다른 창에 가려져 있어도 PrintWindow로 그린다).
 #   powershell -ExecutionPolicy Bypass -File Tools/window_shot.ps1 -Out Saved/Captures/editor.png
-param([string]$Out = "Saved/Captures/editor.png")
+param([string]$Out = "Saved/Captures/editor.png", [string]$Crop = "")   # Crop "x,y,w,h" (창 픽셀) 이면 그 부분만 저장
 
 Add-Type -AssemblyName System.Drawing
 Add-Type @"
@@ -23,6 +23,7 @@ $g = [System.Drawing.Graphics]::FromImage($bmp)
 $hdc = $g.GetHdc()
 [Win]::PrintWindow($h, $hdc, 2) | Out-Null   # PW_RENDERFULLCONTENT
 $g.ReleaseHdc($hdc); $g.Dispose()
+if ($Crop) { $c = $Crop.Split(",") | ForEach-Object { [int]$_ }; $part = $bmp.Clone((New-Object System.Drawing.Rectangle $c[0], $c[1], $c[2], $c[3]), $bmp.PixelFormat); $bmp.Dispose(); $bmp = $part }
 $full = [System.IO.Path]::GetFullPath($Out)
 [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($full)) | Out-Null
 $bmp.Save($full, [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
