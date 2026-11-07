@@ -2,7 +2,7 @@
 
 L_Combat(16m 방, 가운데 원점, 플레이어는 +X를 봄)의 테이블·보급대 배치를 플레이어 기준으로 옮겨,
 여기서는 플레이어가 동쪽(+Y)을 본다. 스폰 지점은 마당의 실제 출입구에 둔다(이름은 웨이브 데이터와 같게 Front·Left·Right).
-테이블은 공장 팔레트(86×120×15cm)를 두 줄 6단으로 쌓아 높이 90cm. 게임 모드는 BP_FirstVRCombatMode.
+꾸민 무기 세 종과 꾸민 탄창 보급대 셋(8-3c). 테이블은 공장 팔레트(86×120×15cm)를 두 줄 6단으로 쌓아 높이 90cm. 게임 모드는 BP_FirstVRCombatMode.
 다시 실행하면 이 스크립트가 만든 것(폴더 Gameplay)을 지우고 새로 놓는다.
 """
 import math
@@ -60,12 +60,27 @@ for side, ly in (("L", -60), ("R", 60)):
         a.set_actor_label(f"Table_Pallet_{side}{i}")
         a.set_folder_path(FOLDER + "/Table")
 
-# 탄창 보급대(테이블 위, 높이 90)
+# 탄창 보급대(테이블 뒤쪽, 높이 90): 꾸민 탄창. 소총 둘은 서로의 탄창도 받는다(둘 다 BP_Magazine_Rifle 자식)
 disp_cls = load_cls("/Game/Portfolio/Weapons/Magazines/BP_MagazineDispenser.BP_MagazineDispenser_C")
-for label, lx, ly, mag in (("BP_MagazineDispenser_Rifle", 60, -40, "/Game/Portfolio/Weapons/Magazines/BP_Magazine_Rifle.BP_Magazine_Rifle_C"),
-                           ("BP_MagazineDispenser_Pistol", 61, 40, "/Game/Portfolio/Weapons/Magazines/BP_Magazine_Pistol.BP_Magazine_Pistol_C")):
+SHOW = "/Game/Showcase/Weapon/"
+for label, lx, ly, mag in (("BP_MagazineDispenser_AR", 85, -40, "BP_Magazine_AR"),
+                           ("BP_MagazineDispenser_RU74", 85, 40, "BP_Magazine_RU74"),
+                           ("BP_MagazineDispenser_PM", 85, 112, "BP_Magazine_PM")):
     d = spawn(disp_cls, local(lx, ly, 90), YAW, label)
-    d.set_editor_property("MagazineClass", load_cls(mag))
+    d.set_editor_property("MagazineClass", load_cls(f"{SHOW}{mag}.{mag}_C"))
+
+# 꾸민 무기(L_Combat처럼 총구가 앞을 보게 옆으로 눕힌다), 자기 꾸민 탄창을 끼워 둔다
+ms_cls = load_cls("/Script/FirstVR.MagazineStep")
+for weapon, ly, mag in (("BP_RifleWeapon_AR", -80, "BP_Magazine_AR"),
+                        ("BP_AutoRifleWeapon_RU74", 0, "BP_Magazine_RU74"),
+                        ("BP_PistolWeapon_PM", 80, "BP_Magazine_PM")):
+    w = EAS.spawn_actor_from_class(load_cls(f"{SHOW}{weapon}.{weapon}_C"), local(40, ly, 105), unreal.Rotator(-90, 0, YAW))
+    w.set_actor_label(weapon)
+    w.set_folder_path(FOLDER + "/Weapons")
+    w.get_component_by_class(ms_cls).set_editor_property("InitialMagazine", load_cls(f"{SHOW}{mag}.{mag}_C"))
+    o, e = w.get_actor_bounds(False)          # 놓인 무기는 물리로 떨어지지 않으니 바닥면을 테이블 윗면(+0.5)에 맞춘다
+    l = w.get_actor_location()
+    w.set_actor_location(unreal.Vector(l.x, l.y, l.z - (o.z - e.z - (FLOOR + 90)) + 0.5), False, False)
 
 # 적 스폰 지점: 출입구에서 마당 가운데를 본다
 sp_cls = load_cls("/Script/FirstVR.EnemySpawnPoint")

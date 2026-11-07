@@ -1,37 +1,52 @@
-"""8-3b: 팩 퍼시스턴트 레벨(바닥 지형·블로킹 볼륨·폴리지·PlayerStart)을 Showcase로 복제해 PlayerStart와 월드 세팅 게임 모드를 지우고
-L_Combat_Factory에 항상 로드 스트리밍 레벨로 붙인다. 팩 원본은 고치지 않는다."""
+"""8-3b: 팩 퍼시스턴트 레벨(바닥 지형·블로킹 볼륨·폴리지)을 Showcase/Map/L_Combat_Factory_Floor로 '다른 이름으로 저장'한다.
+
+EditorAssetLibrary.duplicate_asset으로 맵을 복사하면 레벨이 제대로 복제되지 않는다(다시 열 때 지형 트랜스폼이 기본값으로
+돌아가고 블로킹 볼륨 브러시가 빠졌다). 그래서 원본 맵을 열고 메모리에서 데모용 요소를 지운 뒤 save_map으로 새 이름에 저장한다.
+원본 파일은 저장하지 않는다. 지우는 것: 조명 시나리오·환경 스트리밍 레벨 목록, PlayerStart, 월드 세팅 게임 모드,
+레벨 블루프린트(데모 메뉴·페이드 위젯을 띄우고 조명 시나리오를 스트리밍했다).
+끝나면 L_Combat_Factory를 다시 연다(이 레벨을 항상 로드 스트리밍 레벨로 이미 갖고 있다).
+"""
 import sys; sys.path.insert(0, r"D:\Projects\Unreal\FirstVR\Tools\ue_scripts")
 from fv import *
 
 SRC = "/Game/AbandonedFactory/Demo/Maps/Warehouse_02_old_street/Street_01_P"
-DST = "/Game/Showcase/Map/L_Combat_Factory_Ground"
+DST = "/Game/Showcase/Map/L_Combat_Factory_Floor"
+OLD = "L_Combat_Factory_Ground"   # duplicate_asset으로 만들었던 망가진 복제본(스트리밍 목록에서 뺀다)
 UES = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem)
 EAS = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 LES = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 
-if not EAL.does_asset_exist(DST):
-    if not EAL.duplicate_asset(SRC, DST):
-        raise RuntimeError("duplicate failed")
-    print("duplicated", DST)
+if unreal.EditorLoadingAndSavingUtils.get_dirty_map_packages():
+    raise RuntimeError("Current map has unsaved changes")
+LES.load_level(SRC)
+if EAL.does_asset_exist(DST):
+    raise RuntimeError(f"{DST} already exists")
+
 world = UES.get_editor_world()
-if "L_Combat_Factory_Ground" not in [l.get_outer().get_name() for l in unreal.EditorLevelUtils.get_levels(world)]:
-    unreal.EditorLevelUtils.add_level_to_world(world, DST, unreal.LevelStreamingAlwaysLoaded)
-LES.set_current_level_by_name("L_Combat_Factory")
+for lvl in unreal.EditorLevelUtils.get_levels(world):
+    if lvl.get_outer().get_name() != "Street_01_P":
+        unreal.EditorLevelUtils.remove_level_from_world(lvl)
 for a in EAS.get_all_level_actors():
-    if a.get_level().get_outer().get_name() == "L_Combat_Factory_Ground":
-        print("  ", a.get_class().get_name(), a.get_actor_label())
-        if a.get_class().get_name() == "PlayerStart":
-            EAS.destroy_actor(a); print("   -> removed PlayerStart")
-# 팩 데모 게임 모드 참조를 지운다(데모 캐릭터와 컴파일 오류가 있는 ThirdPerson_AnimBP를 끌고 와 Play 때 대화 상자가 뜬다)
-lvl = [l for l in unreal.EditorLevelUtils.get_levels(world) if l.get_outer().get_name() == "L_Combat_Factory_Ground"][0]
-for ws in unreal.ObjectIterator(unreal.WorldSettings):
-    if ws.get_outer() == lvl:
-        ws.modify(); ws.set_editor_property("default_game_mode", None)
-# 복제된 레벨 블루프린트도 비운다(팩 데모 메뉴·페이드 위젯을 화면에 띄우고, BeginPlay에서 팩 조명 시나리오를 스트리밍했다)
-lsb = unreal.find_object(None, f"{DST}.L_Combat_Factory_Ground:PersistentLevel.L_Combat_Factory_Ground")
+    if a.get_class().get_name() == "PlayerStart":
+        EAS.destroy_actor(a)
+world.get_world_settings().set_editor_property("default_game_mode", None)
+lsb = unreal.find_object(None, f"{SRC}.Street_01_P:PersistentLevel.Street_01_P")
 for n in G.get_nodes(BEL.find_event_graph(lsb)):
     G.remove_node(n)
 BEL.remove_unused_variables(lsb)
 BEL.compile_blueprint(lsb)
-unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, False)
-print("dirty", [p.get_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_map_packages()])
+
+print("save_map", unreal.EditorLoadingAndSavingUtils.save_map(world, DST))
+print("now", UES.get_editor_world().get_path_name())
+LES.load_level("/Game/Showcase/Map/L_Combat_Factory")
+world = UES.get_editor_world()
+for lvl in unreal.EditorLevelUtils.get_levels(world):
+    if lvl.get_outer().get_name() == OLD:
+        unreal.EditorLevelUtils.remove_level_from_world(lvl)
+if "L_Combat_Factory_Floor" not in [l.get_outer().get_name() for l in unreal.EditorLevelUtils.get_levels(world)]:
+    unreal.EditorLevelUtils.add_level_to_world(world, DST, unreal.LevelStreamingAlwaysLoaded)
+LES.set_current_level_by_name("L_Combat_Factory")
+LES.save_current_level()
+print("levels", [l.get_outer().get_name() for l in unreal.EditorLevelUtils.get_levels(world)])
+ls = [a for a in EAS.get_all_level_actors() if a.get_class().get_name() == "Landscape"]
+print("landscape", [(a.get_actor_location(), a.get_actor_scale3d()) for a in ls])
