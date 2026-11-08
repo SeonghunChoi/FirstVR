@@ -649,8 +649,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 시체는 `CorpseLifeSpan`(10초) 뒤 사라진다. 래그돌은 카메라를 먼저 맞추고 쓰러뜨리자마자 찍는다
   - 같은 날 에디터 꺼짐: 원격 Python 전역 변수에 연구소 맵 패키지가 남아 맵을 바꿀 때 `World Memory Leaks` → `ue_remote.py`가 명령마다 전역 변수를 비우게 고침(3.7)
 
+- [x] Step 9-2c: SVG 그림 13장 `Docs/Portfolio/Figures/`(생성기 `make_figures.py`, 공통 색·상자·화살표 도우미) — 시스템 한 장 구조도, C++/BP/데이터 역할, 무기 클래스(코어는 추상 단계만), 발사 파이프라인(Success/Failed/Pending + `FFireContext`), 입력 컴포넌트 ↔ 단계, 적 이벤트 흐름, 타격 판정(점 ↔ 지나간 선분), 구간 상태와 연구소 15구간, 순간이동·머리 맞추기(회전까지 계산해 그림), git ↔ Showcase 자식 BP, 적 애님 그래프(에디터에서 읽은 실제 노드 순서), 걷기 보폭·절뚝임 재생 속도, 공장 위 시점 이름표(`shots_log.txt` 카메라로 월드 → 화면 계산). 미리보기 `Figures/index.html`(로컬 http 서버, Pretendard)에서 겹침·넘침 확인
+  - SVG의 한글에 고정폭 글꼴을 쓰면 글자 간격이 벌어진다. 코드 이름만 고정폭, 한글이 섞인 줄은 일반 글꼴
+
 ### 현재 위치
-- **Step 9-2c** 다음: SVG 그림(D1~D12). 9-2d(사용자 VR 스크린샷 U1~U8·영상)는 언제든 따로 가능
+- **Step 9-2d** 다음: 사용자 VR Preview 스크린샷 U1~U8(`Docs/Portfolio/MATERIALS.md`)과 플레이 영상(2~3분, YouTube 일부 공개). 9-3(원고와 HTML 제작)은 9-2d 결과 없이 먼저 시작해도 된다(사진 자리만 비워 둠)
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
