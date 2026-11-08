@@ -89,6 +89,21 @@ void AFirstVRSectionGameMode::CompleteCurrentSection()
 	FinishWithVictory();
 }
 
+bool AFirstVRSectionGameMode::ResolveTeleportDestination(const FVector& AimedLocation, FVector& OutDestination, TOptional<float>& OutFacingYaw) const
+{
+	OutFacingYaw.Reset();
+	const AEncounterSection* Section = Sections.IsValidIndex(CurrentSectionIndex) ? Sections[CurrentSectionIndex].Get() : nullptr;
+	if (GetEncounterState() != EEncounterState::Playing || !Section || Section->GetSectionState() != ESectionState::Active
+		|| !Section->IsInsideStandArea(AimedLocation))
+	{
+		return false;
+	}
+
+	OutDestination = Section->GetActorLocation();
+	OutFacingYaw = Section->GetActorRotation().Yaw;
+	return true;
+}
+
 void AFirstVRSectionGameMode::HealPlayer(float Amount) const
 {
 	if (Amount <= 0.f)

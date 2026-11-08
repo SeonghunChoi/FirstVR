@@ -45,6 +45,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Encounter")
 	EEncounterState GetEncounterState() const { return EncounterState; }
 
+	/**
+	 * 순간이동으로 겨눈 자리(템플릿이 내비 메시에 맞춘 점)에 갈 수 있는지와 실제로 내릴 자리. 폰(BP_XRPawn)의 IsValidTeleportLocation이 부른다.
+	 * 기본은 어디든 허용하고 겨눈 점 그대로다. 구간 게임 모드는 켜진 구간의 설 자리만 허용하고 그 가운데로 바꾼다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Encounter|Teleport")
+	bool CanTeleportTo(FVector AimedLocation, FVector& Destination);
+
+	/**
+	 * 플레이어를 겨눈 자리로 순간이동한다. 머리(카메라)의 수평 위치가 내릴 자리에 오도록 폰을 옮기고,
+	 * 그 자리에 정해진 방향이 있으면 머리가 그쪽을 보게 돌린다(없으면 보던 방향 그대로). 갈 수 없으면 false.
+	 * 폰의 TryTeleport가 템플릿의 Teleport 대신 부른다.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Encounter|Teleport")
+	bool TeleportPlayerTo(APawn* PlayerPawn, FVector AimedLocation);
+
 	/** 구간 상태가 바뀔 때마다. */
 	UPROPERTY(BlueprintAssignable, Category = "Encounter")
 	FOnEncounterStateChanged OnEncounterStateChanged;
@@ -61,6 +76,18 @@ protected:
 
 	/** 승리 상태로 바꾸고 승리 화면을 띄운다(진행 중일 때만). */
 	void FinishWithVictory();
+
+	/**
+	 * 겨눈 자리를 실제로 내릴 자리로 바꾼다. 갈 수 없으면 false. OutFacingYaw를 채우면 도착한 머리가 그 방향을 본다.
+	 * 기본은 겨눈 점 그대로, 방향 없음.
+	 */
+	virtual bool ResolveTeleportDestination(const FVector& AimedLocation, FVector& OutDestination, TOptional<float>& OutFacingYaw) const;
+
+	/** 폰을 옮겨 카메라의 수평 위치를 Location에, 방향을 FacingYaw에 맞춘다. 높이는 Location의 높이(바닥). */
+	static void MoveHeadTo(APawn* PlayerPawn, const FVector& Location, float FacingYaw);
+
+	/** 폰 기준 카메라(머리)의 월드 Yaw. */
+	static float GetHeadYaw(const APawn* PlayerPawn);
 
 	/** 웨이브 진행. 웨이브 데이터는 이 컴포넌트에 넣는다. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Encounter")

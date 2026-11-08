@@ -1,5 +1,6 @@
 ﻿#include "Game/EncounterSection.h"
 
+#include "Components/ArrowComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Game/WaveDataAsset.h"
@@ -31,6 +32,24 @@ AEncounterSection::AEncounterSection()
 	Marker->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Marker->SetCanEverAffectNavigation(false);
 	Marker->SetVisibility(false);
+
+#if WITH_EDITORONLY_DATA
+	FacingArrow = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("FacingArrow"));
+	if (FacingArrow)
+	{
+		FacingArrow->SetupAttachment(Root);
+		FacingArrow->SetRelativeLocation(FVector(0.f, 0.f, 10.f));
+		FacingArrow->ArrowColor = FColor::Cyan;
+		FacingArrow->ArrowSize = 1.5f;
+	}
+#endif
+}
+
+bool AEncounterSection::IsInsideStandArea(const FVector& WorldLocation) const
+{
+	// 표식이 둥근 원판이고 구간을 돌려도(도착 방향) 범위가 같도록 원으로 본다. 반지름 = 상자 X 반폭(월드 크기).
+	const float Radius = ArrivalBox->GetScaledBoxExtent().X;
+	return FVector::DistSquared2D(WorldLocation, ArrivalBox->GetComponentLocation()) <= FMath::Square(Radius);
 }
 
 void AEncounterSection::BeginPlay()
@@ -38,7 +57,7 @@ void AEncounterSection::BeginPlay()
 	Super::BeginPlay();
 
 	Marker->SetVisibility(false);
-	SetDoorsLocked(true);
+	LockDoorsClosed();
 	UE_LOG(LogSection, Log, TEXT("[%s] Section %d ready (%s, %d doors, heal %.0f)"), *GetName(), SectionOrder,
 		HasWaves() ? *WaveData->GetName() : TEXT("no waves"), DoorsToUnlock.Num(), HealOnClear);
 }
@@ -80,9 +99,7 @@ void AEncounterSection::CheckArrival()
 	FVector ViewLocation;
 	FRotator ViewRotation;
 	Player->GetPlayerViewPoint(ViewLocation, ViewRotation);
-	const FVector Local = ArrivalBox->GetComponentTransform().InverseTransformPosition(ViewLocation);
-	const FVector Extent = ArrivalBox->GetUnscaledBoxExtent();
-	if (FMath::Abs(Local.X) <= Extent.X && FMath::Abs(Local.Y) <= Extent.Y)
+	if (IsInsideStandArea(ViewLocation))
 	{
 		Arrive();
 	}
@@ -105,7 +122,7 @@ void AEncounterSection::MarkCleared()
 
 	SetSectionState(ESectionState::Cleared);
 	Marker->SetVisibility(false);
-	SetDoorsLocked(false);
+	OpenDoors();
 }
 
 void AEncounterSection::Arrive()
@@ -116,7 +133,7 @@ void AEncounterSection::Arrive()
 	OnPlayerArrived.Broadcast(this);
 }
 
-void AEncounterSection::SetDoorsLocked(bool bLocked) const
+void AEncounterSection::LockDoorsClosed() const
 {
 	for (AActor* Door : DoorsToUnlock)
 	{
@@ -125,16 +142,52 @@ void AEncounterSection::SetDoorsLocked(bool bLocked) const
 			continue;
 		}
 
-		if (!SetDoorBool(Door, DoorLockPropertyName, bLocked))
+		if (!SetDoorBool(Door, DoorLockPropertyName, true))
 		{
 			UE_LOG(LogSection, Warning, TEXT("[%s] %s has no bool '%s'"), *GetName(), *Door->GetName(), *DoorLockPropertyName.ToString());
 			continue;
 		}
-
-		// 풀 때 바로 연다. 팩 문은 상자에 무언가 들어올 때만 열리므로, 플레이어가 멀리 있어도 끝났다는 것이 보이게 한다.
-		const bool bOpened = !bLocked && !DoorOpenPropertyName.IsNone() && SetDoorBool(Door, DoorOpenPropertyName, true);
-		UE_LOG(LogSection, Log, TEXT("[%s] %s %s"), *GetName(), *Door->GetName(), bLocked ? TEXT("locked") : (bOpened ? TEXT("unlocked, opening") : TEXT("unlocked")));
+		UE_LOG(LogSection, Log, TEXT("[%s] %s locked"), *GetName(), *Door->GetName());
 	}
+}
+
+void AEncounterSection::OpenDoors() const
+{
+	for (AActor* Door : DoorsToUnlock)
+	{
+		if (!Door)
+		{
+			continue;
+		}
+
+		// 이미 열려 있으면 열기를 다시 시키지 않는다(팩 문은 열 때마다 닫힌 자리부터 다시 움직인다).
+		bool bAlreadyOpen = false;
+		if (GetDoorBool(Door, DoorOpenedPropertyName, bAlreadyOpen) && bAlreadyOpen)
+		{
+			UE_LOG(LogSection, Log, TEXT("[%s] %s already open"), *GetName(), *Door->GetName());
+			continue;
+		}
+
+		// 열기만 하고 잠금(Locked)은 그대로 둔다. 잠긴 팩 문은 겹침을 무시하므로 다가가도 다시 열리지 않고, 멀어져도 닫히지 않는다.
+		if (!SetDoorBool(Door, DoorOpenPropertyName, true))
+		{
+			UE_LOG(LogSection, Warning, TEXT("[%s] %s has no bool '%s'"), *GetName(), *Door->GetName(), *DoorOpenPropertyName.ToString());
+			continue;
+		}
+		UE_LOG(LogSection, Log, TEXT("[%s] %s opening (kept open)"), *GetName(), *Door->GetName());
+	}
+}
+
+bool AEncounterSection::GetDoorBool(const AActor* Door, FName PropertyName, bool& bOutValue)
+{
+	const FBoolProperty* Property = FindFProperty<FBoolProperty>(Door->GetClass(), PropertyName);
+	if (!Property)
+	{
+		return false;
+	}
+
+	bOutValue = Property->GetPropertyValue_InContainer(Door);
+	return true;
 }
 
 bool AEncounterSection::SetDoorBool(AActor* Door, FName PropertyName, bool bValue)

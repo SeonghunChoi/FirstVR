@@ -66,21 +66,68 @@ void AFirstVRGameMode::AlignHeadToStart(TWeakObjectPtr<APawn> PlayerPawn, FTrans
 		return;
 	}
 
-	// 폰 기준 카메라 자세 = 트래킹 공간에서 머리가 원점에서 떨어진 거리·돈 각도.
+	// 폰 기준 카메라 자세 = 트래킹 공간에서 머리가 원점에서 떨어진 거리·돈 각도(로그용).
 	const FTransform CameraInPawn = Camera->GetComponentTransform().GetRelativeTransform(Pawn->GetActorTransform());
 	const FVector HeadOffset(CameraInPawn.GetLocation().X, CameraInPawn.GetLocation().Y, 0.f);
-	const float HeadYaw = CameraInPawn.Rotator().Yaw;
 
-	// 폰을 (시작 방향 - 머리 각도)로 돌리고, 돌린 머리 거리만큼 반대로 옮기면 머리가 시작 자리·시작 방향에 온다.
-	const FRotator NewRotation(0.f, Start.Rotator().Yaw - HeadYaw, 0.f);
-	const FVector NewLocation = Start.GetLocation() - NewRotation.RotateVector(HeadOffset);
-	Pawn->SetActorLocationAndRotation(NewLocation, NewRotation, false, nullptr, ETeleportType::TeleportPhysics);
-	if (AController* Controller = Pawn->GetController())
+	MoveHeadTo(Pawn, Start.GetLocation(), Start.Rotator().Yaw);
+	UE_LOG(LogEncounter, Log, TEXT("Head aligned to start (head offset %.0f cm, yaw %.0f)"), HeadOffset.Size(), CameraInPawn.Rotator().Yaw);
+}
+
+void AFirstVRGameMode::MoveHeadTo(APawn* PlayerPawn, const FVector& Location, float FacingYaw)
+{
+	const UCameraComponent* Camera = PlayerPawn ? PlayerPawn->FindComponentByClass<UCameraComponent>() : nullptr;
+	if (!Camera)
+	{
+		return;
+	}
+
+	// 폰 기준 카메라 자세 = 트래킹 공간에서 머리가 원점에서 떨어진 거리·돈 각도.
+	const FTransform CameraInPawn = Camera->GetComponentTransform().GetRelativeTransform(PlayerPawn->GetActorTransform());
+	const FVector HeadOffset(CameraInPawn.GetLocation().X, CameraInPawn.GetLocation().Y, 0.f);
+
+	// 폰을 (원하는 방향 - 머리 각도)로 돌리고, 돌린 머리 거리만큼 반대로 옮기면 머리가 그 자리에서 그 방향을 본다.
+	const FRotator NewRotation(0.f, FacingYaw - CameraInPawn.Rotator().Yaw, 0.f);
+	const FVector NewLocation = Location - NewRotation.RotateVector(HeadOffset);
+	PlayerPawn->SetActorLocationAndRotation(NewLocation, NewRotation, false, nullptr, ETeleportType::TeleportPhysics);
+	if (AController* Controller = PlayerPawn->GetController())
 	{
 		Controller->SetControlRotation(NewRotation);   // 컨트롤러 방향을 따르는 폰이면 다음 틱에 되돌아가지 않게
 	}
+}
 
-	UE_LOG(LogEncounter, Log, TEXT("Head aligned to start (head offset %.0f cm, yaw %.0f)"), HeadOffset.Size(), HeadYaw);
+float AFirstVRGameMode::GetHeadYaw(const APawn* PlayerPawn)
+{
+	const UCameraComponent* Camera = PlayerPawn ? PlayerPawn->FindComponentByClass<UCameraComponent>() : nullptr;
+	return Camera ? Camera->GetComponentRotation().Yaw : (PlayerPawn ? PlayerPawn->GetActorRotation().Yaw : 0.f);
+}
+
+bool AFirstVRGameMode::ResolveTeleportDestination(const FVector& AimedLocation, FVector& OutDestination, TOptional<float>& OutFacingYaw) const
+{
+	OutDestination = AimedLocation;
+	OutFacingYaw.Reset();
+	return true;
+}
+
+bool AFirstVRGameMode::CanTeleportTo(FVector AimedLocation, FVector& Destination)
+{
+	TOptional<float> FacingYaw;
+	return ResolveTeleportDestination(AimedLocation, Destination, FacingYaw);
+}
+
+bool AFirstVRGameMode::TeleportPlayerTo(APawn* PlayerPawn, FVector AimedLocation)
+{
+	FVector Destination;
+	TOptional<float> FacingYaw;
+	if (!PlayerPawn || !ResolveTeleportDestination(AimedLocation, Destination, FacingYaw))
+	{
+		return false;
+	}
+
+	const float Yaw = FacingYaw.Get(GetHeadYaw(PlayerPawn));
+	MoveHeadTo(PlayerPawn, Destination, Yaw);
+	UE_LOG(LogEncounter, Log, TEXT("Teleported to %s (yaw %.0f%s)"), *Destination.ToCompactString(), Yaw, FacingYaw.IsSet() ? TEXT(", fixed") : TEXT(""));
+	return true;
 }
 
 void AFirstVRGameMode::HandlePlayerDied()

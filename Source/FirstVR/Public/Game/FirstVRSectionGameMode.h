@@ -33,6 +33,9 @@ protected:
 	virtual void StartEncounter() override;
 	virtual void HandleAllWavesCleared() override;
 
+	/** 켜진(Active) 구간의 설 자리 안을 겨눌 때만 허용하고, 내릴 자리는 그 구간의 가운데·정해진 방향. */
+	virtual bool ResolveTeleportDestination(const FVector& AimedLocation, FVector& OutDestination, TOptional<float>& OutFacingYaw) const override;
+
 private:
 	UFUNCTION()
 	void HandleSectionArrived(AEncounterSection* Section);
