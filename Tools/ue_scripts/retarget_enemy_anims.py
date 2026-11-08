@@ -6,6 +6,7 @@
 그래서 에셋 하나씩, 기본은 참조 에셋을 따라가지 않는다(refs를 주면 따라간다).
 IKRetargetBatchOperation은 결과를 원본 옆이나 /Game 루트에 만들므로 이름 끝에 _UE4를 붙여 만든 뒤 옮긴다.
 이미 옮겨 둔 결과가 있으면 다시 만들지 않는다.
+8-5d: 리타기터는 IK 본(ik_foot_root·ik_foot_l/r)을 옮기지 않는다. 리타깃한 뒤 fix_retarget_ik_bones.py를 실행한다.
 """
 import sys; sys.path.insert(0, r"D:\Projects\Unreal\FirstVR\Tools\ue_scripts")
 from fv import *
@@ -23,6 +24,7 @@ data = ar.get_asset_by_object_path(f"{src}.{name}")  # noqa (5.7에서 deprecate
 made = unreal.IKRetargetBatchOperation.duplicate_and_retarget(
     [data], load("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple"), load("/Game/WastelandWarrior/meshes/W_warrior_ver1_SK"),
     load("/Game/Showcase/Enemy/Retarget/RTG_UE5Manny_UE4Warrior"), "", "", "", "_UE4", follow, False)
+moved = []
 for d in made:
     p = str(d.package_name)
     dst = f"{OUT}/{p.split('/')[-1]}"
@@ -32,5 +34,8 @@ for d in made:
             print("replaced", dst)
         if not EAL.rename_asset(p, dst):
             raise RuntimeError(f"move failed {p}")
+    moved.append(dst)
+# 다 옮긴 뒤에 저장한다. 옮기는 도중에 저장하면 먼저 저장한 블렌드 스페이스·몽타주 파일에 옮기기 전 시퀀스 경로가 남는다(8-5c에서 발견).
+for dst in moved:
     EAL.save_asset(dst, only_if_is_dirty=False)
     print("retargeted", dst)

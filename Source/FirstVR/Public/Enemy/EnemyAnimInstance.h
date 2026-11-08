@@ -56,6 +56,30 @@ protected:
 	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Limp")
 	FVector RightFootOffset = FVector::ZeroVector;
 
+	/** 절뚝일 때 걷기 블렌드 스페이스의 재생 속도. 다리가 느려진 만큼 Stride Warping이 보폭을 다시 맞춘다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp", meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	float LimpPlayRate = 0.9f;
+
+	/** 절뚝일 때 다친 다리가 앞으로 나가는 동안(스윙 커브 1)의 재생 속도. 다친 다리를 끄는 듯한 걸음이 된다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp", meta = (ClampMin = "0.1", ClampMax = "1.0"))
+	float LimpSwingPlayRate = 0.7f;
+
+	/** 왼발이 앞으로 나가는 구간 커브(0~1). 걷기 애니메이션에 Tools/ue_scripts/bake_foot_swing_curves.py로 구워 넣는다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp")
+	FName LeftFootSwingCurve = TEXT("FootSwing_L");
+
+	/** 오른발이 앞으로 나가는 구간 커브(0~1). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp")
+	FName RightFootSwingCurve = TEXT("FootSwing_R");
+
+	/** 다친 다리 쪽 스윙 커브 값(직전 포즈). 절뚝이지 않으면 0. */
+	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Limp")
+	float InjuredFootSwing = 0.f;
+
+	/** 걷기 블렌드 스페이스 플레이어의 Play Rate. 평소 1, 절뚝이면 LimpPlayRate ~ LimpSwingPlayRate(LimpAlpha로 섞음). */
+	UPROPERTY(VisibleInstanceOnly, Transient, BlueprintReadOnly, Category = "Enemy|Limp")
+	float LocomotionPlayRate = 1.f;
+
 	/** 공격 몽타주가 재생되는 슬롯. 이 슬롯의 몽타주가 섞이는 만큼 Leg IK를 끈다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Limp")
 	FName MontageSlotName = TEXT("DefaultSlot");

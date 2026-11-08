@@ -6,6 +6,7 @@
   → Transform (Modify) Bone ×3(pelvis, ik_foot_l, ik_foot_r, Add to Existing, Component Space) → Leg IK(Alpha ← LegIKAlpha)
   → Component To Local → Output Pose
 UE4 마네킹 뼈대에도 pelvis·ik_foot_l/r·foot_l/r가 같은 이름으로 있다.
+8-5d: 이 스크립트로 다시 만들었다면 이어서 add_stride_warping.py(발 미끄러짐 보폭 워핑)를 실행한다.
 """
 import sys; sys.path.insert(0, r"D:\Projects\Unreal\FirstVR\Tools\ue_scripts")
 from fv import *

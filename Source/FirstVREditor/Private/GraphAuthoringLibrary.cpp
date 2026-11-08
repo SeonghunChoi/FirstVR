@@ -1,5 +1,6 @@
 ﻿#include "GraphAuthoringLibrary.h"
 
+#include "Animation/BlendSpace.h"
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
 #include "EdGraph/EdGraphPin.h"
@@ -400,4 +401,16 @@ FString UGraphAuthoringLibrary::GetPropertyByPath(UObject* Object, const FString
 		Property->ExportText_Direct(Result, ValuePtr, nullptr, Object, PPF_None);
 	}
 	return Result;
+}
+
+bool UGraphAuthoringLibrary::ResampleBlendSpace(UBlendSpace* BlendSpace)
+{
+	if (!BlendSpace)
+	{
+		return false;
+	}
+	BlendSpace->Modify();
+	BlendSpace->ResampleData();
+	BlendSpace->MarkPackageDirty();
+	return true;
 }

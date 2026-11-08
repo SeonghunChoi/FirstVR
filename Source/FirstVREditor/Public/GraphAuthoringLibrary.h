@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+class UBlendSpace;
+
 #include "GraphAuthoringLibrary.generated.h"
 
 class UEdGraph;
@@ -85,4 +87,11 @@ public:
 	/** 점으로 이은 경로의 속성 값을 텍스트로 읽는다. 없으면 빈 문자열. */
 	UFUNCTION(BlueprintCallable, Category = "FirstVR|GraphAuthoring")
 	static FString GetPropertyByPath(UObject* Object, const FString& Path);
+
+	/**
+	 * 블렌드 스페이스의 실행용 블렌드 데이터(삼각 분할)를 샘플 위치로 다시 만든다(블렌드 스페이스 에디터에서 샘플을 옮길 때와 같음).
+	 * SampleData를 속성으로 바꾸면 이 데이터가 다시 만들어지지 않아, 게임은 옛 샘플 위치로 섞는다(8-5d에서 발견).
+	 */
+	UFUNCTION(BlueprintCallable, Category = "FirstVR|GraphAuthoring")
+	static bool ResampleBlendSpace(UBlendSpace* BlendSpace);
 };

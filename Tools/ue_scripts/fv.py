@@ -72,3 +72,11 @@ def compile_save(bp):
     BEL.compile_blueprint(bp)
     EAL.save_loaded_asset(bp, only_if_is_dirty=False)
     print(f"Compiled and saved {bp.get_path_name()}")
+
+
+def require_editing():
+    """에셋을 고치는 스크립트 맨 앞에서 부른다. 사용자가 VR Preview·Play 중이면 멈춘다
+    (8-5d: Play 중 복제는 실패하고, 애님 BP를 reload_packages하자 사용자의 VR Preview가 꺼졌다)."""
+    if unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_game_world():
+        raise RuntimeError("Editor is in play mode (VR Preview/Play/Simulate). Stop it first.")
+
