@@ -56,6 +56,19 @@ void UPlayerHealth::TakeHealthDamage(float Damage)
 	}
 }
 
+void UPlayerHealth::Heal(float Amount)
+{
+	if (bDead || Amount <= 0.f)
+	{
+		return;
+	}
+
+	const float Before = CurrentHealth;
+	CurrentHealth = FMath::Min(MaxHealth, CurrentHealth + Amount);
+	UE_LOG(LogPlayer, Log, TEXT("[%s] Healed %.0f, health %.0f/%.0f"), *GetOwner()->GetName(), CurrentHealth - Before, CurrentHealth, MaxHealth);
+	OnHealthChanged.Broadcast(CurrentHealth, MaxHealth, Before - CurrentHealth);
+}
+
 static FAutoConsoleCommandWithWorldAndArgs PlayerDamageCommand(
 	TEXT("Player.Damage"),
 	TEXT("Applies damage to the player pawn through ApplyDamage. Usage: Player.Damage [Amount] (default 20)"),

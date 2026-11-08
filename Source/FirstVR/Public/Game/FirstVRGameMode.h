@@ -52,6 +52,16 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	/** BeginPlay에서 부른다. 기본은 웨이브 하나로 된 전투(StartWaves). 구간 게임 모드는 구간 진행으로 바꾼다. */
+	virtual void StartEncounter();
+
+	/** 웨이브 스포너가 마지막 웨이브까지 끝냈을 때. 기본은 승리. */
+	UFUNCTION()
+	virtual void HandleAllWavesCleared();
+
+	/** 승리 상태로 바꾸고 승리 화면을 띄운다(진행 중일 때만). */
+	void FinishWithVictory();
+
 	/** 웨이브 진행. 웨이브 데이터는 이 컴포넌트에 넣는다. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Encounter")
 	TObjectPtr<UWaveSpawner> WaveSpawner;
@@ -68,12 +78,24 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter", meta = (ClampMin = "0.0"))
 	float ResultScreenDistance = 100.f;
 
+	/**
+	 * 시작할 때 플레이어 머리(카메라)의 수평 위치·바라보는 방향을 시작 자리(PlayerStart)에 맞출지.
+	 * VR 폰의 원점은 트래킹 공간의 바닥 원점이라, 플레이어가 방 안에서 걸어간 만큼 머리가 원점에서 떨어져 있다.
+	 * 레벨을 다시 열어도 그 거리는 남으므로 폰을 그만큼 반대로 옮긴다(시뮬레이터 WASD 이동은 이 거리를 크게 만든다).
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter")
+	bool bAlignHeadToPlayerStart = true;
+
+	/** 폰을 놓은 뒤 머리를 맞추기까지 기다릴 시간(초). 카메라가 헤드셋 자세를 받은 다음이어야 한다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter", meta = (ClampMin = "0.0", ForceUnits = "s", EditCondition = "bAlignHeadToPlayerStart"))
+	float HeadAlignDelay = 0.2f;
+
 private:
-	UFUNCTION()
-	void HandlePlayerDied();
+	/** 폰을 옮겨 카메라의 수평 위치·방향을 Start에 맞춘다. 높이는 폰의 바닥 높이 그대로. */
+	void AlignHeadToStart(TWeakObjectPtr<APawn> PlayerPawn, FTransform Start);
 
 	UFUNCTION()
-	void HandleAllWavesCleared();
+	void HandlePlayerDied();
 
 	void SetEncounterState(EEncounterState NewState);
 

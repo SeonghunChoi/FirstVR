@@ -35,6 +35,12 @@ void UWaveSpawner::StartWaves()
 	ScheduleWave(0, WaveData->StartDelay);
 }
 
+void UWaveSpawner::SetWaveData(UWaveDataAsset* InWaveData)
+{
+	StopWaves();
+	WaveData = InWaveData;
+}
+
 void UWaveSpawner::StopWaves()
 {
 	if (!bRunning)

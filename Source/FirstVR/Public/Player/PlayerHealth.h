@@ -28,6 +28,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Player")
 	void TakeHealthDamage(float Damage);
 
+	/** 체력을 Amount만큼 채운다(최대 체력까지). 0 이하이거나 이미 죽었으면 무시한다. OnHealthChanged의 Damage는 음수(회복량)로 나간다. */
+	UFUNCTION(BlueprintCallable, Category = "Player")
+	void Heal(float Amount);
+
 	UFUNCTION(BlueprintPure, Category = "Player")
 	float GetCurrentHealth() const { return CurrentHealth; }
 

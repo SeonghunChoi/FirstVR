@@ -30,6 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Encounter|Wave")
 	void StartWaves();
 
+	/** 다음 StartWaves에 쓸 웨이브 목록을 바꾼다(구간마다 다른 웨이브). 진행 중이면 먼저 StopWaves 한다. */
+	UFUNCTION(BlueprintCallable, Category = "Encounter|Wave")
+	void SetWaveData(UWaveDataAsset* InWaveData);
+
 	/** 남은 스폰과 다음 웨이브 예약을 모두 취소한다. 이미 나온 적은 건드리지 않는다. */
 	UFUNCTION(BlueprintCallable, Category = "Encounter|Wave")
 	void StopWaves();
