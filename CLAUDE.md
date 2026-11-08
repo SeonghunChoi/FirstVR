@@ -582,8 +582,14 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 사용자 판단(VR): 걷기 발 미끄러짐은 해결. 걸음 모양이 전투용 걸음은 아니고, 절뚝임은 속도만 느려져 크게 달라 보이지 않지만 애니메이션을 직접 손보지 않는 한 여기서 만족하고 넘어감
   - 측정 도구: `measure_stride.py`(애니메이션 루트·디딤발 속도), `measure_foot_slide.py`(시뮬레이트 중 틱마다 발 월드 위치), `leg_pose.py`(다리·IK 본 위치, 액터 기준). 시뮬레이트 화면에 안 보이는 적은 뼈를 갱신하지 않으므로 `VisibilityBasedAnimTickOption`을 `AlwaysTickPoseAndRefreshBones`로. **측정값만 보지 말고 다리 자세(본 위치)·실제 블렌드 결과(커브 값 등)도 같이 본다**
 
+- [x] Step 8-5e(Claude가 에디터 작업): 조사 — 두 팩의 `UE4_Mannequin_Skeleton`은 본 68개·순서·레퍼런스 포즈가 같다(차이 0cm). 메시의 몸 비율은 달라(솔저가 발 5cm 낮고 팔 8cm 김, 골반·머리 4~7cm 앞) 같은 애니메이션을 나란히 세워 봤고(`compare_scifi.py`, 대기·공격 1·발차기·걷기) 차이가 거의 보이지 않아 사용자 결정으로 **애니메이션 공유**. `make_enemy_scifi.py`: `Showcase/Enemy/Meshes/SK_SciFiSoldier02_Enemy`(팩 메시 복제, 뼈대만 Wasteland 것으로, 물리 에셋은 팩 것 참조 — 바디 19개 본 이름이 Wasteland와 같음), `Showcase/Enemy/BP_EnemySciFiSoldier`(`BP_EnemyWasteland` 자식, 메시만 교체, 애님 BP·적 데이터·캡슐 물려받음) — `L_Combat_Factory`에 임시로 놓고 시뮬레이트: `Walk speed 150`·`ik_foot_root` 루트에·발 정상, 9mm 부위 피해(머리 60·목 40·몸통 20·허벅지 16), 트레이스가 메시 바디에 맞음, `Enemy.Limp Left` → `Limp pose (Left leg, play rate 0.90 / swing 0.70)`·`Walk speed 75`, `Enemy.Kill` → `Ragdoll`·`Body stopped`. 임시 배치는 지우고 저장(레벨 변화 없음). 웨이브·VR 확인은 8-6 연구소 레벨에서
+  - 메시의 뼈대(`Skeleton`)는 Python에서 읽기 전용이라 `set_path(mesh, "Skeleton", ...)`로 넣는다
+  - `unreal.Rotator`의 인자 순서는 (roll, pitch, yaw)다. `Rotator(0, 90, 0)`은 Yaw가 아니라 Pitch 90(캐릭터가 눕는다)
+  - 미확인: 솔저 래그돌 모습(사진에 다른 시체가 찍힘, 같은 물리 바디 구조)
+- [x] ✅ **Step 8-5**: 적 모델 교체(공장 Wasteland Warrior, 연구소용 Sci-Fi Soldier), 걷기 Stride Warping·절뚝임 걸음
+
 ### 현재 위치
-- **Step 8-5e** 다음: Sci-Fi Soldier 02 적 자식 BP(같은 애님 BP·데이터, 호환 뼈대), 8-6 연구소 레벨에서 사용
+- **Step 8-6** 다음: 두 번째 레벨(연구소 구간 돌파). 팩 `Content/SciFiWorld`를 보고 세부 스텝을 나눈다(`Docs/PLAN.md` 10장 "두 번째 레벨"), 적은 `BP_EnemySciFiSoldier`
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
