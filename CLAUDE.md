@@ -618,8 +618,20 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - `Saved/Crashes`의 `UECC-...` 폴더는 VR Preview 시작 때의 무해한 `xrDestroySwapchain` ensure 보고서다(에디터는 계속 동작)
   - 처음 책상 간격(옆 48cm)에서는 설 자리가 내비 메시에서 빠졌다(책상 사이 96cm - 적 반지름 35cm×2). 템플릿 순간이동은 내비 메시에 투영하므로 표식을 겨눌 수 없게 된다 → 75cm
 
+- [x] Step 8-6e: 게임 모드 `NextLevel`(소프트 레벨 참조)·`NextLevelLabel`, `HasNextLevel`/`OpenNextLevel`, 콘솔 `Encounter.NextLevel`, 결과 화면 부모 `UEncounterResultWidget`에 `BindWidgetOptional` `NextLevelButton`·`NextLevelText`(다음 레벨이 있으면 보이고 글자 채움, 누르면 두 버튼 끄고 `OpenNextLevel`) — 빌드. `make_next_level_button.py`: `WBP_VictoryScreen`의 `RestartButton` 아래에 같은 모양 버튼(위젯 트리 안 위젯은 경로 `:WidgetTree.<이름>`으로 찾고 `new_object` + 패널 `add_child`로 붙임). `set_next_levels.py`: 공장 `BP_FirstVRFactoryMode` → `L_Lab`("Next Level"), 새 `Showcase/Game/BP_FirstVRLabMode`(Portfolio 구간 게임 모드 자식) → `L_Combat_Factory`("Start Over"), `L_Lab` 게임 모드 교체. `package_showcase.ps1` 쿠킹 맵 `L_Combat_Factory+L_Lab`. 일반 Play에서 연구소 승리 → 버튼 → `Opening next level /Game/Showcase/Map/L_Combat_Factory` → 공장 게임 모드·웨이브 3개, 공장에서 `Encounter.NextLevel` → `L_Lab`·`BP_FirstVRLabMode`·15구간 확인
+  - Python으로 위젯을 더하면 컴파일 때 `Widget [..] was added but did not get a GUID` ensure가 한 번 나지만 엔진이 GUID를 채워 저장한다(`WidgetVariableNameToGuidMap` 확인)
+  - Portfolio(git) 에셋은 Showcase 맵을 참조하지 않게, 레벨 연결은 Showcase 게임 모드 자식에만 둔다
+  - 연구소 라이트맵 High(Lightmass 21초, `QualityLevel mismatch 2 vs 0 (ini setting)` 경고는 요청 품질과 에디터 기본값이 다르다는 알림). VR Preview(15:35~15:43): 연구소 승리 → `Start Over` → 공장(`BP_FirstVRFactoryMode`) → 승리 → `Next Level` → 연구소(`BP_FirstVRLabMode`) → 맞아서 실패 → 실패 화면 `Restart` → 연구소 다시 시작 확인
+  - Development 패키지(공장 + 연구소): 처음 두 번 쿠킹 실패 `Content is missing from cook ... marked NeverCook or is not cookable` — 템플릿 `BP_XRPawn`의 `HeadMountedDisplayMesh`(스태틱 메시 컴포넌트)가 엔진 에디터 콘텐츠 `/Engine/VREditor/Devices/Generic/GenericHMD`를 쓰는데, 쿠커는 에디터 전용 참조로 보고 빼고(`SkipOnlyEditorOnly`) 쿠킹된 폰은 여전히 참조했다. `DirectoriesToAlwaysCook`에 그 폴더를 넣으면 부모 머티리얼 `GenericHMDMaterial`이 다시 걸려 되돌림 → 쓰지 않는 그 컴포넌트의 메시를 비움(그래프 참조 없음, 파일에서 `GenericHMD` 문자열 0) → 성공(쿠킹 1435개, 오류 0, 2.0GB, `-iterate`로 1분). 8-4 때는 같은 참조가 있었는데도 통과했다(원인 미확인)
+  - 에셋 레지스트리 의존성은 저장 직후 바로 바뀌지 않을 수 있다. 확인은 `AssetRegistry.scan_files_synchronous([파일], True)` 뒤에
+  - 실행 파일(Development, 사용자): 공장 실패 → `Restart`, 승리 → `Next Level` → `L_Lab` → 15구간 승리(`Start Over`는 누르지 않음, 에디터 VR Preview에서 확인한 경로). 공장에서 FPS 차트 저장
+  - 연구소에서 순간이동을 겨눌 때 표식에서 벗어난 빛나는 사각형: 템플릿 `BP_TeleportVisualizer`의 `NS_PlayAreaBounds`(이동 뒤 방·가디언이 놓일 자리, `Get Play Area Bounds`). 사각형은 방 중심(트래킹 원점) 기준이라 머리가 원점에서 떨어진 만큼(이때 WASD로 3.2m) 비켜 보이고, 방향은 지금 폰 방향이라 구간의 정해진 방향과 달랐다 → 결정에 따라 방향까지 맞춤: `AFirstVRGameMode::GetTeleportPreviewYaw(폰, 겨눈 자리)`(BlueprintPure static, 정한 방향이 있으면 정한 방향 - 머리가 폰 안에서 돈 각도) — 빌드, `wire_teleport_preview_yaw.py`로 시각화 BP Tick의 `Set Actor Rotation` 입력을 `Make Rotator(Yaw ← GetTeleportPreviewYaw(플레이어 폰, 자기 위치))`로. 일반 Play에서 머리를 폰 안에서 30도 돌린 채 구간 2 표식: 미리보기 -30 = 순간이동 뒤 폰 -30(머리 0), 표식 밖은 지금 폰 방향 180 확인, VR Preview에서 사용자가 사각형 방향을 눈으로 확인
+  - 패키지 다시 만듦(01:36): Development 81초·Shipping 79초, 둘 다 오류 0(2.0GB·1.7GB), 쿠킹 맵 `L_Combat_Factory`+`L_Lab`
+  - 미확인: 실행 파일에서 연구소 `Start Over` → 공장(에디터 VR Preview에서는 확인), Shipping 실행, 연구소 실행 파일 FPS 차트
+- [x] ✅ **Step 8-6**: 두 번째 레벨 연구소 `L_Lab`(방 두 개·탈출문·라이트맵 High, 구간 게임 모드, 켜진 표식으로만 순간이동, 전투 3·이동 11·탈출 1, 구간마다 무기·탄창 책상, 승리 화면으로 공장 ↔ 연구소)
+
 ### 현재 위치
-- **Step 8-6e** 다음: 패키지에서 두 번째 레벨로 가는 방법(설계 판단)과 패키지 빌드
+- **Step 8 완료** → 다음: `Docs/PLAN.md` Phase 5(PDF 제작). 필요하면 공개 저장소 `README.md`에 8-6(구간 진행·순간이동 판정) 반영
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
@@ -676,6 +688,8 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-08: 연구소 레벨은 팩의 완성된 방(약 32×22m, `SciFiCreaturesResearchRoomA`)을 두 개 이어 붙여 만든다(구간 1·2는 첫 방, 구간 3은 둘째 방, 둘째 방 출구로 탈출). 팩 방 조명 35개는 Static이라 라이트맵을 굽고, 이 레벨만 포스트 프로세스 볼륨에서 Lumen GI를 끈다(VR 프레임 우선). 8-6a~e로 나눔. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-08: 연구소 구간 진행은 C++ 게임 모드 자식 `AFirstVRSectionGameMode`가 맡는다(구간 레벨이 아닌 공장은 기존 게임 모드). 구간 액터가 끝내면 풀 문 목록을 들고 시작할 때 잠그고 끝나면 푼다(팩 문 BP는 그대로, 잠금 변수 이름으로 리플렉션). 탈출 지점은 웨이브 없는 마지막 구간이고, 도착 판정은 구간·탈출 모두 설 자리 상자 안에 플레이어 머리가 들어오는지(8-6b에서 겹침 이벤트 → 0.2초마다 머리 위치 확인으로 바꿈). (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-08: 레벨을 시작(다시 시작 포함)할 때 플레이어 머리의 수평 위치·바라보는 방향을 `PlayerStart`에 맞춘다. 폰을 놓는 게임 모드(`AFirstVRGameMode`)가 맡고, 폰을 그 자리에서 머리 거리만큼 반대로 옮긴다(일반적인 VR 게임 방식). 높이는 폰 바닥 그대로.
+- 2026-11-09: 순간이동 표시의 플레이 영역 사각형(템플릿)은 실제 순간이동 결과와 같은 방향으로 그린다(구간의 정해진 방향 반영, 게임 모드가 계산).
+- 2026-11-09: 패키지는 공장에서 시작하고, 승리 화면의 '다음 레벨' 버튼으로 연구소, 연구소 승리 화면의 '처음부터' 버튼으로 공장에 간다. 다음 레벨은 게임 모드 설정값 `NextLevel`(Showcase 게임 모드 자식에서 정함), 실패 화면은 다시 시작만. 연구소 라이트맵은 High로 굽는다. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-09: 연구소 전투 배치 — 홀스터가 없고 되돌아갈 수 없어 전투 구간마다 무기 책상(꾸민 무기 세 종)·탄창 책상(보급대 셋)을 설 자리 양옆에 둔다. 적은 구간이 바라보는 쪽 앞 좌·우 두 곳에서, 웨이브는 구간마다 2개(2·2 / 2·3 / 3·5명). (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-08: 순간이동 포물선이 닿지 않는 구간 사이에는 웨이브 없는 구간(이동 지점)을 더 놓는다(C++ 변경 없음, 도착하면 바로 다음 표식). 템플릿 발사 속도(650cm/s, 최대 약 5m)는 그대로 두고 간격을 4.5m 이하로 한다(속도를 올리면 가까운 곳 겨누기가 어렵고 포물선이 천장에 닿으며 공장 레벨 이동도 길어진다).
 - 2026-11-08: 구간이 끝나 연 문은 열린 채 잠가 둔다(팩 문은 잠기지 않으면 다가갈 때마다 다시 열리는 애니메이션, 멀어지면 닫힘). 이미 열려 있으면 열기를 다시 시키지 않는다.

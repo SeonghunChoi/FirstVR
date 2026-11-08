@@ -1,4 +1,5 @@
-﻿# 배포 빌드 패키징: 꾸민 전투 레벨(L_Combat_Factory)만 쿠킹하고, 그 레벨에서 시작하게 만든다. 결과는 Packaged\<구성>\
+﻿# 배포 빌드 패키징: 꾸민 레벨 둘(공장 L_Combat_Factory, 연구소 L_Lab)을 쿠킹하고, 공장에서 시작하게 만든다. 결과는 Packaged\<구성>\
+# 레벨 사이는 승리 화면의 '다음 레벨' 버튼(게임 모드 NextLevel)으로 오간다. OpenLevel로 여는 맵은 쿠킹 목록에 있어야 한다.
 #   powershell -ExecutionPolicy Bypass -File Tools/package_showcase.ps1 [-Config Development|Shipping]
 #
 # 공개 저장소의 DefaultEngine.ini(시작 맵 = 템플릿)를 바꾸지 않기 위해, 패키징하는 동안에만 GameDefaultMap을 바꿨다가
@@ -12,6 +13,7 @@ $UE = "F:\Epic Games\Games\UE_5.7"
 $Root = "D:\Projects\Unreal\FirstVR"
 $Project = "$Root\FirstVR.uproject"
 $Map = "/Game/Showcase/Map/L_Combat_Factory"
+$Maps = "$Map+/Game/Showcase/Map/L_Lab"   # 쿠킹할 맵(+로 잇는다). 첫 번째가 시작 맵
 $Ini = "$Root\Config\DefaultEngine.ini"
 $Backup = "$Root\Saved\Package\DefaultEngine.ini.bak"
 $Out = "$Root\Packaged\$Config"
@@ -27,7 +29,7 @@ try {
     & "$UE\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun `
         "-project=$Project" -noP4 -utf8output `
         -target=FirstVR -platform=Win64 "-clientconfig=$Config" `
-        -build -cook -iterate "-map=$Map" `
+        -build -cook -iterate "-map=$Maps" `
         -stage -pak -archive "-archivedirectory=$Out"   # 변수가 든 인수는 따옴표로 감싼다(PowerShell 5.1은 -로 시작하는 토큰의 변수를 펼치지 않는다)
     $code = $LASTEXITCODE
 }

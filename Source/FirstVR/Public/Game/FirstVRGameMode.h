@@ -42,6 +42,17 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Encounter")
 	void RestartEncounter();
 
+	/** 승리 화면에 '다음 레벨' 버튼을 띄울지(NextLevel이 정해져 있는지). */
+	UFUNCTION(BlueprintPure, Category = "Encounter|Next Level")
+	bool HasNextLevel() const { return !NextLevel.IsNull(); }
+
+	UFUNCTION(BlueprintPure, Category = "Encounter|Next Level")
+	FText GetNextLevelLabel() const { return NextLevelLabel; }
+
+	/** NextLevel을 연다. 정해져 있지 않으면 아무것도 하지 않는다. */
+	UFUNCTION(BlueprintCallable, Category = "Encounter|Next Level")
+	void OpenNextLevel();
+
 	UFUNCTION(BlueprintPure, Category = "Encounter")
 	EEncounterState GetEncounterState() const { return EncounterState; }
 
@@ -59,6 +70,13 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Encounter|Teleport")
 	bool TeleportPlayerTo(APawn* PlayerPawn, FVector AimedLocation);
+
+	/**
+	 * 겨눈 자리로 순간이동하면 폰(방의 트래킹 원점)이 향할 Yaw. 템플릿 순간이동 표시(BP_TeleportVisualizer)가 플레이 영역 사각형을 이 방향으로 돌린다.
+	 * 내릴 자리에 정해진 방향이 있으면 (정한 방향 - 머리가 폰 안에서 돈 각도), 없거나 이 게임 모드가 아니면 지금 폰 방향.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Encounter|Teleport", meta = (WorldContext = "WorldContextObject"))
+	static float GetTeleportPreviewYaw(const UObject* WorldContextObject, APawn* PlayerPawn, FVector AimedLocation);
 
 	/** 구간 상태가 바뀔 때마다. */
 	UPROPERTY(BlueprintAssignable, Category = "Encounter")
@@ -104,6 +122,17 @@ protected:
 	/** 결과 화면을 머리에서 얼마나 앞(cm)에 스폰할지. 화면 액터가 스스로 자리를 다시 잡아도 된다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter", meta = (ClampMin = "0.0"))
 	float ResultScreenDistance = 100.f;
+
+	/**
+	 * 승리 화면의 '다음 레벨' 버튼이 열 레벨. 비워 두면 버튼이 없다. 레벨마다 다른 게임 모드 BP 자식에서 정한다
+	 * (공장 → 연구소, 연구소 → 공장 '처음부터'). 소프트 참조라 게임 모드가 그 레벨을 메모리에 올리지는 않는다.
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter|Next Level")
+	TSoftObjectPtr<UWorld> NextLevel;
+
+	/** '다음 레벨' 버튼 글자. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Encounter|Next Level")
+	FText NextLevelLabel = NSLOCTEXT("FirstVR", "NextLevel", "Next Level");
 
 	/**
 	 * 시작할 때 플레이어 머리(카메라)의 수평 위치·바라보는 방향을 시작 자리(PlayerStart)에 맞출지.

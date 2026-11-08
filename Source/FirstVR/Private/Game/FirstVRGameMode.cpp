@@ -3,6 +3,7 @@
 #include "Camera/CameraComponent.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Enemy/AI/EnemyAIController.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Game/WaveSpawner.h"
@@ -115,6 +116,29 @@ bool AFirstVRGameMode::CanTeleportTo(FVector AimedLocation, FVector& Destination
 	return ResolveTeleportDestination(AimedLocation, Destination, FacingYaw);
 }
 
+float AFirstVRGameMode::GetTeleportPreviewYaw(const UObject* WorldContextObject, APawn* PlayerPawn, FVector AimedLocation)
+{
+	const float PawnYaw = PlayerPawn ? PlayerPawn->GetActorRotation().Yaw : 0.f;
+	const UWorld* World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull) : nullptr;
+	const AFirstVRGameMode* GameMode = World ? World->GetAuthGameMode<AFirstVRGameMode>() : nullptr;
+	const UCameraComponent* Camera = PlayerPawn ? PlayerPawn->FindComponentByClass<UCameraComponent>() : nullptr;
+	if (!GameMode || !Camera)
+	{
+		return PawnYaw;
+	}
+
+	FVector Destination;
+	TOptional<float> FacingYaw;
+	if (!GameMode->ResolveTeleportDestination(AimedLocation, Destination, FacingYaw) || !FacingYaw.IsSet())
+	{
+		return PawnYaw;
+	}
+
+	// MoveHeadTo와 같은 계산: 폰 Yaw = 정한 방향 - 머리가 폰 안에서 돈 각도
+	const float HeadYawInPawn = Camera->GetComponentTransform().GetRelativeTransform(PlayerPawn->GetActorTransform()).Rotator().Yaw;
+	return FacingYaw.GetValue() - HeadYawInPawn;
+}
+
 bool AFirstVRGameMode::TeleportPlayerTo(APawn* PlayerPawn, FVector AimedLocation)
 {
 	FVector Destination;
@@ -214,6 +238,31 @@ void AFirstVRGameMode::RestartEncounter()
 	UE_LOG(LogEncounter, Log, TEXT("Restarting %s"), *LevelName);
 	UGameplayStatics::OpenLevel(this, FName(*LevelName));
 }
+
+void AFirstVRGameMode::OpenNextLevel()
+{
+	if (NextLevel.IsNull())
+	{
+		UE_LOG(LogEncounter, Warning, TEXT("No next level"));
+		return;
+	}
+
+	// 소프트 참조의 패키지 이름(/Game/.../L_Lab)으로 연다. 쿠킹할 맵 목록에 그 레벨이 있어야 패키지에서 열린다.
+	const FString LevelName = NextLevel.ToSoftObjectPath().GetLongPackageName();
+	UE_LOG(LogEncounter, Log, TEXT("Opening next level %s"), *LevelName);
+	UGameplayStatics::OpenLevel(this, FName(*LevelName));
+}
+
+static FAutoConsoleCommandWithWorld EncounterNextLevelCommand(
+	TEXT("Encounter.NextLevel"),
+	TEXT("Opens the game mode's next level."),
+	FConsoleCommandWithWorldDelegate::CreateLambda([](UWorld* World)
+	{
+		if (AFirstVRGameMode* GameMode = World ? World->GetAuthGameMode<AFirstVRGameMode>() : nullptr)
+		{
+			GameMode->OpenNextLevel();
+		}
+	}));
 
 static FAutoConsoleCommandWithWorld EncounterRestartCommand(
 	TEXT("Encounter.Restart"),
