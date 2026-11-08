@@ -301,7 +301,12 @@ Content/Portfolio/
   - 8-5c. `DA_Enemy_Wasteland`(UE4 본 이름)·`BP_EnemyWasteland`(`BP_EnemyManny` 자식), 공장 전용 웨이브 데이터·게임 모드 → 일반 Play
   - 8-5d. VR Preview로 공장 웨이브 한 판
   - 8-5e. Sci-Fi Soldier 자식 BP(같은 애님 BP·데이터, 호환 뼈대) — 8-6에서 사용
-- 8-6. 두 번째 레벨: 연구소 구간 돌파 (설계 판단 완료, `Docs/PLAN.md` 10장 "두 번째 레벨", 세부 스텝은 팩을 본 뒤 나눔)
+- 8-6. 두 번째 레벨: 연구소 구간 돌파 (설계 판단 완료, `Docs/PLAN.md` 10장 "두 번째 레벨")
+  - 8-6a. 공간: 팩 방 A를 `Showcase/Map/L_Lab`으로 다른 이름으로 저장, 방 하나를 더 이어 붙여 문으로 연결, 탈출 출구, 라이팅 빌드(이 레벨만 포스트 프로세스 볼륨으로 Lumen 끔) → VR Preview 프레임
+  - 8-6b. 구간 액터(C++): 순서·설 자리 표식·웨이브 데이터·스폰 지점·체력 회복량, 게임 모드가 구간을 차례로 진행(구간 웨이브를 막으면 회복 → 다음 표식, 마지막이면 탈출 표식 → 도착하면 승리) → 일반 Play 로그
+  - 8-6c. 정해진 자리로만 순간이동: 템플릿 순간이동 분석, 켜진 표식으로만 이동 → VR Preview
+  - 8-6d. 배치와 데이터: 시작 자리 무기 테이블, 구간마다 보급대, 스폰 지점, 구간별 웨이브(`BP_EnemySciFiSoldier`), 내비 메시 → VR 한 판
+  - 8-6e. 패키지에서 두 번째 레벨로 가는 방법(미정)과 패키지 빌드
 - 그 뒤 `Docs/PLAN.md` Phase 5(PDF 제작)
 
 ---
@@ -588,8 +593,15 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 미확인: 솔저 래그돌 모습(사진에 다른 시체가 찍힘, 같은 물리 바디 구조)
 - [x] ✅ **Step 8-5**: 적 모델 교체(공장 Wasteland Warrior, 연구소용 Sci-Fi Soldier), 걷기 Stride Warping·절뚝임 걸음
 
+- [x] Step 8-6a(Claude가 에디터 작업, 틈 메우기는 사용자): 팩 방 A(`SciFiCreaturesResearchRoomA`, 본실 x -1425~700 + 입구 복도 700~1400 + 게이트, 레벨 BP·게임 모드 없음)를 `save_map`으로 `Showcase/Map/L_Lab`. `build_lab_rooms.py`: 방 A 액터 191개를 복제해 게이트 바깥 끝 (1675, 400)을 축으로 180도 돌려 둘째 방(아웃라이너 `RoomA`/`RoomB`, 게이트 두 개가 맞붙어 복도-복도로 이어짐, 둘째 방 본실 x 2650~4775). `add_lab_exit.py`: 둘째 방 안쪽 끝 모서리 긴 벽(바닥 높이 0) 7m를 빼고 방 A 입구 복도 묶음(게이트·기둥·50cm 벽·복도)을 돌려 붙여 탈출문 + 7m 복도 + 끝 벽(`RoomB_Exit`, 게이트 (4425, -623)), 그 자리 홀로그램·캡슐 소품 10개 지움. 뒷벽 가운데는 높이 50cm 단(깊이 10.5m)이라 문 높이가 안 맞아 모서리로 옮김. `setup_lab_lighting.py`: 포스트 프로세스 볼륨 무한 범위·GI None·반사 Screen Space, Lightmass Importance Volume, Preview 라이팅 빌드 41초(`L_Lab_BuiltData` 26MB). `PlayerStart` 첫 방 가운데 바닥 (300, 400, 0) 서쪽, 게임 모드 `BP_FirstVRTestMode` — VR Preview FPS 차트(38초, 시뮬레이터 72Hz): 평균 **70.1 FPS**, GPU 4.4ms(꾸민 공장 7.0ms), 60 FPS 목표 놓친 동기화 0%, 히치 0
+  - 두 방 사이 게이트는 팩의 근접 자동문(`BP_BaseDoor`: 상자에 무언가 겹치면 `Opened`, 틱으로 두 문짝을 `MoveDistance`만큼 밀어 엶). 구간을 끝낼 때 열리게 하는 것은 8-6b
+  - VR Preview에서 게이트가 열리지 않았다: 게이트 상자(`OverlapAllDynamic`)는 정상인데 `UPlayerBody`가 `SetGenerateOverlapEvents(false)`였다(겹침 이벤트는 양쪽이 모두 켜져야 발생). C++에서 켬 — 빌드, `BP_XRPawn`의 `PlayerBody`도 새 기본값을 따름. 문 변수 `Locked`가 있어 8-6b에서 구간 진행과 잇는다
+  - 다시 VR Preview: 탈출 지점까지 문 3개 모두 열림. 남은 틈 두 곳 — 게이트 틀 메시는 깊이 58cm인데 액터 경계(문 여는 겹침 상자 500cm 포함)로 계산해 두 게이트 사이 약 4.4m가 비었고, 탈출문 양옆이 뚫려 안이 보였다 → 사용자가 에디터에서 직접 메움(첫 방 게이트를 x 1275로 옮기고 사이 복도 바닥·벽·천장, 탈출문 양옆 기둥). Preview 라이팅 다시 빌드. 둘째 방 액터는 이때 아웃라이너 폴더 밖(None)으로 나옴
+  - **메시 크기는 액터 경계(`get_actor_bounds`)가 아니라 메시 에셋 경계(`get_bounds`)로 잰다**: 블루프린트 액터 경계에는 트리거 상자 같은 보이지 않는 컴포넌트도 들어간다
+  - 이런 틈 메우기는 눈으로 보며 격자 스냅으로 까는 사용자 작업이 빠르다. 아웃라이너 폴더는 트랜스폼이 없어 폴더를 옮기려면 안의 액터를 모두 선택해 함께 옮긴다
+
 ### 현재 위치
-- **Step 8-6** 다음: 두 번째 레벨(연구소 구간 돌파). 팩 `Content/SciFiWorld`를 보고 세부 스텝을 나눈다(`Docs/PLAN.md` 10장 "두 번째 레벨"), 적은 `BP_EnemySciFiSoldier`
+- **Step 8-6b** 다음: 구간 액터(C++)와 게임 모드 구간 진행, 게이트 잠금·열림, 탈출 도착 승리
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
@@ -643,4 +655,5 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-08: 두 번째 레벨은 이동하며 구간 돌파(3구간 + 탈출), 공간은 Fab `Sci-Fi Creatures Research Lab`, 이동은 정해진 자리로만(표식에 템플릿 순간이동을 겨눔, 다른 곳 막힘), 구간은 레벨에 놓는 구간 액터(순서·설 자리·웨이브 데이터·스폰 지점, 한 구간은 기존 웨이브 시스템 재사용), 시작 자리에 무기 테이블·구간마다 탄창 보급대·구간 통과 시 체력 회복. 적 외형·패키지에서 가는 방법은 나중에. (`Docs/PLAN.md` 10장)
 - 2026-11-08: 꾸민 레벨의 적 모델을 바꾼다. 공장은 Fab `Wasteland Warrior`, 연구소는 `Sci-Fi Soldier 02`(둘 다 UE4 Epic 뼈대). 걷기·공격 애니메이션을 IK 리타기터로 새 뼈대에 옮기고 새 애님 BP·물리 에셋·적 데이터를 만든다(적 C++은 그대로, 새 적은 BP 자식 + 데이터). 적 모델 교체를 8-5로, 두 번째 레벨을 8-6으로. (`Docs/PLAN.md` 10장)
 - 2026-11-08: 적 걷기 발 미끄러짐은 엔진 Animation Warping 플러그인의 Stride Warping(보폭을 실제 속도 / 애니메이션 루트 모션 속도로 줄임)으로 고친다. 블렌드 스페이스는 적 속도에서 걷기만 나오게 샘플을 옮기고, 워핑은 슬롯 앞이라 공격 몽타주에는 영향이 없다. 리타깃한 애니메이션은 IK 발 본 트랙을 UE5 원본 규칙으로 다시 써서 쓴다. 그레이박스 마네킹에도 같이 적용. 절뚝일 때는 걷기 재생 속도를 0.9로, 다친 다리가 앞으로 나가는 동안 0.7로 한다. 구간은 걷기 애니메이션에 구운 발 스윙 커브로 알고, 값은 애님 인스턴스 설정값(절뚝임 자세 값과 같은 곳). 템플릿 마네킹 애니메이션에도 커브를 넣는다. (`Docs/PLAN.md` 10장 "적 모델 교체")
+- 2026-11-08: 연구소 레벨은 팩의 완성된 방(약 32×22m, `SciFiCreaturesResearchRoomA`)을 두 개 이어 붙여 만든다(구간 1·2는 첫 방, 구간 3은 둘째 방, 둘째 방 출구로 탈출). 팩 방 조명 35개는 Static이라 라이트맵을 굽고, 이 레벨만 포스트 프로세스 볼륨에서 Lumen GI를 끈다(VR 프레임 우선). 8-6a~e로 나눔. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-04: 적 타격 판정은 Anim Notify State `Enemy Strike Window`(`StrikeBone`, `Radius`)의 구간 동안 본이 지나간 선분 ↔ 몸 캡슐로 하고, 한 구간에서 한 번만 맞힌다(`UEnemyAttack::Begin/Update/EndStrikeWindow`). 한 프레임 판정은 휘두르는 방향과 지나치는 타이밍 때문에 빗나갔다. (`Docs/PLAN.md` 6.9 공격)

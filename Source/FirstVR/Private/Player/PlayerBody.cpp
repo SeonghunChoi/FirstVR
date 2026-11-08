@@ -16,7 +16,9 @@ UPlayerBody::UPlayerBody()
 	// 스폰할 때는 충돌을 꺼 둔다. 켜 두면 폰 원점(바닥)에 중심을 둔 캡슐이 바닥에 박힌 것으로 보여
 	// 스폰 위치 보정이 폰을 캡슐 반 높이만큼 위로 밀어 올린다. BeginPlay에서 자리를 잡은 뒤 켠다.
 	SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SetGenerateOverlapEvents(false);
+	// 레벨의 겹침 영역(팩 근접 자동문의 상자, 구간 도착 판정 등)이 플레이어 몸을 알아채게 겹침 이벤트를 낸다.
+	// 겹침 이벤트는 양쪽 모두 켜져 있어야 발생한다(8-6a: 연구소 게이트가 플레이어에게 열리지 않았음).
+	SetGenerateOverlapEvents(true);
 	SetCanEverAffectNavigation(false);
 	InitCapsuleSize(BodyRadius, 85.f);
 }
