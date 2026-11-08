@@ -133,6 +133,7 @@ Claude Code가 파일을 직접 만들 때는 이 방식을 쓴다.
 - Git Bash에서 `/Game/...` 인수를 넘길 때는 `MSYS_NO_PATHCONV=1`을 붙인다(안 붙이면 `C:/Program Files/Git/Game/...`으로 바뀐다)
 - 화면 보기: `python Tools/ue_remote.py`로 뷰포트 카메라(`UnrealEditorSubsystem.set_level_viewport_camera_info`)·보기 모드(`AutomationLibrary.set_editor_active_viewport_view_mode`)를 맞추고 몇 번 틱을 넘긴 뒤 `powershell -ExecutionPolicy Bypass -File Tools/window_shot.ps1 -Out Saved/Captures/<이름>.png`(에디터 창 PrintWindow, 가려져 있어도 됨) → Read로 본다. 씬 캡처(SceneCapture2D)는 검게 나와서 쓰지 않는다. 에디터 `백그라운드에서 CPU 덜 사용`이 켜져 있으면 초당 3프레임으로 떨어져 로딩·화면 갱신이 멈춘 것처럼 보인다(엔진 공용 `%LOCALAPPDATA%/UnrealEngine/5.7/Saved/Config/WindowsEditor/EditorSettings.ini` `bThrottleCPUWhenNotForeground=False`)
 - **에셋을 고치기 전에 사용자가 VR Preview·Play 중인지 본다**(`fv.require_editing()`). Play 중에는 에셋 복제가 실패하고(`The Editor is currently in a play mode`), `reload_packages`는 사용자의 VR Preview를 꺼 버린다(2026-11-08)
+- **원격 실행의 Python 전역 변수는 명령 사이에 남는다.** `-c` 코드에서 맵 패키지·월드·액터를 전역 변수(반복문 변수 포함)에 담으면 Python이 계속 잡고 있어, 다른 맵을 열 때 `Old Package ... not cleaned up by GC`(`FPyReferenceCollector`) → `World Memory Leaks`로 에디터가 꺼진다(2026-11-09). 그래서 `ue_remote.py`가 명령이 끝날 때마다 모듈이 아닌 전역 변수를 비운다(명령 사이에 값을 넘기려면 파일이나 액터 태그로)
 - **열려 있는 월드의 맵·서브레벨 패키지를 `reload_packages`로 다시 불러오지 않는다**(그 뒤 맵을 열다 에디터가 크래시 리포트 없이 꺼졌다). 열린 맵의 시험 변경을 버리려면 다른 맵을 열 때 저장하지 않는다
 - 팩 맵을 조사할 때는 `inspect_level.py`(서브레벨·액터 종류·조명), 바닥 높이는 맞은 액터를 무시 목록에 넣어 가며 `line_trace_single`을 반복한다
 - 아직 안 되는 것: Python으로 PIE 월드에 액터·컴포넌트 추가(씬 캡처 사진), BP 컴파일 오류 상태 읽기. 필요해지면 `FirstVREditor`에 C++로 더한다
@@ -309,7 +310,11 @@ Content/Portfolio/
   - 8-6e. 패키지에서 두 번째 레벨로 가는 방법(미정)과 패키지 빌드
 ### Step 9. 포트폴리오 PDF (`Docs/PLAN.md` Phase 5, 설계 판단 완료)
 - 9-1. README 갱신: 공개 저장소(git)에 있는 Step 8 내용(구간 진행·순간이동 판정·레벨 잇기 C++, Stride Warping·절뚝임 걸음, 머리 맞추기, 도구), Showcase는 언급만
-- 9-2. PDF 재료: 꾸민 무기·두 레벨·적 반응 스크린샷, 그림(구조도·흐름), 플레이 영상(보조 링크)
+- 9-2. PDF 재료 (설계 판단 완료, `Docs/PLAN.md` Phase 5, 목록 `Docs/Portfolio/MATERIALS.md`, 폴더는 git 제외)
+  - 9-2a. 페이지 계획(요약 2쪽 + 본문 7장)과 재료 목록
+  - 9-2b. Claude 에디터 스크린샷: 장면(공장·연구소·꾸민 무기·절뚝임·래그돌·적 모델 셋)과 에디터 화면(State Tree·공격 몽타주)
+  - 9-2c. SVG 그림: 시스템 구조도, 역할 경계, 단계 파이프라인, 적 이벤트 흐름, 타격 판정, 구간 진행, 순간이동·머리 맞추기, git ↔ Showcase, 적 애님 그래프, 걷기 보폭, 공장 배치 이름표
+  - 9-2d. 사용자 VR Preview 스크린샷(손 시점·순간이동 표시·결과 화면·눈앞의 적 공격)과 짧은 플레이 영상(2~3분, YouTube 일부 공개)
 - 9-3. 원고와 제작: 세로형 A4, 앞 2쪽 요약 + 주제별 본문
 - 9-4. PDF 내보내기와 검토
 
@@ -636,8 +641,16 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 
 - [x] Step 9-1: README에 공개 저장소에 있는 Step 8 내용 — 소개(구간 진행·배포 빌드, Showcase는 저장소 밖), 표(적 걸음·구간 진행·이동·레벨 잇기·편집기 자동화), 실행 방법(플러그인, 순간이동 조작, 배포 빌드 스크립트), 폴더(`FirstVREditor`, `Tools`), 관계도(구간 게임 모드·구간 액터·다음 레벨·가상 함수 세 개), 알고리즘 5.10 걷기 보폭·절뚝임 걸음, 5.11 구간 진행·도착 판정, 5.12 순간이동 판정·머리 맞추기, 패턴(가상 함수 훅·리플렉션·소프트 참조), 8장 디버깅·편집기 자동화 도구, 9장 Showcase 제외 — Mermaid 세 개를 mermaid 10.9.1로 파싱·렌더 확인
 
+- [x] Step 9-2a: PDF 페이지 계획(요약 2쪽 + 본문 7장)과 재료 목록 `Docs/Portfolio/MATERIALS.md`, `Docs/Portfolio/`를 `.gitignore`
+
+- [x] Step 9-2b(Claude가 에디터 작업): 스크린샷 10장 `Docs/Portfolio/Shots/`(2560×1440) — 공장 전투(시뮬레이트, 테이블 너머 걸어오는 적)·공장 위 시점·연구소 위 시점(천장 숨김, 15구간 표식)·연구소 구간 2 책상과 표식·그레이박스 ↔ 꾸민 무기 세 쌍·절뚝임·래그돌·적 모델 셋·`ST_Enemy`·공격 몽타주 판정 구간. 뺀 것: 레버(각도 차이가 사진에 안 보임), 피격 순간·적 공격(정지 사진·플레이어 없는 시뮬레이트로는 안 읽힘 → VR·영상), 애님 그래프(그림으로), Stride Warping 디버그(그림으로). 도구 `shot.py`(뷰포트 카메라 + `AutomationLibrary.take_high_res_screenshot`, 게임 화면처럼, 카메라를 `shots_log.txt`에 남김)·`hide_above.py`(위에서 찍을 때 천장 숨김)·`lineup_weapons.py`(사진용 임시 액터 줄 세우기)·`enemy_shot.py`(시뮬레이트 적 옮기기·멈추기·절뚝임·사망 + 적 기준 카메라)·`attack_freeze.py`, `window_shot.ps1 -Title/-List`(따로 뜬 에셋 편집기 창)
+  - 고해상도 찍기의 `delay`는 게임 시간이라 `slomo` 중에는 늦게 찍힌다. 순간을 잡으려면 `slomo 0.0001`로 멈춘 뒤 `delay=0`
+  - 사진용 임시 액터는 `spawn_actor_from_class(..., transient=True)` + 태그로 찾아 지운다. 그래도 맵이 '수정됨'이 되면 원래와 같은 상태인지 확인하고 저장한 뒤 맵을 바꾼다
+  - 시체는 `CorpseLifeSpan`(10초) 뒤 사라진다. 래그돌은 카메라를 먼저 맞추고 쓰러뜨리자마자 찍는다
+  - 같은 날 에디터 꺼짐: 원격 Python 전역 변수에 연구소 맵 패키지가 남아 맵을 바꿀 때 `World Memory Leaks` → `ue_remote.py`가 명령마다 전역 변수를 비우게 고침(3.7)
+
 ### 현재 위치
-- **Step 9-2** 다음: PDF 재료(스크린샷·그림·영상)
+- **Step 9-2c** 다음: SVG 그림(D1~D12). 9-2d(사용자 VR 스크린샷 U1~U8·영상)는 언제든 따로 가능
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
@@ -695,6 +708,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-08: 연구소 구간 진행은 C++ 게임 모드 자식 `AFirstVRSectionGameMode`가 맡는다(구간 레벨이 아닌 공장은 기존 게임 모드). 구간 액터가 끝내면 풀 문 목록을 들고 시작할 때 잠그고 끝나면 푼다(팩 문 BP는 그대로, 잠금 변수 이름으로 리플렉션). 탈출 지점은 웨이브 없는 마지막 구간이고, 도착 판정은 구간·탈출 모두 설 자리 상자 안에 플레이어 머리가 들어오는지(8-6b에서 겹침 이벤트 → 0.2초마다 머리 위치 확인으로 바꿈). (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-08: 레벨을 시작(다시 시작 포함)할 때 플레이어 머리의 수평 위치·바라보는 방향을 `PlayerStart`에 맞춘다. 폰을 놓는 게임 모드(`AFirstVRGameMode`)가 맡고, 폰을 그 자리에서 머리 거리만큼 반대로 옮긴다(일반적인 VR 게임 방식). 높이는 폰 바닥 그대로.
 - 2026-11-09: Phase 5 — README는 공개 저장소에 있는 것까지만, PDF는 배포 빌드까지 모두. PDF는 세로형 문서, 앞 2쪽 요약 + 주제별 본문. 9-1 README → 9-2 재료 → 9-3 원고·제작 → 9-4 내보내기. (`Docs/PLAN.md` Phase 5)
+- 2026-11-09: PDF는 HTML/CSS(A4 세로) → 브라우저 인쇄, 그림은 SVG. 스크린샷은 Claude(에디터·시뮬레이트 연출)와 사용자(VR 손 시점)가 나눠 찍고, 영상은 2~3분 하나(YouTube 일부 공개, 링크·QR). 원고·재료는 `Docs/Portfolio/`(git 제외). (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: 순간이동 표시의 플레이 영역 사각형(템플릿)은 실제 순간이동 결과와 같은 방향으로 그린다(구간의 정해진 방향 반영, 게임 모드가 계산).
 - 2026-11-09: 패키지는 공장에서 시작하고, 승리 화면의 '다음 레벨' 버튼으로 연구소, 연구소 승리 화면의 '처음부터' 버튼으로 공장에 간다. 다음 레벨은 게임 모드 설정값 `NextLevel`(Showcase 게임 모드 자식에서 정함), 실패 화면은 다시 시작만. 연구소 라이트맵은 High로 굽는다. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-09: 연구소 전투 배치 — 홀스터가 없고 되돌아갈 수 없어 전투 구간마다 무기 책상(꾸민 무기 세 종)·탄창 책상(보급대 셋)을 설 자리 양옆에 둔다. 적은 구간이 바라보는 쪽 앞 좌·우 두 곳에서, 웨이브는 구간마다 2개(2·2 / 2·3 / 3·5명). (`Docs/PLAN.md` 10장 "두 번째 레벨")

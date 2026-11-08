@@ -30,6 +30,15 @@ PURGE_SCRIPT_MODULES = (
     "        del sys.modules[_n]\n"
 )
 
+# 원격 명령은 에디터 Python의 같은 전역 공간에서 돈다. 명령이 전역 변수에 맵 패키지·월드·액터를 남기면
+# Python이 계속 참조해 다른 맵을 열 때 옛 맵이 GC되지 않고 에디터가 꺼진다(World Memory Leaks). 명령마다 비운다.
+CLEAR_GLOBALS = (
+    "import types as _t, gc as _gc\n"
+    "for _n in [k for k, v in list(globals().items()) if not k.startswith('__') and not isinstance(v, _t.ModuleType)]:\n"
+    "    globals().pop(_n, None)\n"
+    "_gc.collect()\n"
+)
+
 
 def find_node(remote, timeout):
     deadline = time.time() + timeout
@@ -64,6 +73,7 @@ def main():
         # 에디터 Python은 한 번 import한 모듈을 계속 쓴다. Tools/ue_scripts의 도우미를 고치면 바로 반영되게 매번 비운다.
         remote.run_command(PURGE_SCRIPT_MODULES, unattended=True, exec_mode=remote_execution.MODE_EXEC_FILE)
         result = remote.run_command(command, unattended=True, exec_mode=remote_execution.MODE_EXEC_FILE)
+        remote.run_command(CLEAR_GLOBALS, unattended=True, exec_mode=remote_execution.MODE_EXEC_FILE)
     finally:
         remote.stop()
 

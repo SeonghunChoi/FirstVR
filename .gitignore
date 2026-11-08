@@ -107,3 +107,6 @@ __pycache__/
 
 # 패키지 빌드 결과
 Packaged/
+
+# PDF 원고·재료 (Fab 에셋 스크린샷, 개인 정보, Docs/PLAN.md Phase 5)
+Docs/Portfolio/
