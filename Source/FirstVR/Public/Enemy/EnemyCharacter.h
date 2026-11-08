@@ -7,6 +7,7 @@
 
 class UDamageReceiver;
 class UEnemyAttack;
+class UEnemyHitEffects;
 class UHitReaction;
 class UPhysicalAnimationComponent;
 
@@ -42,6 +43,10 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TObjectPtr<UEnemyAttack> EnemyAttack;
+
+	/** 탄에 맞은 곳의 연출(적 데이터의 HitEffect·HitSound). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TObjectPtr<UEnemyHitEffects> HitEffects;
 
 private:
 	/** 적 데이터의 걷는 속도를 캐릭터 무브먼트에 넣는다. 절뚝이면 LimpSpeedScale을 곱한다. */

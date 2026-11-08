@@ -661,7 +661,19 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 두 칸 배치 안에 코드를 두면 칸이 좁아 잘린다. 코드는 전체 폭, 설명은 그 아래 두 칸. 쪽마다 콘텐츠 아래 끝을 재서 280mm 안으로(쪽 표시 위)
 - **Step 9-3c** 사용자 확인 대기: 본문 4~7장 7쪽(12~18쪽) — 4장 전투 구간 3쪽(공장 배치 이름표·플레이어 컴포넌트·웨이브 / 연구소 위 시점·구간 상태·도착 판정·문 리플렉션 / 순간이동·`MoveHeadTo`·`ResolveTeleportDestination` 코드·레벨 잇기), 5장 배포 빌드 2쪽(git ↔ Showcase·꾸민 무기·레벨·적 / FPS 표·줄인 방법·패키징·한 판의 흐름), 6장 개발 방식(본인 ↔ Claude Code 역할 표, 원격 실행 → Python 61개 → 그래프 작성 C++ 17개 함수, 그래프 작성 Python 조각), 7장 마무리(확인 못 한 것·다음 할 것·링크). 전체 18쪽, 코드 조각 C++ 7개 + Python 1개, 모든 쪽 높이·폭 넘침 없음(자동 측정). VR 사진 자리 U1~U4·U6·U9와 영상 링크·QR은 비어 있음
   - 넘침 자동 측정: 쪽마다 콘텐츠 아래 끝(280mm 이하), `pre`의 `scrollWidth`, 오른쪽 여백을 넘은 요소. 인라인 코드 이름이 길면 칸을 밀어내므로 `overflow-wrap: anywhere`
-- 다음: 9-2d(사용자 VR 스크린샷 U1~U9·영상) → 사진 넣기 → 9-4 PDF 내보내기와 검토
+- **Step 9-2d** VR 사진(원격 촬영, 사용자가 자세): `Docs/Portfolio/Shots/vr/` U1 권총·레이저, U2 두 손 소총, U3 탄창 끼우기 직전, U4 피격 비네트·손목 80/100(`Player.Damage 20`과 같은 틱), U5 연구소 순간이동 포물선·표식·플레이 영역, U6 실패·승리 화면, U7 눈앞의 공격(몽타주 34%에서 멈춤)·U7_approach 다가오는 적, U9 연구소 전투(실행 파일 대신 VR Preview). U8(피격 순간)은 아직. 도구 `vr_shot.py`(PIE 게임 월드에 `pre` 콘솔 명령 + `HighResShot 1` → 한쪽 눈 3360×1760), `attack_freeze.py`(머리 3m 안일 때만 slomo, 휘두르는 구간에서 멈추고 같은 틱에 찍기)
+  - 사용자가 Claude에게 말하려고 시뮬레이터 포커스를 잃으면 자세가 풀리는 장면(순간이동 겨누기)은 "10초 뒤 3초 간격 세 장"으로 찍는다
+  - 대기 중에 slomo를 걸면 웨이브 전체가 느려진다. 적이 머리 가까이 왔을 때만 건다(VR 폰 원점이 아니라 카메라 기준 거리)
+- 원고에 VR 사진 넣음(2000px JPG `Shots/jpg/vr/`): 2쪽 U2, 7쪽 U1·U2·U3, 12쪽 U4·U6 승리, 14쪽 U5(코드는 `MoveHeadTo`만 남기고 `ResolveTeleportDestination` 코드는 글로), 16쪽 U9(설명 'VR Preview 연구소 전투'), 18쪽 U7_approach·U7·U6 실패. U8은 건너뜀(영상으로). 18쪽 모두 넘침·깨진 이미지 없음
+- [x] **Step 9-2e**(영상 전 추가): 발사·피격 연출 — 사용자가 VR Preview에서 총구 화염과 줄인 피격 크기 확인(2026-11-09). 총소리는 모든 무기가 템플릿 `Fire_Cue`, 피격음은 없음
+  - [x] C++: `Common/EffectSpawn`(나이아가라·캐스케이드 둘 다 스폰), `UFireEffectsComponent`(`OnFired` → `Muzzle`에 화염·`ShellEject`에 탄피·총소리, 발마다 피치 0.95~1.05), `UEnemyHitEffects`(`AEnemyCharacter` 생성자, `OnDamaged` → 적 데이터 `HitEffect`·`HitSound`), 탄 데이터 `ImpactEffect`·`ImpactSound`, 투사체가 받는 쪽 없는 곳에 맞으면 탄 연출 — 커맨드라인 빌드(`UFXSystemAsset`에 `GetNameSafe`는 완전한 타입이 필요해 `Particles/ParticleSystem.h` 포함)
+  - [x] `wire_fire_effects.py`: 그레이박스 무기 4종에 `FireEffects`(총소리 템플릿 `Fire_Cue`만), 꾸민 AR·RU74는 팩 총구 화염·탄피 + `RifleMesh` 소켓 `ShellEjectionSocket`에 `ShellEject` 기준점, Makarov는 소총 총구 화염 0.6배. 시뮬레이트에서 `PlayFireEffects` → 화염·불빛 확인
+  - 피격 연출 에셋: 처음 고른 Fab `Ballistics FX`는 '완성 프로젝트' 형식이라 별도 프로젝트 생성이 필요했고 런처에서 다운로드 실패 → 사용자 결정으로 무료(개인용) `Realistic Starter VFX Pack Vol 2`(피·Hit·불티 등 나이아가라 56종)로 바꿈. 꾸민 탄·적 데이터에만 연결(그레이박스는 비움). 엔진 Python으로는 나이아가라 색·크기를 못 바꾼다
+  - [x] `wire_hit_effects.py`(팩 `Content/Realistic_Starter_VFX_Pack_Vol2`, `.gitignore`, 캐스케이드): 그레이박스 탄 데이터는 git이라 Showcase에 같은 이름의 사본 `Showcase/Weapon/Data/DA_Ammo_9mm`·`DA_Ammo_556`(벽 `P_Default`)을 만들어 꾸민 탄창 3종 `AmmoType`을 바꿈, `DA_Enemy_Wasteland` 피격 `P_Blood_Splat_Cone` 2.5배, 솔저용 사본 `DA_Enemy_SciFi`(불티 `P_Default`)를 `BP_EnemySciFiSoldier`의 `DamageReceiver`에. 팩 `P_Sparks_A~F`는 반복 재생이라 뺌(풀링 스폰이 끝나지 않음). 시뮬레이트에서 `test_fire.py`(파지 '잡힘'·안전 해제 후 `RequestFire`)로 금속 기둥 불티, 적 `calf_l` 명중·절뚝임, 피 튀김(직접 스폰) 확인. 피격음은 팩에 없어 비움
+  - VR 확인(사용자): 총구 화염 잘 보임, 벽·적 피격 파티클이 너무 크고 멀리 튐 → 캐스케이드 팩 효과는 컴포넌트 크기에 따라 튀는 거리도 커진다(피 2.5배 ≈ 70cm). 벽 `P_Default` 1.0 → 0.4, 피 2.5 → 1.0, 솔저 불티 1.0 → 0.5 → 그래도 큼 → 벽 0.2, 피 0.6, 솔저 0.25
+  - 탄 데이터 사본은 원본과 이름이 같다(로그 `DA_Ammo_556`이 그레이박스·꾸민 것 둘 다). 구분은 경로로
+  - 나이아가라 시스템은 Python에서 이미터·모듈 값을 읽거나 바꿀 수 없다(`emitter_handles` 없음). 블루프린트 SCS 노드는 `GetPropertyByPath(bp, "SimpleConstructionScript")` → `AllNodes`로 찾고 소켓은 노드의 `AttachToName`
+- 다음: 영상(V0, 사용자 녹화·YouTube 일부 공개) → 링크·QR → 9-4 PDF 내보내기와 검토
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
@@ -719,6 +731,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-08: 연구소 구간 진행은 C++ 게임 모드 자식 `AFirstVRSectionGameMode`가 맡는다(구간 레벨이 아닌 공장은 기존 게임 모드). 구간 액터가 끝내면 풀 문 목록을 들고 시작할 때 잠그고 끝나면 푼다(팩 문 BP는 그대로, 잠금 변수 이름으로 리플렉션). 탈출 지점은 웨이브 없는 마지막 구간이고, 도착 판정은 구간·탈출 모두 설 자리 상자 안에 플레이어 머리가 들어오는지(8-6b에서 겹침 이벤트 → 0.2초마다 머리 위치 확인으로 바꿈). (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-08: 레벨을 시작(다시 시작 포함)할 때 플레이어 머리의 수평 위치·바라보는 방향을 `PlayerStart`에 맞춘다. 폰을 놓는 게임 모드(`AFirstVRGameMode`)가 맡고, 폰을 그 자리에서 머리 거리만큼 반대로 옮긴다(일반적인 VR 게임 방식). 높이는 폰 바닥 그대로.
 - 2026-11-09: Phase 5 — README는 공개 저장소에 있는 것까지만, PDF는 배포 빌드까지 모두. PDF는 세로형 문서, 앞 2쪽 요약 + 주제별 본문. 9-1 README → 9-2 재료 → 9-3 원고·제작 → 9-4 내보내기. (`Docs/PLAN.md` Phase 5)
+- 2026-11-09: 발사·피격 연출 — 총구(화염·총소리·탄피)는 새 부품 `UFireEffectsComponent`(`OnFired` 구독, 에셋은 무기 BP·꾸민 자식이 덮어씀), 맞은 곳은 벽은 탄 데이터·적은 적 데이터(`UEnemyHitEffects`가 `OnDamaged` 구독). 이펙트는 `UFXSystemAsset`(나이아가라·캐스케이드). (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: PDF 원고 — AI 활용은 '개발 방식' 장에서 역할 분담과 직접 만든 자동화 도구로 드러낸다(공고 우대사항 연결), 개인 정보는 이름·GitHub만, C++ 코드는 핵심만 짧게(주제마다 10~20줄 발체 4~6개, 처음 '코드 없이'에서 바꿈), 흰 바탕 기술 문서. 9-3a~c. (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: PDF는 HTML/CSS(A4 세로) → 브라우저 인쇄, 그림은 SVG. 스크린샷은 Claude(에디터·시뮬레이트 연출)와 사용자(VR 손 시점)가 나눠 찍고, 영상은 2~3분 하나(YouTube 일부 공개, 링크·QR). 원고·재료는 `Docs/Portfolio/`(git 제외). (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: 순간이동 표시의 플레이 영역 사각형(템플릿)은 실제 순간이동 결과와 같은 방향으로 그린다(구간의 정해진 방향 반영, 게임 모드가 계산).

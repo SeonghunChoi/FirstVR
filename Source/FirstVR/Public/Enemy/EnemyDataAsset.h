@@ -4,6 +4,9 @@
 #include "Engine/DataAsset.h"
 #include "EnemyDataAsset.generated.h"
 
+class UFXSystemAsset;
+class USoundBase;
+
 class UAnimMontage;
 
 /** 다리 좌우. 다리가 아닌 본은 None이다. */
@@ -85,4 +88,18 @@ public:
 	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))
 	float CorpseLifeSpan = 10.f;
+
+	/** 탄에 맞은 곳의 연출(피 튀김, 기계 몸이면 불티). 나이아가라 또는 캐스케이드. 맞은 면의 법선이 이펙트의 위(+Z)가 된다. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects")
+	TObjectPtr<UFXSystemAsset> HitEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects")
+	FVector HitEffectScale = FVector::OneVector;
+
+	/** 탄에 맞은 소리. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects")
+	TObjectPtr<USoundBase> HitSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects", meta = (ClampMin = "0.0"))
+	float HitSoundVolume = 0.8f;
 };

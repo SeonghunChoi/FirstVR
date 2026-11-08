@@ -5,6 +5,9 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Weapon/AmmoDataAsset.h"
 #include "Weapon/Hittable.h"
+#include "Common/EffectSpawn.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
 #include "Weapon/WeaponTypes.h"
 
 AWeaponProjectile::AWeaponProjectile()
@@ -52,11 +55,20 @@ void AWeaponProjectile::HandleStop(const FHitResult& Hit)
 {
 	UE_LOG(LogWeapon, Log, TEXT("[%s] Hit %s (%s) at %s"), *GetName(), *GetNameSafe(Hit.GetActor()), *Hit.BoneName.ToString(), *Hit.ImpactPoint.ToCompactString());
 
-	if (AActor* HitActor = Hit.GetActor())
+	IHittable* Hittable = Hit.GetActor() ? Hit.GetActor()->FindComponentByInterface<IHittable>() : nullptr;
+	if (Hittable)
 	{
-		if (IHittable* Hittable = HitActor->FindComponentByInterface<IHittable>())
+		// 피해를 받는 쪽의 연출(피 튀김 등)은 그쪽이 맡는다. 투사체는 탄 데이터와 배율만 넘긴다.
+		Hittable->ReceiveHit(Hit, Ammo, DamageScale);
+	}
+	else if (Ammo)
+	{
+		// 벽·바닥: 맞은 면의 법선을 이펙트의 위(+Z)로.
+		const FRotator Rotation = FRotationMatrix::MakeFromZ(Hit.ImpactNormal).Rotator();
+		FirstVRFX::SpawnAtLocation(this, Ammo->ImpactEffect, Hit.ImpactPoint, Rotation, Ammo->ImpactEffectScale);
+		if (Ammo->ImpactSound)
 		{
-			Hittable->ReceiveHit(Hit, Ammo, DamageScale);
+			UGameplayStatics::PlaySoundAtLocation(this, Ammo->ImpactSound, Hit.ImpactPoint, Ammo->ImpactSoundVolume, FMath::FRandRange(0.9f, 1.1f));
 		}
 	}
 	Destroy();
