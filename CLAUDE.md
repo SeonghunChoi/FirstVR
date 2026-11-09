@@ -681,6 +681,9 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - Fab 무료 `Shooter Warfare ... 200 Free SFX`는 설명(탄 맞는 소리·방탄복 등)과 달리 소총 장전 손잡이·탄창 넣고 빼기·안전장치 소리뿐이었다(HomkaH 무료 200은 유료판의 한 갈래만 들어 있다). 받기 전에 설명만 믿지 않는다
   - 템플릿 폰을 바꿀 값이 팩 에셋이면 Showcase 자식 폰 + Showcase 게임 모드의 `DefaultPawnClass`로 덮어쓴다
 - [x] 영상(V0) 녹화: 사용자가 에디터 VR Preview로 녹화(2026-11-09)
+- [x] 패키지 다시 만듦(발사·피격 연출과 근접 소리 반영, 17:07): Development 6분 20초(셰이더·새 에셋 118개 쿠킹)·Shipping 81초, 둘 다 쿠킹 오류 0, 쿠킹 1488개(2.0GB·1.7GB). 실행 파일 확인은 사용자
+- [x] 안 쓰는 Fab 에셋 영구 삭제(사용자 결정, 2026-11-09): `find_unused_pack_assets.py`(뿌리 = Portfolio·Showcase·git 템플릿 폴더, 에셋 레지스트리 하드 + 소프트 의존성을 따라가 팩 폴더에서 닿지 않는 에셋, 목록 `Saved/UnusedPackAssets/`)로 찾아 에디터를 닫고 디스크에서 지움 — 통째로 안 쓰던 `Nimikko_WesternTown`·`Sci-Fi_Shots_Pack2_Game_Of_Weapons`·`FreeTPPMeleeSFX`, 쓰는 팩 안의 안 쓰는 에셋 1,311개(공장 팩 757개 3.1GB 등), 합계 4.46GB(`Content` 2.8GB로). 루트에 받아 둔 소리 zip·폴더도 지움. `check_asset_refs.py`로 빠진 참조를 보면 39개지만 모두 지우기 전부터 있던 것(팩 제작자의 옛 경로 `/Game/AK74`·`/Game/M16`·`/Game/AssaultPack`·`/Game/FactoryDistrictBundle`, 템플릿 `LS_Attack_*`·`SKM_Quinn` 등). 패키지(Development·Shipping) 다시 빌드: 쿠킹 1,488개 그대로·모두 변경 없음으로 건너뜀·오류 0
+  - 지운 에셋이 다시 필요하면 Fab에서 그 팩을 다시 받는다(git에 없음)
 - 다음: YouTube 일부 공개 업로드(사용자) → 링크·QR(표지 `.links`, 18쪽 링크 표의 `[링크 자리]`) → 9-4 PDF 내보내기와 검토
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
