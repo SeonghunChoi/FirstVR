@@ -684,7 +684,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - [x] 패키지 다시 만듦(발사·피격 연출과 근접 소리 반영, 17:07): Development 6분 20초(셰이더·새 에셋 118개 쿠킹)·Shipping 81초, 둘 다 쿠킹 오류 0, 쿠킹 1488개(2.0GB·1.7GB). 실행 파일 확인은 사용자
 - [x] 안 쓰는 Fab 에셋 영구 삭제(사용자 결정, 2026-11-09): `find_unused_pack_assets.py`(뿌리 = Portfolio·Showcase·git 템플릿 폴더, 에셋 레지스트리 하드 + 소프트 의존성을 따라가 팩 폴더에서 닿지 않는 에셋, 목록 `Saved/UnusedPackAssets/`)로 찾아 에디터를 닫고 디스크에서 지움 — 통째로 안 쓰던 `Nimikko_WesternTown`·`Sci-Fi_Shots_Pack2_Game_Of_Weapons`·`FreeTPPMeleeSFX`, 쓰는 팩 안의 안 쓰는 에셋 1,311개(공장 팩 757개 3.1GB 등), 합계 4.46GB(`Content` 2.8GB로). 루트에 받아 둔 소리 zip·폴더도 지움. `check_asset_refs.py`로 빠진 참조를 보면 39개지만 모두 지우기 전부터 있던 것(팩 제작자의 옛 경로 `/Game/AK74`·`/Game/M16`·`/Game/AssaultPack`·`/Game/FactoryDistrictBundle`, 템플릿 `LS_Attack_*`·`SKM_Quinn` 등). 패키지(Development·Shipping) 다시 빌드: 쿠킹 1,488개 그대로·모두 변경 없음으로 건너뜀·오류 0
   - 지운 에셋이 다시 필요하면 Fab에서 그 팩을 다시 받는다(git에 없음)
-- 다음: YouTube 일부 공개 업로드(사용자) → 링크·QR(표지 `.links`, 18쪽 링크 표의 `[링크 자리]`) → 9-4 PDF 내보내기와 검토
+- [x] 연구소 첫 전투 구간 스폰 자리가 어두워 사용자가 라이트 추가 → `setup_lab_lighting.py build high`(Lightmass 19.9초, 410/410) → 패키지 다시 빌드(Development `L_Lab`·`BuiltData` 2개만 다시 쿠킹, Shipping, 오류 0)
+- [x] 영상 링크: 사용자가 YouTube에 일부 공개로 올림(https://youtu.be/CofajnEWEQ4). 표지 링크 줄·18쪽 링크 표에 넣고(클릭 가능한 `<a>`), 표지 오른쪽 위에 QR(`Shots/qr_video.svg`, segno로 만든 버전 3 SVG, 20mm). 18쪽 모두 넘침·깨진 이미지 없음
+- [x] Step 9-4 PDF 내보내기(Claude): 원고를 로컬 http 서버(`Docs/Portfolio`, 포트 8765)로 열고 헤드리스 Chrome `--print-to-pdf --no-pdf-header-footer --virtual-time-budget=20000`으로 `Docs/Portfolio/FirstVR_Portfolio_ChoiSeonghun.pdf`(18쪽 A4, 9.0MB). PyMuPDF로 쪽 수·크기·글꼴·링크·남은 자리 표시 검사, 쪽마다 렌더링해 눈으로 검토. 고친 것: 코드 글꼴(Google Fonts의 JetBrains Mono는 가변 글꼴이라 Chrome이 Type3로 넣음 → jsDelivr `@fontsource/jetbrains-mono@5.0.20` 고정 굵기 400·600, 코드 글꼴 목록에 Pretendard를 넣어 한글이 굴림체로 빠지지 않게), 18쪽 `Docs/WEAPON_ASSEMBLY.md` 칸 줄바꿈, 커밋 수 75개 → 80여 개, GitHub 주소도 링크로
+  - 헤드리스 Chrome은 PDF를 쓴 뒤에도 끝나지 않는다. 파일이 생기면 `--user-data-dir`(scratchpad `chrome-pdf`)로 찾아 그 프로세스만 끈다
+- 남은 것: 사용자가 PDF를 열어 최종 검토(종이 인쇄 상태, QR 찍기)
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
