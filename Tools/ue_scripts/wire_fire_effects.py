@@ -1,10 +1,11 @@
-"""9-2e: 발사 연출 부품(UFireEffectsComponent)을 무기 BP에 붙이고 에셋을 정한다.
+﻿"""9-2e: 발사 연출 부품(UFireEffectsComponent)을 무기 BP에 붙이고 에셋을 정한다.
 
     python Tools/ue_remote.py Tools/ue_scripts/wire_fire_effects.py
 
 - 그레이박스 무기(git): FireEffects 부품 + 총소리만(템플릿 Fire_Cue). 팩 에셋은 참조하지 않는다.
 - 꾸민 무기(Showcase): 물려받은 FireEffects를 덮어써 팩 총구 화염·탄피, 소총은 메시 소켓 ShellEjectionSocket에 ShellEject 기준점.
   Makarov는 권총 팩에 파티클이 없어 소총 총구 화염을 작게 쓴다(탄피는 소총 탄피를 작게).
+  총소리는 Fab `Free Weapon Sound Effects`(돌격소총·권총 발사음, 소총 둘은 서로 다른 변형).
 다시 실행해도 된다(있으면 추가하지 않고 값만 다시 넣음).
 """
 import sys; sys.path.insert(0, r"D:\Projects\Unreal\FirstVR\Tools\ue_scripts")
@@ -19,10 +20,14 @@ FIRE_CUE = load("/Game/XRFramework/Audio/Fire_Cue")
 GRAYBOX = ["/Game/Portfolio/Weapons/BP_PistolWeapon", "/Game/Portfolio/Weapons/BP_RifleWeapon",
            "/Game/Portfolio/Weapons/BP_AutoRifleWeapon", "/Game/Portfolio/Weapons/BP_AssembledRifle"]
 P = "/Game/FPS_Assault_Pack/Particles/Emitters/"
+S = "/Game/FreeWeaponSFX/Cue/"   # Fab Free Weapon Sound Effects(SoundLab1), git 제외
 SHOWCASE = {
-    "/Game/Showcase/Weapon/BP_RifleWeapon_AR": dict(muzzle=P + "Rifle/P_Rifle_Muzzleflash", shell=P + "Rifle/P_Rifle_ShellEject", scale=1.0, socket=True),
-    "/Game/Showcase/Weapon/BP_AutoRifleWeapon_RU74": dict(muzzle=P + "AR74/P_RU74_Muzzleflash", shell=P + "AR74/P_RU74_ShellEject", scale=1.0, socket=True),
-    "/Game/Showcase/Weapon/BP_PistolWeapon_PM": dict(muzzle=P + "Rifle/P_Rifle_Muzzleflash", shell=None, scale=0.6, socket=False),
+    "/Game/Showcase/Weapon/BP_RifleWeapon_AR": dict(muzzle=P + "Rifle/P_Rifle_Muzzleflash", shell=P + "Rifle/P_Rifle_ShellEject", scale=1.0, socket=True,
+                                                     sound=S + "AssaultRifle/Gunshots/sfx_wpn_ar_gunshot_01_Cue"),
+    "/Game/Showcase/Weapon/BP_AutoRifleWeapon_RU74": dict(muzzle=P + "AR74/P_RU74_Muzzleflash", shell=P + "AR74/P_RU74_ShellEject", scale=1.0, socket=True,
+                                                          sound=S + "AssaultRifle/Gunshots/sfx_wpn_ar_gunshot_02_Cue"),
+    "/Game/Showcase/Weapon/BP_PistolWeapon_PM": dict(muzzle=P + "Rifle/P_Rifle_Muzzleflash", shell=None, scale=0.6, socket=False,
+                                                     sound=S + "Handgun/Gunshots/sfx_wpn_hgn_gunshot_01_Cue"),
 }
 
 
@@ -81,5 +86,7 @@ for path, cfg in SHOWCASE.items():
     t.set_editor_property("MuzzleEffectScale", unreal.Vector(s, s, s))
     if cfg["shell"]:
         t.set_editor_property("ShellEjectEffect", load(cfg["shell"]))
+    t.set_editor_property("FireSound", load(cfg["sound"]))
     compile_save(bp)
-    print(path.split("/")[-1], "muzzle", t.get_editor_property("MuzzleEffect").get_name(), "shell", t.get_editor_property("ShellEjectEffect"))
+    print(path.split("/")[-1], "muzzle", t.get_editor_property("MuzzleEffect").get_name(), "shell", t.get_editor_property("ShellEjectEffect"),
+          "sound", t.get_editor_property("FireSound").get_name())

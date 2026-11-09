@@ -665,14 +665,18 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 사용자가 Claude에게 말하려고 시뮬레이터 포커스를 잃으면 자세가 풀리는 장면(순간이동 겨누기)은 "10초 뒤 3초 간격 세 장"으로 찍는다
   - 대기 중에 slomo를 걸면 웨이브 전체가 느려진다. 적이 머리 가까이 왔을 때만 건다(VR 폰 원점이 아니라 카메라 기준 거리)
 - 원고에 VR 사진 넣음(2000px JPG `Shots/jpg/vr/`): 2쪽 U2, 7쪽 U1·U2·U3, 12쪽 U4·U6 승리, 14쪽 U5(코드는 `MoveHeadTo`만 남기고 `ResolveTeleportDestination` 코드는 글로), 16쪽 U9(설명 'VR Preview 연구소 전투'), 18쪽 U7_approach·U7·U6 실패. U8은 건너뜀(영상으로). 18쪽 모두 넘침·깨진 이미지 없음
-- [x] **Step 9-2e**(영상 전 추가): 발사·피격 연출 — 사용자가 VR Preview에서 총구 화염과 줄인 피격 크기 확인(2026-11-09). 총소리는 모든 무기가 템플릿 `Fire_Cue`, 피격음은 없음
+- [x] **Step 9-2e**(영상 전 추가): 발사·피격 연출 — 사용자가 VR Preview에서 총구 화염과 줄인 피격 크기 확인(2026-11-09). 총소리는 그레이박스 템플릿 `Fire_Cue`, 꾸민 무기는 Fab `Free Weapon Sound Effects`, 피격음은 없음
   - [x] C++: `Common/EffectSpawn`(나이아가라·캐스케이드 둘 다 스폰), `UFireEffectsComponent`(`OnFired` → `Muzzle`에 화염·`ShellEject`에 탄피·총소리, 발마다 피치 0.95~1.05), `UEnemyHitEffects`(`AEnemyCharacter` 생성자, `OnDamaged` → 적 데이터 `HitEffect`·`HitSound`), 탄 데이터 `ImpactEffect`·`ImpactSound`, 투사체가 받는 쪽 없는 곳에 맞으면 탄 연출 — 커맨드라인 빌드(`UFXSystemAsset`에 `GetNameSafe`는 완전한 타입이 필요해 `Particles/ParticleSystem.h` 포함)
   - [x] `wire_fire_effects.py`: 그레이박스 무기 4종에 `FireEffects`(총소리 템플릿 `Fire_Cue`만), 꾸민 AR·RU74는 팩 총구 화염·탄피 + `RifleMesh` 소켓 `ShellEjectionSocket`에 `ShellEject` 기준점, Makarov는 소총 총구 화염 0.6배. 시뮬레이트에서 `PlayFireEffects` → 화염·불빛 확인
   - 피격 연출 에셋: 처음 고른 Fab `Ballistics FX`는 '완성 프로젝트' 형식이라 별도 프로젝트 생성이 필요했고 런처에서 다운로드 실패 → 사용자 결정으로 무료(개인용) `Realistic Starter VFX Pack Vol 2`(피·Hit·불티 등 나이아가라 56종)로 바꿈. 꾸민 탄·적 데이터에만 연결(그레이박스는 비움). 엔진 Python으로는 나이아가라 색·크기를 못 바꾼다
   - [x] `wire_hit_effects.py`(팩 `Content/Realistic_Starter_VFX_Pack_Vol2`, `.gitignore`, 캐스케이드): 그레이박스 탄 데이터는 git이라 Showcase에 같은 이름의 사본 `Showcase/Weapon/Data/DA_Ammo_9mm`·`DA_Ammo_556`(벽 `P_Default`)을 만들어 꾸민 탄창 3종 `AmmoType`을 바꿈, `DA_Enemy_Wasteland` 피격 `P_Blood_Splat_Cone` 2.5배, 솔저용 사본 `DA_Enemy_SciFi`(불티 `P_Default`)를 `BP_EnemySciFiSoldier`의 `DamageReceiver`에. 팩 `P_Sparks_A~F`는 반복 재생이라 뺌(풀링 스폰이 끝나지 않음). 시뮬레이트에서 `test_fire.py`(파지 '잡힘'·안전 해제 후 `RequestFire`)로 금속 기둥 불티, 적 `calf_l` 명중·절뚝임, 피 튀김(직접 스폰) 확인. 피격음은 팩에 없어 비움
   - VR 확인(사용자): 총구 화염 잘 보임, 벽·적 피격 파티클이 너무 크고 멀리 튐 → 캐스케이드 팩 효과는 컴포넌트 크기에 따라 튀는 거리도 커진다(피 2.5배 ≈ 70cm). 벽 `P_Default` 1.0 → 0.4, 피 2.5 → 1.0, 솔저 불티 1.0 → 0.5 → 그래도 큼 → 벽 0.2, 피 0.6, 솔저 0.25
   - 탄 데이터 사본은 원본과 이름이 같다(로그 `DA_Ammo_556`이 그레이박스·꾸민 것 둘 다). 구분은 경로로
+  - [x] 꾸민 무기 총소리: 보유 팩에 실제 총소리가 없어(SF 총소리뿐) 사용자가 무료 Fab `Free Weapon Sound Effects`(SoundLab1, `Content/FreeWeaponSFX`, `.gitignore`)를 추가. `wire_fire_effects.py`로 AR `sfx_wpn_ar_gunshot_01_Cue`·RU74 `_02_Cue`·Makarov `sfx_wpn_hgn_gunshot_01_Cue`(발사음 1.5초·1초, 실외 잔향 tail은 안 씀). 시뮬레이트에서 세 무기 `FIRE`, 템플릿 `Fire_Cue`의 `orphaned sound` 경고가 사라짐. 사용자가 VR Preview에서 소리 확인(2026-11-09)
+  - 스크립트를 다시 돌리면 값이 같은 그레이박스 BP도 다시 저장돼 git 변경으로 잡힌다. 내용 변화가 없으면 `git checkout`으로 되돌린다
   - 나이아가라 시스템은 Python에서 이미터·모듈 값을 읽거나 바꿀 수 없다(`emitter_handles` 없음). 블루프린트 SCS 노드는 `GetPropertyByPath(bp, "SimpleConstructionScript")` → `AllNodes`로 찾고 소켓은 노드의 `AttachToName`
+- [x] 놓은 무기가 공중에 멈춤(사용자 발견, 영상 전): 템플릿 `BP_GrabComponent`는 `BeginPlay`의 `SetShouldSimulateOnDrop`에서 부모가 물리 중일 때만 `bSimulateOnDrop`을 켜고(끄지는 않음) 놓을 때 이 값이 참이어야 물리를 켠다. 무기 `Body`는 처음부터 물리가 꺼져 있었다(탄창은 C++에서 켬). 결정에 따라 처음 배치는 고정 그대로, 놓을 때만 물리: `set_weapon_drop_physics.py`로 그레이박스 무기 5종 `Grip`의 `bSimulateOnDrop` 기본값 True(꾸민 무기는 물려받음), C++ 변경 없음 — 시뮬레이트에서 다섯 무기를 1m 올려 `TryRelease` → 물리 켜짐 → 바닥(z 3)까지 떨어짐 확인, 사용자가 VR Preview에서 놓은 무기가 떨어지는 것 확인
+  - 템플릿 BP 변수 중 인스턴스 편집이 막힌 것(`bIsHeld`)은 `GraphAuthoringLibrary.set_property_by_path`로 바꾼다
 - 다음: 영상(V0, 사용자 녹화·YouTube 일부 공개) → 링크·QR → 9-4 PDF 내보내기와 검토
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
@@ -734,6 +738,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-09: 발사·피격 연출 — 총구(화염·총소리·탄피)는 새 부품 `UFireEffectsComponent`(`OnFired` 구독, 에셋은 무기 BP·꾸민 자식이 덮어씀), 맞은 곳은 벽은 탄 데이터·적은 적 데이터(`UEnemyHitEffects`가 `OnDamaged` 구독). 이펙트는 `UFXSystemAsset`(나이아가라·캐스케이드). (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: PDF 원고 — AI 활용은 '개발 방식' 장에서 역할 분담과 직접 만든 자동화 도구로 드러낸다(공고 우대사항 연결), 개인 정보는 이름·GitHub만, C++ 코드는 핵심만 짧게(주제마다 10~20줄 발체 4~6개, 처음 '코드 없이'에서 바꿈), 흰 바탕 기술 문서. 9-3a~c. (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: PDF는 HTML/CSS(A4 세로) → 브라우저 인쇄, 그림은 SVG. 스크린샷은 Claude(에디터·시뮬레이트 연출)와 사용자(VR 손 시점)가 나눠 찍고, 영상은 2~3분 하나(YouTube 일부 공개, 링크·QR). 원고·재료는 `Docs/Portfolio/`(git 제외). (`Docs/PLAN.md` Phase 5)
+- 2026-11-09: 무기는 처음 배치(테이블·책상 위)에서는 고정, 한 번 잡았다 놓으면 물리(중력)로 떨어진다(템플릿 잡기 컴포넌트 `bSimulateOnDrop` 기본값). 처음부터 물리를 켜는 방법은 시험 맵의 공중 배치가 떨어지고 테이블에서 밀려날 수 있어 택하지 않음.
 - 2026-11-09: 순간이동 표시의 플레이 영역 사각형(템플릿)은 실제 순간이동 결과와 같은 방향으로 그린다(구간의 정해진 방향 반영, 게임 모드가 계산).
 - 2026-11-09: 패키지는 공장에서 시작하고, 승리 화면의 '다음 레벨' 버튼으로 연구소, 연구소 승리 화면의 '처음부터' 버튼으로 공장에 간다. 다음 레벨은 게임 모드 설정값 `NextLevel`(Showcase 게임 모드 자식에서 정함), 실패 화면은 다시 시작만. 연구소 라이트맵은 High로 굽는다. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-09: 연구소 전투 배치 — 홀스터가 없고 되돌아갈 수 없어 전투 구간마다 무기 책상(꾸민 무기 세 종)·탄창 책상(보급대 셋)을 설 자리 양옆에 둔다. 적은 구간이 바라보는 쪽 앞 좌·우 두 곳에서, 웨이브는 구간마다 2개(2·2 / 2·3 / 3·5명). (`Docs/PLAN.md` 10장 "두 번째 레벨")
