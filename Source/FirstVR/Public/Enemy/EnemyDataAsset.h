@@ -85,6 +85,13 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Attack", meta = (ClampMin = "0.0", ForceUnits = "s"))
 	float AttackCooldown = 1.5f;
 
+	/** 공격의 타격 판정 구간이 시작될 때(휘두르는 순간) 휘두르는 본 위치에서 내는 소리. 비우면 소리 없음. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects")
+	TObjectPtr<USoundBase> AttackSwingSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|Effects", meta = (ClampMin = "0.0"))
+	float AttackSwingSoundVolume = 1.f;
+
 	/** 사망 후 몸을 남겨 두는 시간. 지나면 액터를 없앤다. 0이면 계속 남긴다. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy|State", meta = (ClampMin = "0.0", ForceUnits = "s"))
 	float CorpseLifeSpan = 10.f;

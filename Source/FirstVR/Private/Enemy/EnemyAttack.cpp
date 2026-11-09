@@ -143,6 +143,15 @@ void UEnemyAttack::BeginStrikeWindow(FName StrikeBone, float Radius)
 	StrikeSamples = 0;
 	ClosestStrikeDistance = TNumericLimits<float>::Max();
 	LastStrikeLocation = Mesh->GetSocketLocation(StrikeBone);
+
+	// 휘두르는 소리: 판정 구간이 시작되는 순간, 휘두르는 본 자리에서 한 번
+	const UEnemyDataAsset* Data = DamageReceiver ? DamageReceiver->GetEnemyData() : nullptr;
+	if (Data && Data->AttackSwingSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Data->AttackSwingSound, LastStrikeLocation,
+			Data->AttackSwingSoundVolume, FMath::FRandRange(0.9f, 1.1f));
+	}
+
 	UpdateStrikeWindow();
 }
 

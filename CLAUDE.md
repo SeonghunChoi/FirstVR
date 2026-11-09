@@ -677,7 +677,11 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
   - 나이아가라 시스템은 Python에서 이미터·모듈 값을 읽거나 바꿀 수 없다(`emitter_handles` 없음). 블루프린트 SCS 노드는 `GetPropertyByPath(bp, "SimpleConstructionScript")` → `AllNodes`로 찾고 소켓은 노드의 `AttachToName`
 - [x] 놓은 무기가 공중에 멈춤(사용자 발견, 영상 전): 템플릿 `BP_GrabComponent`는 `BeginPlay`의 `SetShouldSimulateOnDrop`에서 부모가 물리 중일 때만 `bSimulateOnDrop`을 켜고(끄지는 않음) 놓을 때 이 값이 참이어야 물리를 켠다. 무기 `Body`는 처음부터 물리가 꺼져 있었다(탄창은 C++에서 켬). 결정에 따라 처음 배치는 고정 그대로, 놓을 때만 물리: `set_weapon_drop_physics.py`로 그레이박스 무기 5종 `Grip`의 `bSimulateOnDrop` 기본값 True(꾸민 무기는 물려받음), C++ 변경 없음 — 시뮬레이트에서 다섯 무기를 1m 올려 `TryRelease` → 물리 켜짐 → 바닥(z 3)까지 떨어짐 확인, 사용자가 VR Preview에서 놓은 무기가 떨어지는 것 확인
   - 템플릿 BP 변수 중 인스턴스 편집이 막힌 것(`bIsHeld`)은 `GraphAuthoringLibrary.set_property_by_path`로 바꾼다
-- 다음: 영상(V0, 사용자 녹화·YouTube 일부 공개) → 링크·QR → 9-4 PDF 내보내기와 검토
+- [x] 근접 전투 소리(사용자 발견: 적 공격·피격 소리 없음, 영상 전): 플레이어 피격음은 임시 `Fire_Cue` 피치 0.5(총소리로 들림), 적 피격음은 비어 있었고 적 공격 소리는 기능이 없었다. C++: 적 데이터 `AttackSwingSound`·`AttackSwingSoundVolume`, `UEnemyAttack::BeginStrikeWindow`에서 휘두르는 본 자리에 재생(피치 0.9~1.1) — 커맨드라인 빌드. 에셋: 처음 쓴 `Third-Person Action & Adventure 200`(HomkaH)의 근접 60개는 사용자가 들어 보니 검 공격용이라 바꿈. 사용자가 시청 페이지(`Saved/SoundAudition/`, 로컬 http 서버)에서 고름: 휘두르기 = Fab `General Whoosh SFX`(Sound Kajiya) `GW_Whoosh_T1_1` → `Content/GeneralWhooshSFX/SW_Whoosh_T1_1`, 플레이어 피격 = Fab `Damage Vocalizations (Male)`(VoiceBosch, 신음 22개) 02번 → `Content/DamageVocalizations/SW_DamageGrunt_02`, 적이 총에 맞음 = 같은 팩 19번(다른 배우) → `SW_DamageGrunt_19`(두 폴더 `.gitignore`). `wire_combat_sounds.py`: 없으면 WAV에서 가져오고, 꾸민 적 데이터 둘에 휘두르기·피격음, 플레이어 피격음은 git 에셋 `BP_XRPawn`에 있어 Showcase 자식 폰 `Showcase/Game/BP_XRPawn_Showcase`(피치 1.0)를 만들어 공장·연구소 게임 모드 `DefaultPawnClass`로. 사용자가 이 소리로 VR Preview 영상 녹화까지 마침(2026-11-09)
+  - Fab 무료 `Shooter Warfare ... 200 Free SFX`는 설명(탄 맞는 소리·방탄복 등)과 달리 소총 장전 손잡이·탄창 넣고 빼기·안전장치 소리뿐이었다(HomkaH 무료 200은 유료판의 한 갈래만 들어 있다). 받기 전에 설명만 믿지 않는다
+  - 템플릿 폰을 바꿀 값이 팩 에셋이면 Showcase 자식 폰 + Showcase 게임 모드의 `DefaultPawnClass`로 덮어쓴다
+- [x] 영상(V0) 녹화: 사용자가 에디터 VR Preview로 녹화(2026-11-09)
+- 다음: YouTube 일부 공개 업로드(사용자) → 링크·QR(표지 `.links`, 18쪽 링크 표의 `[링크 자리]`) → 9-4 PDF 내보내기와 검토
 - 나중에 할 수 있는 것: 전투용 걸음(무기 없는 공격형 걷기) 애니메이션, 절뚝임 전용 애니메이션
 - 나중에 정리: `FirstVREditor.Target.cs`에 `IncludeOrderVersion` 설정 (빌드 시 `[Upgrade]` 권고)
 - 원격 저장소: `origin` = https://github.com/SeonghunChoi/FirstVR (공개)
@@ -739,6 +743,7 @@ Claude Code는 스텝이 끝날 때마다 이 절을 갱신한다.
 - 2026-11-09: PDF 원고 — AI 활용은 '개발 방식' 장에서 역할 분담과 직접 만든 자동화 도구로 드러낸다(공고 우대사항 연결), 개인 정보는 이름·GitHub만, C++ 코드는 핵심만 짧게(주제마다 10~20줄 발체 4~6개, 처음 '코드 없이'에서 바꿈), 흰 바탕 기술 문서. 9-3a~c. (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: PDF는 HTML/CSS(A4 세로) → 브라우저 인쇄, 그림은 SVG. 스크린샷은 Claude(에디터·시뮬레이트 연출)와 사용자(VR 손 시점)가 나눠 찍고, 영상은 2~3분 하나(YouTube 일부 공개, 링크·QR). 원고·재료는 `Docs/Portfolio/`(git 제외). (`Docs/PLAN.md` Phase 5)
 - 2026-11-09: 무기는 처음 배치(테이블·책상 위)에서는 고정, 한 번 잡았다 놓으면 물리(중력)로 떨어진다(템플릿 잡기 컴포넌트 `bSimulateOnDrop` 기본값). 처음부터 물리를 켜는 방법은 시험 맵의 공중 배치가 떨어지고 테이블에서 밀려날 수 있어 택하지 않음.
+- 2026-11-09: 적이 휘두르는 소리는 타격 판정 구간이 시작될 때 `UEnemyAttack`이 적 데이터 `AttackSwingSound`를 낸다(피격 연출처럼 데이터에서 고름, 몽타주 Play Sound 노티파이는 쓰지 않음). 휘두르기는 `General Whoosh SFX`, 피격음은 `Damage Vocalizations (Male)` 목소리(플레이어·적은 다른 배우).
 - 2026-11-09: 순간이동 표시의 플레이 영역 사각형(템플릿)은 실제 순간이동 결과와 같은 방향으로 그린다(구간의 정해진 방향 반영, 게임 모드가 계산).
 - 2026-11-09: 패키지는 공장에서 시작하고, 승리 화면의 '다음 레벨' 버튼으로 연구소, 연구소 승리 화면의 '처음부터' 버튼으로 공장에 간다. 다음 레벨은 게임 모드 설정값 `NextLevel`(Showcase 게임 모드 자식에서 정함), 실패 화면은 다시 시작만. 연구소 라이트맵은 High로 굽는다. (`Docs/PLAN.md` 10장 "두 번째 레벨")
 - 2026-11-09: 연구소 전투 배치 — 홀스터가 없고 되돌아갈 수 없어 전투 구간마다 무기 책상(꾸민 무기 세 종)·탄창 책상(보급대 셋)을 설 자리 양옆에 둔다. 적은 구간이 바라보는 쪽 앞 좌·우 두 곳에서, 웨이브는 구간마다 2개(2·2 / 2·3 / 3·5명). (`Docs/PLAN.md` 10장 "두 번째 레벨")
